@@ -2,6 +2,8 @@
 #define MAZE_H
 
 #include <iostream>
+#include <string>
+
 #include "GridGraph.h"
 
 class Maze
@@ -17,6 +19,8 @@ class Maze
                                         // be careful when using it as modifying this will modify private data member which is undesireable
                                         // using this over getMazeMap allows for performance improvements as large maze will not need to be copied
         void setMazeMap(GridGraph* m); // MazeMap setter
+
+        bool printMaze();
 
     private:
         GridGraph MazeMap;

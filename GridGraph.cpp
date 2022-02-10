@@ -19,6 +19,8 @@ void printNodes(GridGraph* m){ // prints nodes of the referenced grid graph
     }
 
     printf("\n");
+
+    return;
 }
 
 void printXEdges(GridGraph* m){ // prints x_edge of the referenced grid graph
@@ -40,6 +42,8 @@ void printXEdges(GridGraph* m){ // prints x_edge of the referenced grid graph
     }
 
     printf("\n");
+
+    return;
 }
 
 void printYEdges(GridGraph* m){ // prints y_edge of the referenced grid graph
@@ -61,4 +65,6 @@ void printYEdges(GridGraph* m){ // prints y_edge of the referenced grid graph
     }
 
     printf("\n");
+    
+    return;
 }
