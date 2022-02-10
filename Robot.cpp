@@ -32,28 +32,28 @@ bool Robot::move2Cell(int direction){ // function to move robot depending on loc
 
     switch (direction){ // switch statement to move robot in specific direction based on know information from local map
     case 1:
-        if (local_map.y_edges[y_position][x_position] != 1){ // if there is an edge between current node and node above
+        if (!local_map.y_edges[y_position][x_position]){ // if there is an edge between current node and node above
             y_position--; // move robot to node above
             ret_value = true; // ret_value = true as movement was a success
         }
         break;
 
     case 2:
-        if (local_map.y_edges[y_position+1][x_position] != 1){ // if there is an edge between current node and node below
+        if (!local_map.y_edges[y_position+1][x_position]){ // if there is an edge between current node and node below
             y_position++; // move robot to node below
             ret_value = true; // ret_value = true as movement was a success
         }
         break;
 
     case 3:
-        if (local_map.x_edges[y_position][x_position] != 1){ // if there is an edge between current node and node to the left
+        if (!local_map.x_edges[y_position][x_position]){ // if there is an edge between current node and node to the left
             x_position--; // move robot to node to the left
             ret_value = true; // ret_value = true as movement was a success
         }
         break;
 
     case 4:
-        if (local_map.x_edges[y_position][x_position+1] != 1){ // if there is an edge between current node and node to the right 
+        if (!local_map.x_edges[y_position][x_position+1]){ // if there is an edge between current node and node to the right 
             x_position++; // move robot to node to the right
             ret_value = true; // ret_value = true as movement was a success
         }
@@ -62,10 +62,16 @@ bool Robot::move2Cell(int direction){ // function to move robot depending on loc
     default: // if invalid direction is passed into function
         break;
     }
-    if (ret_value)
+    if (ret_value) // if robot position movement successfull
         std::cout << "Robot Sucessfully moved to " << x_position  << ", "<< y_position << "\n";
     return ret_value; // ret_value = true if robot moved sucessfully
                       // ret_value = false if robot failed to move
+}
+
+bool Robot::pf_FloodFill(int dest_x, int dest_y){ // TODO: implement simple flood fill pathfinding
+    bool ret_value = false;
+
+    return ret_value;    
 }
 
 void Robot::printRobotNodes(){ // function to print Robot's map of explored nodes
@@ -78,4 +84,3 @@ void Robot::printRobotXMap(){ // function to print Robot's X edge map
 void Robot::printRobotYMap(){ // function to print Robot's Y edge map 
     printYEdges(&local_map);
 }
-
