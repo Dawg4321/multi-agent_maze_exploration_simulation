@@ -81,7 +81,7 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
         ret_value.push_back(buffer);
     }
     // check if neighbour to the south is valid and connected via an edge (no wall)
-    if(!LocalMap.y_edges[y][x] && LocalMap.nodes[y+1][x] == 1){
+    if(!LocalMap.y_edges[y+1][x] && LocalMap.nodes[y+1][x] == 1){
         buffer.x = x; 
         buffer.y = y + 1;
         ret_value.push_back(buffer);
@@ -93,7 +93,7 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
         ret_value.push_back(buffer);
     }
     // check if neighbour to the west is valid and connected via an edge (no wall)
-    if(!LocalMap.x_edges[y][x] && LocalMap.nodes[y][x+1] == 1){
+    if(!LocalMap.x_edges[y+1][x] && LocalMap.nodes[y][x+1] == 1){
         buffer.x = x + 1; 
         buffer.y = y;
         ret_value.push_back(buffer);
@@ -143,16 +143,18 @@ bool Robot::pf_BFS(int x_dest, int y_dest){
         std::vector<Coordinates> valid_neighbours = getValidNeighbours(curr_node.x, curr_node.y);
 
         for(int i = 0; i < valid_neighbours.size(); i ++){
-
+            
+            if(visited_nodes.find(valid_neighbours[i]) != visited_nodes.end()){
                 
-            visited_nodes.insert({valid_neighbours[i], curr_node});
-           // if(visited_nodes.find(valid_neighbours[i]) == visited_nodes.end()){
-                node_queue.push(valid_neighbours[i]);
-            //}
+            }
+            else{
+                node_queue.push(valid_neighbours[i]);              
+                visited_nodes.insert({valid_neighbours[i], curr_node});
+            }
         }
     }
     
-    while(curr_node.x != x_position && curr_node.y != y_position){
+    while(curr_node.x != x_position || curr_node.y != y_position){
         planned_path.push_back(curr_node);
         printf("hi\n");
         curr_node = visited_nodes[curr_node];

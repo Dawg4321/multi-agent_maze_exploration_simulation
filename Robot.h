@@ -13,10 +13,9 @@ struct Coordinates{
     unsigned int x;
     unsigned int y;
 
-    bool operator<(const Coordinates& a) const
-{
-    return (x < a.x && y < a.y);
-}
+    bool operator<(const Coordinates& a) const{
+        return (x < a.x || y < a.y);
+    }
 };
 
 class Robot{
