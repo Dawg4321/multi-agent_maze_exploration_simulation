@@ -10,7 +10,7 @@ void printNodes(GridGraph* m){ // prints nodes of the referenced grid graph
     printf("\n   "); // new line
     
     for (int i = 0; i < 32; i++) // printing divider from column numbers
-        printf("---",i);
+        printf("---");
 
     for (int i = 0; i < 31; i++){
         printf("\n%3d|",i);
@@ -33,7 +33,7 @@ void printXEdges(GridGraph* m){ // prints x_edge of the referenced grid graph
     printf("\n   "); // new line
     
     for (int i = 0; i < 32; i++) // printing divider from column numbers
-        printf("---",i);
+        printf("---");
 
     for (int i = 0; i < 32; i++){ // print x_edge matrix
         printf("\n%3d|",i);
@@ -53,10 +53,10 @@ void printYEdges(GridGraph* m){ // prints y_edge of the referenced grid graph
     for (int i = 0; i < 32; i++) // printing column numbers
         printf(" %-2d",i);
 
-    printf("\n   "); // new line
+    printf("\n   "); // new line to allow table to be printed below column numbers
     
     for (int i = 0; i < 32; i++) // printing divider from column numbers
-        printf("---",i);
+        printf("---");
 
     for (int i = 0; i < 32; i++){ // print x_edge matrix
         printf("\n%3d|",i);

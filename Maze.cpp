@@ -81,7 +81,9 @@ GridGraph* Maze::getMazeMapPointer(){
     return (&MazeMap);
 }
 
-bool Maze::printMaze(){
+bool Maze::printMaze(){ // function to print layout of maze in an intuitive manner
+                        // maze design based off what can be seen here: https://www.chegg.com/homework-help/questions-and-answers/using-c-1-write-maze-solving-program-following-functionality-note-implementation-details-a-q31826669
+
 
     std::string logos[5] = { "   ", "---", "|", " ", " R "}; // array with logos to use when printing maze
     
@@ -90,7 +92,7 @@ bool Maze::printMaze(){
         return false; // return false as printing failed
     }
 
-    printf("**Maze Simulation**\n");   
+    printf("**Maze Simulation**\n"); // printing title and maze information
     printf("Size = %d x %d\n", maze_xsize, maze_ysize);
 
     int string_pointer = 0; // integer used to determine which logo needs to be printed from logo vector
@@ -128,11 +130,11 @@ bool Maze::printMaze(){
             }
         }
         
-        if (count == 1){ // if both the row and column corresponding to i value have been incremented
+        if (count == 1){ // if both the row and column corresponding to i value have been printed
             count = 0; // reset count value
             i++; // increment i to access next row
         }
-        else
+        else // if only the column edges corresponding to i have been printed
             count++;
 
         printf("\n");
