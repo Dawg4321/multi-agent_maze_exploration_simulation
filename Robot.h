@@ -5,15 +5,27 @@
 #include <vector>
 #include <queue>
 #include <map>
-#include <list>
 
 #include "GridGraph.h"
 
 struct Coordinates{
+    // Coordinates data members
     unsigned int x;
     unsigned int y;
 
-    bool operator<(const Coordinates& a) const{
+    // Coordinates Constructors
+    Coordinates(){
+        x = 0;
+        y = 0;
+    }
+
+    Coordinates(unsigned int a, unsigned int b){
+        x = a;
+        y = b;
+    }
+
+    // Coordinates overloaded operators
+    bool operator<(const Coordinates& a) const{ 
         return (x < a.x || (!(x < a.x) && y < a.y));
     }
     bool operator==(const Coordinates& a) const{

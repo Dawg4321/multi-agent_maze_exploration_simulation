@@ -68,12 +68,13 @@ bool Robot::move2Cell(int direction){ // function to move robot depending on loc
                       // ret_value = false if robot failed to move
 }
 
-std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int y){
+std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int y){ // function to gather valid neighbouring cells of a selected cell based on robot's local map
 
-    std::vector<Coordinates> ret_value; // vector of arrays to return
+    std::vector<Coordinates> ret_value; // vector of Coordinates to return
+                                        // this will contain the coordinates of valid neighbouring nodes
     
-    Coordinates buffer; // buffer vector to gather positions of neighbouring nodes
-    if (x != 0)
+    Coordinates buffer; // buffer structor to gather positions of neighbouring nodes before pushing to vector
+
     // check if neighbour to the north is valid and connected via an edge (no wall)
     if(!LocalMap.y_edges[y][x] && LocalMap.nodes[y-1][x] == 1){
         buffer.x = x; 
@@ -99,16 +100,21 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
         ret_value.push_back(buffer);
     }
 
-    for(int i = 0; i < ret_value.size(); i ++){
+    // printing all valid neighbouring nodes of selected node
+    for(int i = 0; i < ret_value.size(); i ++){ // TODO: after debugging
         printf("%d,%d\n",ret_value[i].x,ret_value[i].y);
     }
-    return ret_value;
+
+    return ret_value; // returning vector
+    // TODO: return by pointer may be desirable
 }
 
-bool Robot::pf_BFS(int x_dest, int y_dest){
+bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot to follow from current position to a specified destination
     
     planned_path.clear(); // clearing planned_path as new path is to be planned using breadth first search
 
+    // initial checks to ensure path needs to be planned
+    // no point using computation if robot is at destination or destination does not exist on robot's local map
     if(LocalMap.nodes[y_dest][x_dest] == 0) // if the destination node has not been explored
         return false;                       // can't create a path thus return false;
 
@@ -117,61 +123,51 @@ bool Robot::pf_BFS(int x_dest, int y_dest){
 
     bool ret_value = false; // return value
 
-    std::queue<Coordinates> node_queue; // creating 
+    std::queue<Coordinates> node_queue; // creating node queue to store nodes to be "explored" by algorithm
 
-    std::map<Coordinates, Coordinates> visited_nodes;
+    std::map<Coordinates, Coordinates> visited_nodes; // map to track explored nodes to their parent node
 
-    Coordinates curr_node;
-    curr_node.x = x_position;
-    curr_node.y = y_position;
+    // initializing first node to explore from with robot's current coordinates
+    Coordinates curr_node(x_position, y_position); 
 
+    node_queue.push(curr_node); // adding first node to explore to node queue
+    visited_nodes.insert({curr_node, curr_node}); // adding first node to visited node maps using itself as parent
 
-    node_queue.push(curr_node);
-    visited_nodes.insert({curr_node, curr_node});
-
-    while(node_queue.size() != 0){// while nodes to explore are in the queue
+    while(node_queue.size() != 0){// while nodes to explore are in node_queue
         
-        curr_node = node_queue.front(); // gather node from front of queue
+        curr_node = node_queue.front(); // gathering node from front of queue
 
         printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
 
-        node_queue.pop(); // removing current node from queue
+        node_queue.pop(); // removing node from front of the queue
 
-        if (curr_node.x == x_dest && curr_node.y == y_dest){
-            break;
+        if (curr_node.x == x_dest && curr_node.y == y_dest){ // if the target node has been located
+            ret_value = true; // return true as path found
+            break; // break from while loop
         }
         
-        std::vector<Coordinates> valid_neighbours = getValidNeighbours(curr_node.x, curr_node.y);
+        std::vector<Coordinates> valid_neighbours = getValidNeighbours(curr_node.x, curr_node.y); // gathering neighbours of current node
 
-        for(int i = 0; i < valid_neighbours.size(); i ++){
-            bool flag = false;
+        for(int i = 0; i < valid_neighbours.size(); i ++){ // iterate through all of the current node's neighbours to see if they have been explored
 
-            for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
-                if (key == valid_neighbours[i]){
-                    flag = true;
-                    break;
-                }
-            }
-            if(!flag){//== visited_nodes.end()){
+            if(visited_nodes.contains(valid_neighbours[i]) == 0){//== visited_nodes.end()){
                 node_queue.push(valid_neighbours[i]);              
                 visited_nodes.insert({valid_neighbours[i], curr_node});   
             }
-            /*
-            if(visited_nodes.count(valid_neighbours[i]) == 0){//== visited_nodes.end()){
-                node_queue.push(valid_neighbours[i]);              
-                visited_nodes.insert({valid_neighbours[i], curr_node});   
-            }
-            else{
-                
-            }*/
         }
     }
     
-    curr_node.x = x_dest;
-    curr_node.y = y_dest;
-    while(!(curr_node.x == x_position && curr_node.y == y_position)){
-        
-        planned_path.push_back(curr_node);
+    // TODO: implement handling if path to target location is not found 
+
+    // as a valid path has been found from current position to target using robot's local map
+    // must travel from destination back through parent nodes to reconstruct path
+    
+    curr_node.x = x_dest; // ensuring the current node is pointing to destination
+    curr_node.y = y_dest; // this allows for the "walk back" through nodes to start to occur
+    
+    while(!(curr_node.x == x_position && curr_node.y == y_position)){ // while the starting node has not been found from parents
+
+        planned_path.push_back(curr_node); // add current node to planned path
 
         for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
             if (key == curr_node){
@@ -181,12 +177,12 @@ bool Robot::pf_BFS(int x_dest, int y_dest){
         }
     }
 
-    printf("Planned Path\n");
-    for(int i = 0; i <  planned_path.size(); i++){
+    printf("Planned Path\n"); // printing planned path
+    for(int i = 0; i <  planned_path.size(); i++){ // TODO: Remove after further debugging
         printf("%d,%d\n",planned_path[i].x,planned_path[i].y);
     }
 
-    return ret_value;    
+    return ret_value; 
 }
 
 void Robot::printRobotNodes(){ // function to print Robot's map of explored nodes
