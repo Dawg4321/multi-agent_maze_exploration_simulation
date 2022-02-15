@@ -73,7 +73,7 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
     std::vector<Coordinates> ret_value; // vector of arrays to return
     
     Coordinates buffer; // buffer vector to gather positions of neighbouring nodes
-
+    if (x != 0)
     // check if neighbour to the north is valid and connected via an edge (no wall)
     if(!LocalMap.y_edges[y][x] && LocalMap.nodes[y-1][x] == 1){
         buffer.x = x; 
@@ -93,7 +93,7 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
         ret_value.push_back(buffer);
     }
     // check if neighbour to the west is valid and connected via an edge (no wall)
-    if(!LocalMap.x_edges[y+1][x] && LocalMap.nodes[y][x+1] == 1){
+    if(!LocalMap.x_edges[y][x+1] && LocalMap.nodes[y][x+1] == 1){
         buffer.x = x + 1; 
         buffer.y = y;
         ret_value.push_back(buffer);
@@ -137,31 +137,53 @@ bool Robot::pf_BFS(int x_dest, int y_dest){
 
         node_queue.pop(); // removing current node from queue
 
-        if (curr_node.x == x_dest && curr_node.y == y_dest)
+        if (curr_node.x == x_dest && curr_node.y == y_dest){
             break;
+        }
         
         std::vector<Coordinates> valid_neighbours = getValidNeighbours(curr_node.x, curr_node.y);
 
         for(int i = 0; i < valid_neighbours.size(); i ++){
-            
-            if(visited_nodes.find(valid_neighbours[i]) != visited_nodes.end()){
-                
+            bool flag = false;
+
+            for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
+                if (key == valid_neighbours[i]){
+                    flag = true;
+                    break;
+                }
+            }
+            if(!flag){//== visited_nodes.end()){
+                node_queue.push(valid_neighbours[i]);              
+                visited_nodes.insert({valid_neighbours[i], curr_node});   
+            }
+            /*
+            if(visited_nodes.count(valid_neighbours[i]) == 0){//== visited_nodes.end()){
+                node_queue.push(valid_neighbours[i]);              
+                visited_nodes.insert({valid_neighbours[i], curr_node});   
             }
             else{
-                node_queue.push(valid_neighbours[i]);              
-                visited_nodes.insert({valid_neighbours[i], curr_node});
-            }
+                
+            }*/
         }
     }
     
-    while(curr_node.x != x_position || curr_node.y != y_position){
+    curr_node.x = x_dest;
+    curr_node.y = y_dest;
+    while(!(curr_node.x == x_position && curr_node.y == y_position)){
+        
         planned_path.push_back(curr_node);
-        printf("hi\n");
-        curr_node = visited_nodes[curr_node];
+
+        for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
+            if (key == curr_node){
+                curr_node = val;
+                break;
+            }
+        }
     }
 
-    for(int i = 0; i < planned_path.size(); i ++){
-        printf("%d,%d\n", planned_path[i].x,planned_path[i].y);
+    printf("Planned Path\n");
+    for(int i = 0; i <  planned_path.size(); i++){
+        printf("%d,%d\n",planned_path[i].x,planned_path[i].y);
     }
 
     return ret_value;    

@@ -14,7 +14,10 @@ struct Coordinates{
     unsigned int y;
 
     bool operator<(const Coordinates& a) const{
-        return (x < a.x || y < a.y);
+        return (x < a.x || (!(x < a.x) && y < a.y));
+    }
+    bool operator==(const Coordinates& a) const{
+        return (x == a.x && y == a.y);
     }
 };
 
