@@ -185,6 +185,20 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
     return ret_value; 
 }
 
+void Robot::findNearestUnknownCell(){
+
+}
+
+void Robot::soloExplore(GridGraph* maze){
+    while(1){
+        scanCell(maze);
+
+        // find nearest unseen cell
+
+        move2Cell();
+    }
+}
+
 void Robot::printRobotNodes(){ // function to print Robot's map of explored nodes
     printNodes(&LocalMap);
 }

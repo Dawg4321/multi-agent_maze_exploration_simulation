@@ -41,6 +41,9 @@ class Robot{
         bool move2Cell(int direction);
         bool pf_BFS(int x, int y);
 
+        void findNearestUnknownCell();
+        void soloExplore(GridGraph* maze);
+
         std::vector<Coordinates> getValidNeighbours(unsigned int x, unsigned  int y);
 
         void printRobotXMap();
