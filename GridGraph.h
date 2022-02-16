@@ -10,7 +10,8 @@
 typedef struct{
     char nodes[INITIAL_NUM_ROWS][INITIAL_NUM_COLS] = {0}; // Nodes represent each cell within the maze
                                                           // 0 = invalid node
-                                                          // 1 = valid node
+                                                          // 1 = explored valid node
+                                                          // 2 =  unexplored valid node
 
     // bit matrix corresponding to y (east-west) edges of nodes in maze                                                                                         
     std::vector<std::vector<bool>> x_edges{INITIAL_NUM_ROWS + 1, std::vector<bool>(INITIAL_NUM_COLS + 1)}; // 32x32 bit matrix
