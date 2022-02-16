@@ -38,14 +38,18 @@ class Robot{
         Robot(int x, int y);
 
         void scanCell(GridGraph* maze);
+
         bool move2Cell(int direction);
+        bool move2Cell(Coordinates* destination);
+
         bool pf_BFS(int x, int y);
 
-        void findNearestUnknownCell();
+        bool BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector);
         void soloExplore(GridGraph* maze);
 
         std::vector<Coordinates> getValidNeighbours(unsigned int x, unsigned  int y);
 
+        void printRobotMaze();
         void printRobotXMap();
         void printRobotYMap();
         void printRobotNodes();
@@ -54,6 +58,9 @@ class Robot{
         // cartesian cordinates
         unsigned int x_position; // x position within cells 
         unsigned int y_position; // y position within cells
+
+        int number_of_unexplored; // number of unexplored cells encountered
+
         std::vector<Coordinates> planned_path; 
         
         GridGraph LocalMap; // local_map maintained by robot of areas explored
