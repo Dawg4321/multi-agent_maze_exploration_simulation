@@ -38,6 +38,8 @@ class Robot{
 
         int number_of_unexplored; // number of unexplored cells encountered
 
+        unsigned int id; // robot id assigned by controller;
+
         std::vector<Coordinates> planned_path; 
         
         GridGraph LocalMap; // local_map maintained by robot of areas explored
@@ -45,6 +47,8 @@ class Robot{
         unsigned int maze_xsize; // size of maze
         unsigned int maze_ysize; // this is not used by exploration algorithms
                                  // only for printing purposes
+
+
 };
 
 #endif

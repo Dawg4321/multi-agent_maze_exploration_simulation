@@ -364,7 +364,7 @@ bool Robot::printRobotMaze(){ // function to print robot's local map of maze
     int count = 0; // counter to determine if both the column and row edges have been printed
     int i = 0; // counter to track if the whole maze has been printed
 
-    do{ // while loop to determing which row to print (i = node row number)
+    while(!(i >= maze_ysize && count == 1)){ // while loop to determing which row to print (i = node row number)
     
         if(count == 0){ // printing the horizontal walls of maze
 
@@ -425,7 +425,7 @@ bool Robot::printRobotMaze(){ // function to print robot's local map of maze
 
         printf("\n");
 
-    }while(!(i >= maze_ysize && count == 1)); // if all of the rows have been printed including final column, break
+    }
 
     return true; // return true as printing succeeded
 }
