@@ -4,6 +4,9 @@ Robot::Robot(int x, int y){
     x_position = x; // initialising robots current position with passed in values
     y_position = y;
 
+    maze_xsize = 4;
+    maze_ysize = 4;
+
     number_of_unexplored = 1; // set to 1 as current occupied cell is unknown to robot
 }
 
@@ -269,8 +272,6 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
 
         printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
 
-
-
         if (LocalMap.nodes[curr_node.y][curr_node.x] == 2){ // if an unexplored node has been found
             ret_value = true; // return true as path to unexplored node found
             break; // break from while loop
@@ -326,22 +327,107 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
 void Robot::soloExplore(GridGraph* maze){
     while(1){
 
-        scanCell(maze);
+        scanCell(maze); // scan cell 
         
         if(number_of_unexplored == 0){ // no more cells to explore therefore break from scan loop
             printf("Done exploring!\n");
             break;
         }
 
-        BFS_pf2NearestUnknownCell(&planned_path);
+        printRobotMaze(); // print maze contents for analysis
+
+        BFS_pf2NearestUnknownCell(&planned_path); // move to nearest unseen cell
 
         for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
             move2Cell(&(planned_path[planned_path.size()-i-1]));
         }
-        planned_path.clear();
+        planned_path.clear(); // clear planned_path as movement has been completed
     }
 
     return;
+}
+
+bool Robot::printRobotMaze(){ // function to print robot's local map of maze
+                              // maze design based off what can be seen here: https://www.chegg.com/homework-help/questions-and-answers/using-c-1-write-maze-solving-program-following-functionality-note-implementation-details-a-q31826669
+
+    std::string logos[8] = { "   ", "---", "|", " ", " R ", " . ", " X ", " * "}; // array with logos to use when printing maze
+    
+    if(maze_xsize == 0 || maze_ysize == 0){ // if maze has not been allocated
+        printf("Error: Maze size has not been specified\n");
+        return false; // return false as printing failed
+    }
+
+    printf("*Robot Local Map**\n"); // printing title and maze information
+
+    int string_pointer = 0; // integer used to determine which logo needs to be printed from logo vector
+
+    int count = 0; // counter to determine if both the column and row edges have been printed
+    int i = 0; // counter to track if the whole maze has been printed
+
+    do{ // while loop to determing which row to print (i = node row number)
+    
+        if(count == 0){ // printing the horizontal walls of maze
+
+            for(int j = 0; j < maze_xsize; j++){
+
+                if(LocalMap.y_edges[i][j]){ // if there is no edge between two nodes
+                    string_pointer = 1; // print horizontal line
+                }
+                else{ // if there is an edge between two nodes
+                    string_pointer = 0; // print horizontal line
+                }
+
+                printf("+%s", logos[string_pointer].c_str());
+            }
+            printf("+");
+        }
+        else{ // printing vertical walls of the maze
+
+            for(int j = 0; j < maze_xsize + 1; j++){
+
+                // checking the walls between two nodes (e.g. wall?, no wall?)
+                if(LocalMap.x_edges[i][j]){ // if there is no edge between two nodes
+                    string_pointer = 2; // print horizontal line
+                }
+                else{ // if there is an edge between two nodes
+                    string_pointer = 3; // print horizontal line
+                }
+                printf("%s", logos[string_pointer].c_str());
+
+                // checking contents of a node (e.g. does it have a robot?)
+                if (j >= maze_xsize){ // if iterating outside of valid node
+                    string_pointer = 3; // print empty space as node is outside of maze
+                }
+                else if(j == x_position && i == y_position){ // if current node is the robot's location
+                    string_pointer = 4; // print R for robot
+                }
+                else if(LocalMap.nodes[i][j] == 0){ // if current node is invalid (unseen and unexplored)
+                    string_pointer = 6; // print I for invalid cell
+                }
+                else if(LocalMap.nodes[i][j] == 2){ // if current node has been seen but not explored
+                    string_pointer = 7; // print * for seen node
+                }
+                else{ // if current cell has been seen and explored (valid)
+                    string_pointer = 0; // print empty space
+                }
+
+
+                printf("%s",logos[string_pointer].c_str());
+            }
+        }
+        
+        if (count == 1){ // if both the row and column corresponding to i value have been printed
+            count = 0; // reset count value
+            i++; // increment i to access next row
+        }
+        else // if only the column edges corresponding to i have been printed
+            count++;
+
+        printf("\n");
+
+    }while(!(i >= maze_ysize && count == 1)); // if all of the rows have been printed including final column, break
+
+    return true; // return true as printing succeeded
 }
 
 void Robot::printRobotNodes(){ // function to print Robot's map of explored nodes

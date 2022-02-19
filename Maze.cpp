@@ -84,7 +84,6 @@ GridGraph* Maze::getMazeMapPointer(){
 bool Maze::printMaze(){ // function to print layout of maze in an intuitive manner
                         // maze design based off what can be seen here: https://www.chegg.com/homework-help/questions-and-answers/using-c-1-write-maze-solving-program-following-functionality-note-implementation-details-a-q31826669
 
-
     std::string logos[5] = { "   ", "---", "|", " ", " R "}; // array with logos to use when printing maze
     
     if(maze_xsize == 0 || maze_ysize == 0){ // if maze has not been allocated
@@ -100,7 +99,7 @@ bool Maze::printMaze(){ // function to print layout of maze in an intuitive mann
     int count = 0; // counter to determine if both the column and row edges have been printed
     int i = 0; // counter to track if the whole maze has been printed
 
-    while(i < maze_ysize + 1){ // for loop to print rows
+    while(i < maze_ysize + 1){ // while loop to determing which row to print (i = node row number)
     
         if(count == 0){ // printing the horizontal walls of maze
 
@@ -109,7 +108,7 @@ bool Maze::printMaze(){ // function to print layout of maze in an intuitive mann
                     string_pointer = 1; // print horizontal line
                 }
                 else{ // if there is an edge between two nodes
-                    string_pointer = 0; // print horizontal line
+                    string_pointer = 0; // print empty space
                 }
 
                 printf("+%s", logos[string_pointer].c_str());
@@ -119,11 +118,12 @@ bool Maze::printMaze(){ // function to print layout of maze in an intuitive mann
         else{ // printing vertical walls of the maze
 
             for(int j = 0; j < maze_xsize + 1; j++){
+                
                 if(MazeMap.x_edges[i][j]){ // if there is no edge between two nodes
-                    string_pointer = 2; // print horizontal line
+                    string_pointer = 2; // print vetical line
                 }
                 else{ // if there is an edge between two nodes
-                    string_pointer = 3; // print horizontal line
+                    string_pointer = 3; // print empty space
                 }
 
                 printf("%s%s", logos[string_pointer].c_str(),logos[0].c_str());
@@ -140,5 +140,5 @@ bool Maze::printMaze(){ // function to print layout of maze in an intuitive mann
         printf("\n");
     }
 
-    return true; // return false as printing succeeded
+    return true; // return true as printing succeeded
 }
