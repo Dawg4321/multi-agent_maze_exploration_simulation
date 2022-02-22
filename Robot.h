@@ -23,6 +23,7 @@ class Robot{
 
         bool BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector);
 
+        void startUp(GridGraph* maze);
         void soloExplore(GridGraph* maze);
 
         std::vector<Coordinates> getValidNeighbours(unsigned int x, unsigned  int y);

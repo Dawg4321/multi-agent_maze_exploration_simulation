@@ -324,6 +324,13 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
     return ret_value; 
 }
 
+void Robot::startUp(GridGraph* maze){ // function to initialize robot before it starts operating
+    
+    scanCell(maze); // scans cell that the robot currently belongs to initialze local map before exploring
+
+    return;
+}
+
 void Robot::soloExplore(GridGraph* maze){
     while(1){
 
