@@ -23,13 +23,15 @@ class RobotMaster{
 
         void receiveRequests();  // recieves and decodes request information from imcoming request
 
+        bool checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable); // checks if a cell is occupied by a robot
+
         int addRobot(unsigned int x, unsigned int y); // adds robots to tracked_robots This is important to allow for the robot to be synchronized by the control system
         void updateGlobalMap(); // updates global map with information from robot scan
         bool robotMoveRequest(); // function to aid in preventing robot collisions
 
         int changeRobotState(); // changes robot state using return variable
 
-        void printGlobalMap(); // prints global map with robot locations
+        bool printGlobalMap(); // prints global map with robot locations
         
 
     private:
@@ -38,6 +40,9 @@ class RobotMaster{
         std::vector<RobotInfo> tracked_robots; // vector to track information on various robots within maze
 
         unsigned int id_tracker; // tracks next id to give to robot
+
+        unsigned int maze_xsize; // size of maze
+        unsigned int maze_ysize; // this is only used for printing purposes
 };
 
 #endif
