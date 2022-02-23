@@ -106,7 +106,40 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
     return true; // return true as printing succeeded
 }
 
-int RobotMaster::addRobot(unsigned int x, unsigned int y){
+void RobotMaster::receiveRequests(){
+    Message request = Message_Handler->getMessage(); // gathering request from msg_queue
+
+    switch (request.request_type){ // determining type of request before processing
+        
+        case 0: // addRobot request
+            
+            // addRobot request msg_data layout:
+            // [0] = type: (unsigned int*), content: x coordinate of robot
+            // [0] = type: (unsigned int*), content: y coordinate of robot
+
+            // gathering data from request
+            unsigned int* x = (unsigned int*)request.msg_data[0]; // first pointer of msg_data points to x coordinates
+            unsigned int* y = (unsigned int*)request.msg_data[1]; // second pointer of msg_data points to y coordinates
+
+            unsigned int robot_id = addRobot(*x, *y); // add robot using coordinates
+                                                      // return value is assigned id of robot
+            
+            request.return_data.push_back((void*)&robot_id); // returning data to sender
+            pthread_cond_signal(request.condition_var); // signalling request condition variable to unblock waiting robot thread
+            break;
+        
+        case 1: // updateGlobalMap request
+            /* code */
+            break;
+
+        default:
+            break;
+    }
+
+    return;
+} 
+
+unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y){
     
     id_tracker++; // incrementing inorder to determine next id to give a robot
 

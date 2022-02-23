@@ -8,7 +8,7 @@ RequestHandler::~RequestHandler(){
 
 }
 
-void RequestHandler::sendMessage(Message m){
+void RequestHandler::sendMessage(Message m){ // TODO: add basic message layout validation
     pthread_mutex_lock(&msg_mutex); // locking mutex so msg_queue can be modified safely 
 
     msg_queue.push(m); // add m to end of FIFO msg_queue

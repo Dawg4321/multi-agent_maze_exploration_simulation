@@ -1,3 +1,6 @@
+#ifndef REQUESTHANDLER_H
+#define REQUESTHANDLER_H
+
 #include <vector>
 #include <queue>
 #include <pthread.h>
@@ -24,3 +27,5 @@ class RequestHandler{
         std::queue<Message> msg_queue; // FIFO queue of messages sent to RobotMaster Class
         pthread_mutex_t msg_mutex; // mutex for controlling all operations on msg_queue by threads
 };
+
+#endif

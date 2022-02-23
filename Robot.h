@@ -9,6 +9,7 @@
 
 #include "GridGraph.h"
 #include "Coordinates.h"
+#include "RequestHandler.h"
 
 class Robot{
     public:
@@ -45,11 +46,11 @@ class Robot{
         
         GridGraph LocalMap; // local_map maintained by robot of areas explored
 
+        RequestHandler* Message_Handler; // pointer to request handler shared by all Robot objects
+
         unsigned int maze_xsize; // size of maze
         unsigned int maze_ysize; // this is not used by exploration algorithms
                                  // only for printing purposes
-
-
 };
 
 #endif

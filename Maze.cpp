@@ -99,7 +99,7 @@ bool Maze::printMaze(){ // function to print layout of maze in an intuitive mann
     int count = 0; // counter to determine if both the column and row edges have been printed
     int i = 0; // counter to track if the whole maze has been printed
 
-    while(i < maze_ysize + 1){ // while loop to determing which row to print (i = node row number)
+    while(!(i >= maze_ysize && count == 1)){ // while loop to determing which row to print (i = node row number)
     
         if(count == 0){ // printing the horizontal walls of maze
 

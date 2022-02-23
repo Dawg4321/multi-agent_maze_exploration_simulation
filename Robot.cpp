@@ -4,10 +4,24 @@ Robot::Robot(int x, int y){
     x_position = x; // initialising robots current position with passed in values
     y_position = y;
 
-    maze_xsize = 4;
+    maze_xsize = 4; // TODO: change constructor to assign maze size
     maze_ysize = 4;
 
     number_of_unexplored = 1; // set to 1 as current occupied cell is unknown to robot
+
+    // addRobot request to RobotMaster
+    Message m; // buffer to load data into before sending message
+
+    m.request_type = 0; // request_type = 0 as addRobot request required
+
+    m.msg_data.push_back((void*) &x); // adding x position of robot to [0]
+    m.msg_data.push_back((void*) &y); // adding y position of robot to [1]
+    pthread_cond_t cond_var;
+    m.condition_var = &cond_var;
+    
+    Message_Handler->sendMessage(m);
+
+    pthread_cond_t;
 }
 
 void Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all sides
