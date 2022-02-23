@@ -119,15 +119,15 @@ void RobotMaster::receiveRequests(){
                     {
                         // addRobot request msg_data layout:
                         // [0] = type: (unsigned int*), content: x coordinate of robot
-                        // [0] = type: (unsigned int*), content: y coordinate of robot
+                        // [1] = type: (unsigned int*), content: y coordinate of robot
 
                         // gathering data from request
                         unsigned int* x = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
                         unsigned int* y = (unsigned int*)request->msg_data[1]; // second pointer of msg_data points to y coordinates
-
-                        unsigned int robot_id = addRobot(*x, *y); // add robot using coordinates
-                                                                // return value is assigned id of robot
                         
+                        unsigned int robot_id = addRobot(*x, *y); // add robot using coordinates
+                                                                  // return value is assigned id of robot
+                        //printf("%d\n", robot_id);                              
                         request->return_data.push_back((void*)&robot_id); // returning data to sender
                         pthread_cond_signal(request->condition_var); // signalling request condition variable to unblock waiting robot thread
                         break;
@@ -161,9 +161,9 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y){
     
     tracked_robots.push_back(temp); // adding robot info to tracked_robots
 
-    printf("CONTROLLER: returing id = %d\n",id_tracker);
+    printf("CONTROLLER: returning id = %d\n",temp.robot_id);
 
-    return id_tracker; // returning id to be assigned to the robot which triggered this function
+    return temp.robot_id; // returning id to be assigned to the robot which triggered this function
 }
 
 void RobotMaster::updateGlobalMap(){

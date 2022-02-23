@@ -41,6 +41,8 @@ class Robot{
         void printRobotYMap();
         void printRobotNodes();
 
+        unsigned int getID() { return id;}
+
     private:
         unsigned int x_position; // x position within cells 
         unsigned int y_position; // y position within cells

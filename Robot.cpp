@@ -13,12 +13,12 @@ Robot::Robot(int x, int y, RequestHandler* r){
 
     printf("ROBOT: calling robot master\n");
     // addRobot request to RobotMaster
-    Message m; // buffer to load data into before sending message
+    Message* temp_message = new Message(); // buffer to load data into before sending message
 
-    m.request_type = 0; // request_type = 0 as addRobot request required
+    temp_message->request_type = 0; // request_type = 0 as addRobot request required
 
-    m.msg_data.push_back((void*) &x); // adding x position of robot to [0]
-    m.msg_data.push_back((void*) &y); // adding y position of robot to [1]
+    temp_message->msg_data.push_back((void*) &x); // adding x position of robot to [0]
+    temp_message->msg_data.push_back((void*) &y); // adding y position of robot to [1]
 
     pthread_cond_t cond_var; // gathering condition variable to block robot until it the robotmaster responds
     pthread_cond_init(&cond_var, NULL); // initializing condition variable
@@ -26,18 +26,23 @@ Robot::Robot(int x, int y, RequestHandler* r){
     pthread_mutex_t mutex; // generating mutex for use with condition variable
     pthread_mutex_init(&mutex, NULL); // intializing mutex
 
-    m.condition_var = &cond_var; // assigning condition variable to message before sending
+    temp_message->condition_var = &cond_var; // assigning condition variable to message before sending
     
-    Message_Handler->sendMessage(&m); // sending message to robot controller
+    Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
     printf("ROBOT: waiting for id\n");
-    pthread_cond_wait(m.condition_var, &mutex); //  blocking robot until RobotMaster unblocks it with response message
-    id = *(unsigned int*)m.return_data[0]; // gather assigned id from RobotMaster's response
+    while(temp_message->return_data.empty()){
+        pthread_cond_wait(temp_message->condition_var, &mutex); //  blocking robot until RobotMaster unblocks it with response message
+    }
+
+    id = *(unsigned int*)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
+
+    printf("ROBOT: id = %d %x\n",id, temp_message);
 
     pthread_mutex_destroy(&mutex); // destorying mutex and condition variable for messaging as no longer needed
     pthread_cond_destroy(&cond_var);
 
-    printf("ROBOT: id = %d\n", id);
+    delete temp_message; // deleting temp message as its no longer needed
 }
 
 void Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all sides
