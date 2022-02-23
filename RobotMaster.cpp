@@ -148,7 +148,6 @@ void RobotMaster::receiveRequests(){
     }
     return;
 } 
-
 unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y){
     printf("CONTROLLER: adding robot\n");
     id_tracker++; // incrementing inorder to determine next id to give a robot

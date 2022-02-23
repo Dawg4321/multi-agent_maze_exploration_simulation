@@ -22,12 +22,13 @@ Robot::Robot(int x, int y, RequestHandler* r){
 
     pthread_cond_t cond_var; // gathering condition variable to block robot until it the robotmaster responds
     pthread_cond_init(&cond_var, NULL); // initializing condition variable
-    m.condition_var = &cond_var;
-    
-    Message_Handler->sendMessage(&m); // sending message to robot controller
 
     pthread_mutex_t mutex; // generating mutex for use with condition variable
     pthread_mutex_init(&mutex, NULL); // intializing mutex
+
+    m.condition_var = &cond_var; // assigning condition variable to message before sending
+    
+    Message_Handler->sendMessage(&m); // sending message to robot controller
 
     printf("ROBOT: waiting for id\n");
     pthread_cond_wait(m.condition_var, &mutex); //  blocking robot until RobotMaster unblocks it with response message
