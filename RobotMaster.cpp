@@ -120,6 +120,10 @@ void RobotMaster::receiveRequests(){
                         // addRobot request msg_data layout:
                         // [0] = type: (unsigned int*), content: x coordinate of robot
                         // [1] = type: (unsigned int*), content: y coordinate of robot
+                        
+                        // initializing mutex for acknowledgement                        
+                        pthread_mutex_t ack_mutex; // assigning mutex to use to cause thread to wait for acknowledgement on id request
+                        pthread_mutex_init(&ack_mutex, NULL); // initializing mutex
 
                         // gathering data from request
                         unsigned int* x = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
@@ -130,6 +134,13 @@ void RobotMaster::receiveRequests(){
                         //printf("%d\n", robot_id);                              
                         request->return_data.push_back((void*)&robot_id); // returning data to sender
                         pthread_cond_signal(request->condition_var); // signalling request condition variable to unblock waiting robot thread
+                        
+                        //do{
+                        //    pthread_cond_wait(request->acknowlgement_var,&ack_mutex); // waiting for robot to complete handling of id
+                        //}while(request != NULL);
+
+                        pthread_mutex_destroy(&ack_mutex); // destroying mutex as operation is done
+                        
                         break;
                     }
                 case 1: // updateGlobalMap request

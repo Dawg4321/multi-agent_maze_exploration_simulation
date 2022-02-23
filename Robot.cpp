@@ -23,24 +23,31 @@ Robot::Robot(int x, int y, RequestHandler* r){
     pthread_cond_t cond_var; // gathering condition variable to block robot until it the robotmaster responds
     pthread_cond_init(&cond_var, NULL); // initializing condition variable
 
+    pthread_cond_t ack_var; // gathering condition variable to block robot until it the robotmaster responds
+    pthread_cond_init(&ack_var, NULL); // initializing condition variable
+
     pthread_mutex_t mutex; // generating mutex for use with condition variable
     pthread_mutex_init(&mutex, NULL); // intializing mutex
 
-    temp_message->condition_var = &cond_var; // assigning condition variable to message before sending
-    
+    temp_message->condition_var = &cond_var; // assigning condition variables to message before sending
+    temp_message->acknowlgement_var = &ack_var;
+
     Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
     printf("ROBOT: waiting for id\n");
-    while(temp_message->return_data.empty()){
+    do{ // while loop to help prevent spurious wake ups
         pthread_cond_wait(temp_message->condition_var, &mutex); //  blocking robot until RobotMaster unblocks it with response message
-    }
+    }while(temp_message->return_data.empty());
 
     id = *(unsigned int*)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
-
+    
+    //pthread_cond_signal(&ack_var); // signalling controller that id has been accessed safely thus allowing the request to be completed
+    
     printf("ROBOT: id = %d %x\n",id, temp_message);
 
-    pthread_mutex_destroy(&mutex); // destorying mutex and condition variable for messaging as no longer needed
+    pthread_mutex_destroy(&mutex); // destorying mutex and condition variables for messaging as no longer needed
     pthread_cond_destroy(&cond_var);
+    pthread_cond_destroy(&ack_var);
 
     delete temp_message; // deleting temp message as its no longer needed
 }
