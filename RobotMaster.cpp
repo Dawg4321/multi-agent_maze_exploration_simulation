@@ -131,16 +131,22 @@ void RobotMaster::receiveRequests(){
                         
                         unsigned int robot_id = addRobot(*x, *y); // add robot using coordinates
                                                                   // return value is assigned id of robot
-                        //printf("%d\n", robot_id);                              
+                        //printf("%d\n", robot_id);                     
+                        pthread_mutex_lock(&ack_mutex);         
                         request->return_data.push_back((void*)&robot_id); // returning data to sender
+                        pthread_mutex_unlock(&ack_mutex);
                         pthread_cond_signal(request->condition_var); // signalling request condition variable to unblock waiting robot thread
                         
                         //do{
-                        //    pthread_cond_wait(request->acknowlgement_var,&ack_mutex); // waiting for robot to complete handling of id
+                        //pthread_cond_wait(request->acknowlgement_var,&ack_mutex); // waiting for robot to complete handling of id
                         //}while(request != NULL);
 
                         pthread_mutex_destroy(&ack_mutex); // destroying mutex as operation is done
                         
+                        // sent message was dynamically allocated thus must be deleted as seen below
+                        // this part of the code is thread safe as the robot has finished using these variabless
+                        //pthread_cond_destroy(request->acknowlgement_var); // deleting acknowledgement condition variable
+                        //delete request; // deleting message from robot 
                         break;
                     }
                 case 1: // updateGlobalMap request

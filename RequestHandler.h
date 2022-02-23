@@ -13,8 +13,8 @@ struct Message{
     std::vector<void*> msg_data; // message data for controller to unpack
 
     pthread_cond_t* condition_var;  // pointer to condition variable to notify sender that response is ready in return_data
-    pthread_cond_t* acknowlgement_var; // pointer to condition variable which is used to block controller until robot is done with response 
-    std::vector<volatile void*> return_data; //  data returned from message request
+    pthread_mutex_t* acknowlgement_mutex; // pointer to condition variable which is used to block controller until robot is done with response 
+    std::vector<void*> return_data; //  data returned from message request
 };
 
 class RequestHandler{
