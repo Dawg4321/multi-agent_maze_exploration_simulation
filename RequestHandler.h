@@ -14,8 +14,8 @@ struct Message{
     std::vector<void*> msg_data; // message data for controller to unpack
 
     // semaphores used to synchronize thread communication
-    sem_t* response_semaphore; // semaphore to control whether response has sent read
-    sem_t* ack_semaphore;      // semaphore to control whether response has been analysed
+    sem_t* res_sem; // semaphore to control whether response has sent read
+    sem_t* ack_sem;      // semaphore to control whether response has been analysed
 
     std::vector<void*> return_data; //  data returned from message request
 };

@@ -127,7 +127,6 @@ void RobotMaster::receiveRequests(){
                         // addRobot request msg_data layout:
                         // [0] = type: (unsigned int*), content: x coordinate of robot
                         // [1] = type: (unsigned int*), content: y coordinate of robot
-                        printf("req1\n");
                         // gathering data from request
                         unsigned int* x = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
                         unsigned int* y = (unsigned int*)request->msg_data[1]; // second pointer of msg_data points to y coordinates
@@ -136,19 +135,17 @@ void RobotMaster::receiveRequests(){
                                                                   // return value is assigned id of robot
 
                         request->return_data.push_back((void*)&robot_id); // returning data to sender
-                        sem_post(request->response_semaphore);
-                        sem_wait(request->ack_semaphore);
+                        sem_post(request->res_sem);
+                        sem_wait(request->ack_sem);
                         
-                        // sent message and variables were dynamically allocated thus must be deleted as seen below
-                        // this part of the code is thread safe as the robot has finished using these variabless
-                        sem_destroy(request->ack_semaphore); // deleting semaphores
-                        sem_destroy(request->response_semaphore);
+                        // sent message were dynamically allocated thus must be deleted
+                        // this part of the code should be thread safe as the robot and Controller have finished using these variables
                         delete request;
+
                         break;
                     }
                 case 1: // updateGlobalMap request
                     {   
-                        printf("req2\n");
                         // updateGlobalMap request msg_data layout:
                         // [0] = type: (unsigned int*), content: id of robot sending request
                         // [1] = type: (vector<bool>*), content: vector containing information on walls surrounding robot
@@ -162,20 +159,13 @@ void RobotMaster::receiveRequests(){
                         updateGlobalMap(robot_id, wall_info, cords); // updating global map with information
 
                         //request->return_data.push_back((void*)&robot_id); // telling Robot that data was successfully added to GlobalMap and it can continue
-                        int temp;
-                        sem_getvalue(request->response_semaphore,&temp);
-                        printf("%d semval\n",temp);
 
-                        while(sem_post(request->response_semaphore) != -1) {}
-                        
-                        sem_getvalue(request->response_semaphore,&temp);
-                        printf("%d semval\n",temp);
-                        sem_wait(request->ack_semaphore);
+                        sem_post(request->res_sem);
+    
+                        sem_wait(request->ack_sem);
 
-                        // sent message and variables were dynamically allocated thus must be deleted as seen below
-                        // this part of the code is thread safe as the robot has finished using these variabless
-                        sem_destroy(request->ack_semaphore); // deleting semaphores
-                        sem_destroy(request->response_semaphore);
+                        // sent message were dynamically allocated thus must be deleted
+                        // this part of the code should be thread safe as the robot and Controller have finished using these variabless
                         delete request;
 
                         break;

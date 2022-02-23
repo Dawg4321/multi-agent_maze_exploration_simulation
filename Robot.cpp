@@ -1,6 +1,7 @@
 #include "Robot.h"
 
 Robot::Robot(int x, int y, RequestHandler* r){
+    // Object Initialization
     x_position = x; // initialising robots current position with passed in values
     y_position = y;
 
@@ -11,8 +12,15 @@ Robot::Robot(int x, int y, RequestHandler* r){
 
     number_of_unexplored = 1; // set to 1 as current occupied cell is unknown to robot
 
+    response_sem = new sem_t; // semaphore to signal from controller to robot that the response message is ready 
+    sem_init(response_sem, 0, 0); // initializing semaphore to value of 0. this will cause robot to wait until response is ready
+                                  
+    acknowledgement_sem = new sem_t; // semaphore to signal from robot to controller that the current response message has been analysed  
+    sem_init(acknowledgement_sem, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
+                             
     printf("ROBOT: calling robot master\n");
-    // addRobot request to RobotMaster
+    
+    // sending addRobot request to RobotMaster to get ID
     Message* temp_message = new Message(); // buffer to load data into before sending message
 
     temp_message->request_type = 0; // request_type = 0 as addRobot request required
@@ -20,25 +28,18 @@ Robot::Robot(int x, int y, RequestHandler* r){
     temp_message->msg_data.push_back((void*) &x); // adding x position of robot to [0]
     temp_message->msg_data.push_back((void*) &y); // adding y position of robot to [1]
 
-    sem_t res_semaphore; // semaphore to signal from controller to robot that the response message is ready 
-    sem_init(&res_semaphore, 0, 0); // initializing semaphore to value of 0. this will cause robot to wait until response is ready
-                                    // (semaphore pointer, is sem shared with forks?, value of semaphore)
-    temp_message->response_semaphore = &res_semaphore;
-
-    sem_t ack_semaphore; // semaphore to signal from robot to controller that the current response message has been analysed  
-    sem_init(&ack_semaphore, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
-                                    // (semaphore pointer, is sem shared with forks?, value of semaphore)
-    temp_message->ack_semaphore = &ack_semaphore;
+    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
+    temp_message->ack_sem= acknowledgement_sem;
 
     Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
     printf("ROBOT: waiting for id\n");
 
-    sem_wait(&res_semaphore); // waiting for response to be ready from controller
+    sem_wait(response_sem); // waiting for response to be ready from controller
 
     id = *(unsigned int*)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
     
-    sem_post(&ack_semaphore); // signalling to controller that the response has been utilised and it can move onto another request
+    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
 
     printf("ROBOT: id = %d %x\n",id, temp_message);
 }
@@ -134,8 +135,8 @@ bool Robot::move2Cell(int direction){ // function to move robot depending on loc
     default: // if invalid direction is passed into function
         break;
     }
-    if (ret_value) // if robot position movement successfull
-        std::cout << "Robot Sucessfully moved to " << x_position  << ", "<< y_position << "\n";
+    /*if (ret_value) // if robot position movement successfull
+        std::cout << "Robot Sucessfully moved to " << x_position  << ", "<< y_position << "\n";*/
     return ret_value; // ret_value = true if robot moved sucessfully
                       // ret_value = false if robot failed to move
 }
@@ -208,10 +209,10 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
         ret_value.push_back(buffer);
     }
 
-    // printing all valid neighbouring nodes of selected node
+    /*// printing all valid neighbouring nodes of selected node
     for(int i = 0; i < ret_value.size(); i ++){ // TODO: after debugging
         printf("%d,%d\n",ret_value[i].x,ret_value[i].y);
-    }
+    }*/
 
     return ret_value; // returning vector
     // TODO: return by pointer may be desirable
@@ -245,7 +246,7 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
         
         curr_node = node_queue.front(); // gathering node from front of queue
 
-        printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
+        //printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
 
         node_queue.pop(); // removing node from front of the queue
 
@@ -285,10 +286,10 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
         }
     }
 
-    printf("Planned Path\n"); // printing planned path
+    /*printf("Planned Path\n"); // printing planned path
     for(int i = 0; i <  planned_path.size(); i++){ // TODO: Remove after further debugging
         printf("%d,%d\n",planned_path[i].x,planned_path[i].y);
-    }
+    }*/
 
     return ret_value; 
 }
@@ -311,14 +312,14 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
         
         curr_node = node_queue.front(); // gathering node from front of queue
 
-        printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
+        //printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
 
         if (LocalMap.nodes[curr_node.y][curr_node.x] == 2){ // if an unexplored node has been found
             ret_value = true; // return true as path to unexplored node found
             break; // break from while loop
         }
         else if(node_queue.size() < 1){ // if node_queue is empty, no unexplored nodes found 
-            printf("bruh\n");           // true can be returned as no errors occured in pathfinding
+                                        // true can be returned as no errors occured in pathfinding
             return true;                // ret_vector will be empty as no unexplored nodes found therefore no need to move
         }
 
@@ -357,10 +358,10 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
         }
     }
 
-    printf("Planned Path\n"); // printing planned path
+    /*printf("Planned Path\n"); // printing planned path
     for(int i = 0; i <  ret_vector->size(); i++){ // TODO: Remove after further debugging
         printf("%d,%d\n",(*ret_vector)[i].x,(*ret_vector)[i].y);
-    }
+    }*/
 
     return ret_value; 
 }
@@ -401,7 +402,6 @@ void Robot::multiExplore(GridGraph* maze){
         std::vector<bool> connection_data = scanCell(maze); // scan cell 
         
         // sending message with scanned maze information
-        printf("message 2\n");
         Message* temp_message = new Message(); // buffer to load data into before sending message
 
         temp_message->request_type = 1; // request_type = 0 as updateGlobalMap request required
@@ -412,27 +412,18 @@ void Robot::multiExplore(GridGraph* maze){
         temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
         temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
         
-        sem_t res_semaphore; // semaphore to signal from controller to robot that the response message is ready 
-        sem_init(&res_semaphore, 0, 0); // initializing semaphore to value of 0. this will cause robot to wait until response is ready
-                                        // (semaphore pointer, is sem shared with forks?, value of semaphore)
-        temp_message->response_semaphore = &res_semaphore;
-
-        sem_t ack_semaphore; // semaphore to signal from robot to controller that the current response message has been analysed  
-        sem_init(&ack_semaphore, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
-                                    // (semaphore pointer, is sem shared with forks?, value of semaphore)
-        temp_message->ack_semaphore = &ack_semaphore;
+        temp_message->res_sem = response_sem; // attaching communication semaphores to message
+        temp_message->ack_sem = acknowledgement_sem;
         
-        Message_Handler->sendMessage(temp_message);
+        Message_Handler->sendMessage(temp_message); // sending message to message queue
 
-        sem_wait(&res_semaphore); // waiting for data to be inputted into Master before continuing
-        sem_post(&ack_semaphore);
+        sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
+        sem_post(acknowledgement_sem);
 
         if(number_of_unexplored == 0){ // no more cells to explore therefore break from scan loop
             printf("Done exploring!\n");
             break;
         }
-
-        printRobotMaze(); // print maze contents for analysis
 
         BFS_pf2NearestUnknownCell(&planned_path); // move to nearest unseen cell
 

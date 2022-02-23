@@ -60,9 +60,13 @@ class Robot{
 
         RequestHandler* Message_Handler; // pointer to request handler shared by all Robot objects
 
+        sem_t* response_sem; // semaphores to be used for inter-thread synchornization when passing messages
+        sem_t* acknowledgement_sem;
+
         unsigned int maze_xsize; // size of maze
         unsigned int maze_ysize; // this is not used by exploration algorithms
                                  // only for printing purposes
+
 };
 
 #endif
