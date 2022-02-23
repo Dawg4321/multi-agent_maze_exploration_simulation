@@ -1,14 +1,17 @@
 #include "Robot.h"
 
-Robot::Robot(int x, int y){
+Robot::Robot(int x, int y, RequestHandler* r){
     x_position = x; // initialising robots current position with passed in values
     y_position = y;
 
-    maze_xsize = 4; // TODO: change constructor to assign maze size
-    maze_ysize = 4;
+    Message_Handler = r; // assigning message handler for robot -> master communications
+
+    maze_xsize = 4; // hard coding 4x4 maze as used by sample maze
+    maze_ysize = 4; // TODO: change constructor to assign maze size
 
     number_of_unexplored = 1; // set to 1 as current occupied cell is unknown to robot
 
+    printf("ROBOT: calling robot master\n");
     // addRobot request to RobotMaster
     Message m; // buffer to load data into before sending message
 
@@ -16,12 +19,24 @@ Robot::Robot(int x, int y){
 
     m.msg_data.push_back((void*) &x); // adding x position of robot to [0]
     m.msg_data.push_back((void*) &y); // adding y position of robot to [1]
-    pthread_cond_t cond_var;
+
+    pthread_cond_t cond_var; // gathering condition variable to block robot until it the robotmaster responds
+    pthread_cond_init(&cond_var, NULL); // initializing condition variable
     m.condition_var = &cond_var;
     
-    Message_Handler->sendMessage(m);
+    Message_Handler->sendMessage(&m); // sending message to robot controller
 
-    pthread_cond_t;
+    pthread_mutex_t mutex; // generating mutex for use with condition variable
+    pthread_mutex_init(&mutex, NULL); // intializing mutex
+
+    printf("ROBOT: waiting for id\n");
+    pthread_cond_wait(m.condition_var, &mutex); //  blocking robot until RobotMaster unblocks it with response message
+    id = *(unsigned int*)m.return_data[0]; // gather assigned id from RobotMaster's response
+
+    pthread_mutex_destroy(&mutex); // destorying mutex and condition variable for messaging as no longer needed
+    pthread_cond_destroy(&cond_var);
+
+    printf("ROBOT: id = %d\n", id);
 }
 
 void Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all sides

@@ -13,6 +13,7 @@ struct Message{
     std::vector<void*> msg_data; // message data for controller to unpack
 
     pthread_cond_t* condition_var;  // pointer to condition variable to notify sender that response is ready in return_data
+
     std::vector<void*> return_data; //  data returned from message request
 };
 
@@ -21,10 +22,10 @@ class RequestHandler{
         RequestHandler(); // constructor
         ~RequestHandler(); // destructor
 
-        void sendMessage(Message m); // add a message to the message queue
-        Message getMessage(); // return message from front of message queue
+        void sendMessage(Message* m); // add a message address to the message queue
+        Message* getMessage(); // return address of message from front of message queue
     private:
-        std::queue<Message> msg_queue; // FIFO queue of messages sent to RobotMaster Class
+        std::queue<Message*> msg_queue; // FIFO queue of messages sent to RobotMaster Class
         pthread_mutex_t msg_mutex; // mutex for controlling all operations on msg_queue by threads
 };
 

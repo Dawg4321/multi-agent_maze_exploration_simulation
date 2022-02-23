@@ -13,7 +13,7 @@
 
 class Robot{
     public:
-        Robot(int x, int y);
+        Robot(int x, int y, RequestHandler* r);
 
         void scanCell(GridGraph* maze);
 

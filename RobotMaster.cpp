@@ -1,7 +1,8 @@
 #include "RobotMaster.h"
 
-RobotMaster::RobotMaster(){
-    id_tracker = 0;
+RobotMaster::RobotMaster(RequestHandler* r){
+    id_tracker = 0; // initializing id counter to zero
+    Message_Handler = r; // gathering request handler to use for receiving robot -> master communications
 }
 
 RobotMaster::~RobotMaster(){
@@ -107,40 +108,49 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
 }
 
 void RobotMaster::receiveRequests(){
-    Message request = Message_Handler->getMessage(); // gathering request from msg_queue
-
-    switch (request.request_type){ // determining type of request before processing
-        
-        case 0: // addRobot request
+    Message* request = Message_Handler->getMessage(); // gathering request from msg_queue
+                                                      // pointer is gathered so response can be gathered by robot threads
+                                                      // returned pointer will be NULL is no messages to get
+    
+    if(request != NULL){ // if there is a a request to handle, process it
+        switch (request->request_type){ // determining type of request before processing
             
-            // addRobot request msg_data layout:
-            // [0] = type: (unsigned int*), content: x coordinate of robot
-            // [0] = type: (unsigned int*), content: y coordinate of robot
+                case 0: // addRobot request
+                    {
+                        // addRobot request msg_data layout:
+                        // [0] = type: (unsigned int*), content: x coordinate of robot
+                        // [0] = type: (unsigned int*), content: y coordinate of robot
 
-            // gathering data from request
-            unsigned int* x = (unsigned int*)request.msg_data[0]; // first pointer of msg_data points to x coordinates
-            unsigned int* y = (unsigned int*)request.msg_data[1]; // second pointer of msg_data points to y coordinates
+                        // gathering data from request
+                        unsigned int* x = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
+                        unsigned int* y = (unsigned int*)request->msg_data[1]; // second pointer of msg_data points to y coordinates
 
-            unsigned int robot_id = addRobot(*x, *y); // add robot using coordinates
-                                                      // return value is assigned id of robot
-            
-            request.return_data.push_back((void*)&robot_id); // returning data to sender
-            pthread_cond_signal(request.condition_var); // signalling request condition variable to unblock waiting robot thread
-            break;
-        
-        case 1: // updateGlobalMap request
-            /* code */
-            break;
-
-        default:
-            break;
+                        unsigned int robot_id = addRobot(*x, *y); // add robot using coordinates
+                                                                // return value is assigned id of robot
+                        
+                        request->return_data.push_back((void*)&robot_id); // returning data to sender
+                        pthread_cond_signal(request->condition_var); // signalling request condition variable to unblock waiting robot thread
+                        break;
+                    }
+                case 1: // updateGlobalMap request
+                    {
+                    
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
+            }
     }
+    else{ // if no message to handle, do nothing
 
+    }
     return;
 } 
 
 unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y){
-    
+    printf("CONTROLLER: adding robot\n");
     id_tracker++; // incrementing inorder to determine next id to give a robot
 
     RobotInfo temp; // buffer to store robot info before pushing it to the tracked_robots vecto
@@ -151,6 +161,8 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y){
     temp.robot_status = 0;      // updating current robot status to 0 to leave it on stand by
     
     tracked_robots.push_back(temp); // adding robot info to tracked_robots
+
+    printf("CONTROLLER: returing id = %d\n",id_tracker);
 
     return id_tracker; // returning id to be assigned to the robot which triggered this function
 }

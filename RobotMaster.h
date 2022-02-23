@@ -20,7 +20,7 @@ struct RobotInfo{ // structure to track information of various robots in the swa
 
 class RobotMaster{
     public:
-        RobotMaster(/* args */);
+        RobotMaster(RequestHandler* r);
         ~RobotMaster();
 
         void receiveRequests();  // recieves and decodes request information from imcoming request
