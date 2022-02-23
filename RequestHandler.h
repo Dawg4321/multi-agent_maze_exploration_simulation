@@ -4,6 +4,7 @@
 #include <vector>
 #include <queue>
 #include <pthread.h>
+#include <semaphore.h>
 
 struct Message{
     char request_type; // type of request sent to Robot Controller
@@ -12,8 +13,10 @@ struct Message{
                        
     std::vector<void*> msg_data; // message data for controller to unpack
 
-    pthread_cond_t* condition_var;  // pointer to condition variable to notify sender that response is ready in return_data
-    pthread_mutex_t* acknowlgement_mutex; // pointer to condition variable which is used to block controller until robot is done with response 
+    // semaphores used to synchronize thread communication
+    sem_t* response_semaphore; // semaphore to control whether response has sent read
+    sem_t* ack_semaphore;      // semaphore to control whether response has been analysed
+
     std::vector<void*> return_data; //  data returned from message request
 };
 

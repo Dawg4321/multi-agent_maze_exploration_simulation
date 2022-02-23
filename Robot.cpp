@@ -20,34 +20,27 @@ Robot::Robot(int x, int y, RequestHandler* r){
     temp_message->msg_data.push_back((void*) &x); // adding x position of robot to [0]
     temp_message->msg_data.push_back((void*) &y); // adding y position of robot to [1]
 
-    pthread_cond_t cond_var; // gathering condition variable to block robot until it the robotmaster responds
-    pthread_cond_init(&cond_var, NULL); // initializing condition variable
+    sem_t res_semaphore; // semaphore to signal from controller to robot that the response message is ready 
+    sem_init(&res_semaphore, 0, 0); // initializing semaphore to value of 0. this will cause robot to wait until response is ready
+                                    // (semaphore pointer, is sem shared with forks?, value of semaphore)
+    temp_message->response_semaphore = &res_semaphore;
 
-    pthread_mutex_t ack_mutex; // gathering condition variable to block robot until it the robotmaster responds
-    pthread_mutex_init(&ack_mutex, NULL); // initializing condition variable
-
-    temp_message->condition_var = &cond_var; // assigning condition variables to message before sending
-    temp_message->acknowlgement_mutex = &ack_mutex;
+    sem_t ack_semaphore; // semaphore to signal from robot to controller that the current response message has been analysed  
+    sem_init(&ack_semaphore, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
+                                    // (semaphore pointer, is sem shared with forks?, value of semaphore)
+    temp_message->ack_semaphore = &ack_semaphore;
 
     Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
     printf("ROBOT: waiting for id\n");
 
-    pthread_mutex_lock(&ack_mutex);
-    while(temp_message->return_data.empty()){ // while loop to help prevent spurious wake ups
-        pthread_cond_wait(temp_message->condition_var, temp_message->acknowlgement_mutex); //  blocking robot until RobotMaster unblocks it with response message
-    }
-    pthread_mutex_unlock(&ack_mutex);
+    sem_wait(&res_semaphore); // waiting for response to be ready from controller
 
     id = *(unsigned int*)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
     
-    pthread_mutex_destroy(&ack_mutex); // destorying mutex and condition variables for messaging as no longer needed
-    pthread_cond_destroy(&cond_var);
-    for(int i = 0; i < 100000; i++){}
-    //pthread_cond_signal(&ack_var); // signalling controller that id has been accessed safely thus allowing the request to be completed
-    
+    sem_post(&ack_semaphore); // signalling to controller that the response has been utilised and it can move onto another request
+
     printf("ROBOT: id = %d %x\n",id, temp_message);
-    delete temp_message; // deleting message from robot 
 }
 
 void Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all sides

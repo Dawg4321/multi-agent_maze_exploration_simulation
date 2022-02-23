@@ -120,10 +120,6 @@ void RobotMaster::receiveRequests(){
                         // addRobot request msg_data layout:
                         // [0] = type: (unsigned int*), content: x coordinate of robot
                         // [1] = type: (unsigned int*), content: y coordinate of robot
-                        
-                        // initializing mutex for acknowledgement                        
-                        pthread_mutex_t ack_mutex; // assigning mutex to use to cause thread to wait for acknowledgement on id request
-                        pthread_mutex_init(&ack_mutex, NULL); // initializing mutex
 
                         // gathering data from request
                         unsigned int* x = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
@@ -131,22 +127,16 @@ void RobotMaster::receiveRequests(){
                         
                         unsigned int robot_id = addRobot(*x, *y); // add robot using coordinates
                                                                   // return value is assigned id of robot
-                        //printf("%d\n", robot_id);                     
-                        pthread_mutex_lock(&ack_mutex);         
-                        request->return_data.push_back((void*)&robot_id); // returning data to sender
-                        pthread_mutex_unlock(&ack_mutex);
-                        pthread_cond_signal(request->condition_var); // signalling request condition variable to unblock waiting robot thread
-                        
-                        //do{
-                        //pthread_cond_wait(request->acknowlgement_var,&ack_mutex); // waiting for robot to complete handling of id
-                        //}while(request != NULL);
 
-                        pthread_mutex_destroy(&ack_mutex); // destroying mutex as operation is done
+                        request->return_data.push_back((void*)&robot_id); // returning data to sender
+                        sem_post(request->response_semaphore);
+                        sem_wait(request->ack_semaphore);
                         
-                        // sent message was dynamically allocated thus must be deleted as seen below
+                        // sent message and variables were dynamically allocated thus must be deleted as seen below
                         // this part of the code is thread safe as the robot has finished using these variabless
-                        //pthread_cond_destroy(request->acknowlgement_var); // deleting acknowledgement condition variable
-                        //delete request; // deleting message from robot 
+                        sem_destroy(request->ack_semaphore); // deleting semaphores
+                        sem_destroy(request->response_semaphore);
+                        delete request; // deleting message
                         break;
                     }
                 case 1: // updateGlobalMap request

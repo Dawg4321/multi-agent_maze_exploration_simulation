@@ -7,6 +7,9 @@
 #include <map>
 #include <string>
 
+#include <pthread.h>
+#include <semaphore.h>
+
 #include "GridGraph.h"
 #include "Coordinates.h"
 #include "RequestHandler.h"
