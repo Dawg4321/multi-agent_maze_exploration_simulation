@@ -43,9 +43,10 @@ Robot::Robot(int x, int y, RequestHandler* r){
     printf("ROBOT: id = %d %x\n",id, temp_message);
 }
 
-void Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all sides
+std::vector<bool> Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all sides
                                        // function assumes current cell has not been scanned yet
-    
+    std::vector<bool> ret_vector;
+
     number_of_unexplored--;
     
     // gathering x edges within maze at robot's current position
@@ -55,6 +56,13 @@ void Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all si
     // gathering y edges within maze at robot's current position
     LocalMap.y_edges[y_position][x_position] = maze->y_edges[y_position][x_position]; // north
     LocalMap.y_edges[y_position+1][x_position] = maze->y_edges[y_position+1][x_position]; // south
+
+    // placing edges within return vector for usage by RobotMaster -> [0] = north, [1] = south, [2] = east, [3] = west
+    ret_vector.push_back(maze->y_edges[y_position][x_position]); // north
+    ret_vector.push_back(maze->y_edges[y_position+1][x_position]); // south
+    ret_vector.push_back(maze->x_edges[y_position][x_position]); // east
+    ret_vector.push_back(maze->x_edges[y_position][x_position+1]); // west
+    
 
     // updating state of current node 
     LocalMap.nodes[y_position][x_position] = 1; // setting currently scanned node to 1 to signifiy its been scanned 
@@ -81,7 +89,7 @@ void Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all si
         LocalMap.nodes[y_position][x_position + 1] = 2; // if unexplored and no wall between robot and cell, set western node to unexplored
         number_of_unexplored++;
     }
-    return;
+    return ret_vector;
 }
 
 bool Robot::move2Cell(int direction){ // function to move robot depending on location of walls within local map
@@ -369,6 +377,56 @@ void Robot::soloExplore(GridGraph* maze){
 
         scanCell(maze); // scan cell 
         
+        if(number_of_unexplored == 0){ // no more cells to explore therefore break from scan loop
+            printf("Done exploring!\n");
+            break;
+        }
+
+        printRobotMaze(); // print maze contents for analysis
+
+        BFS_pf2NearestUnknownCell(&planned_path); // move to nearest unseen cell
+
+        for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
+            move2Cell(&(planned_path[planned_path.size()-i-1]));
+        }
+        planned_path.clear(); // clear planned_path as movement has been completed
+    }
+
+    return;
+}
+
+void Robot::multiExplore(GridGraph* maze){
+    while(1){
+
+        std::vector<bool> connection_data = scanCell(maze); // scan cell 
+        
+        // sending message with scanned maze information
+        printf("message 2\n");
+        Message* temp_message = new Message(); // buffer to load data into before sending message
+
+        temp_message->request_type = 1; // request_type = 0 as updateGlobalMap request required
+
+        Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
+
+        temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
+        temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
+        temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
+        
+        sem_t res_semaphore; // semaphore to signal from controller to robot that the response message is ready 
+        sem_init(&res_semaphore, 0, 0); // initializing semaphore to value of 0. this will cause robot to wait until response is ready
+                                        // (semaphore pointer, is sem shared with forks?, value of semaphore)
+        temp_message->response_semaphore = &res_semaphore;
+
+        sem_t ack_semaphore; // semaphore to signal from robot to controller that the current response message has been analysed  
+        sem_init(&ack_semaphore, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
+                                    // (semaphore pointer, is sem shared with forks?, value of semaphore)
+        temp_message->ack_semaphore = &ack_semaphore;
+        
+        Message_Handler->sendMessage(temp_message);
+
+        sem_wait(&res_semaphore); // waiting for data to be inputted into Master before continuing
+        sem_post(&ack_semaphore);
+
         if(number_of_unexplored == 0){ // no more cells to explore therefore break from scan loop
             printf("Done exploring!\n");
             break;

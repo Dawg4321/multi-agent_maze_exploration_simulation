@@ -24,7 +24,7 @@ class Robot{
         void startRobot(GridGraph* maze); // loop used by robot to move through maze
 
         // **Low Level Robot Operations**
-        void scanCell(GridGraph* maze); // scans content of robots current cell using maze information
+        std::vector<bool> scanCell(GridGraph* maze); // scans content of robots current cell using maze information
         bool move2Cell(int direction); // moves robot to cell if possible in specified direction
         bool move2Cell(Coordinates* destination); // moves robot to neighbouring cell using neighbouring cell coordinates
 
