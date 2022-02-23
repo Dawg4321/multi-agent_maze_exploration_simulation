@@ -18,7 +18,7 @@ class Robot{
         Robot(int x, int y, RequestHandler* r); // constructor for multi-robot exploration purposes
 
         // ** Robot Loop**
-        void startRobot(); // loop used by robot to move through maze
+        void startRobot(GridGraph* maze); // loop used by robot to move through maze
 
         // **Low Level Robot Operations**
         void scanCell(GridGraph* maze); // scans content of robots current cell using maze information
@@ -34,7 +34,7 @@ class Robot{
         // **Robot Algorithms**
         void soloExplore(GridGraph* maze); // algorithm used when robot is exploring alone
         void multiExplore(GridGraph* maze); // algorithm used when robot is exploring using RobotMaster
-        
+
         // **Printing Functions**
         bool printRobotMaze();
         void printRobotXMap();
