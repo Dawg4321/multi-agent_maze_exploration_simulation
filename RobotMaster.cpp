@@ -157,7 +157,7 @@ void RobotMaster::receiveRequests(){
                             start_exploration_message->request_type = 1; // specifying begin exploration message type
                             
                             start_exploration_message->res_sem = new sem_t; // creating semaphore to block RobotMaster until all robots have begun exploring
-                            sem_init(start_exploration_message->res_sem, 1,  1 + -1*tracked_robots.size());
+                            sem_init(start_exploration_message->res_sem, 1,  -1*tracked_robots.size());
 
                             for(int i = 0; i < tracked_robots.size(); i++){
                                 tracked_robots[i].Robot_Message_Reciever->sendMessage(start_exploration_message);

@@ -372,7 +372,7 @@ void Robot::soloExplore(GridGraph* maze){
 
 void Robot::multiRobotLoop(GridGraph* maze){ // function to initialize robot before it starts operating
 
-    getID(); // getting id from robotmaster before begining robot exploration
+    assignIdFromMaster(); // getting id from robotmaster before begining robot exploration
     int status = 0; // tracks status of robot
                     // -1 = shut down
                     // 0 = stand by
@@ -439,7 +439,7 @@ void Robot::multiExplore(GridGraph* maze){
     return;
 }
 
-void Robot::getIdFromMaster(){
+void Robot::assignIdFromMaster(){
 
     printf("ROBOT: calling robot master\n");
     // sending addRobot request to RobotMaster to get ID

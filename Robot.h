@@ -41,7 +41,7 @@ class Robot{
         void multiExplore(GridGraph* maze); // algorithm used when robot is exploring using RobotMaster
 
         // ** General Purpose Functions **
-        void getIdFromMaster(); // gets an ID from a RobotMaster using a message
+        void assignIdFromMaster(); // gets an ID from a RobotMaster using a message
         int getRequestsFromMaster(int status); // checks if master wants to change current status of robot
         
         // **Printing Functions**
