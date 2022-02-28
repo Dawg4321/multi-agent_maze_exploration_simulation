@@ -1,11 +1,12 @@
 #include "Robot.h"
 
-Robot::Robot(int x, int y, RequestHandler* r){
+Robot::Robot(int x, int y, RequestHandler* outgoing_req){
     // Object Initialization
     x_position = x; // initialising robots current position with passed in values
     y_position = y;
 
-    Message_Handler = r; // assigning message handler for robot -> master communications
+    Robot_2_Master_Message_Handler = outgoing_req; // assigning message handler for robot -> master communications
+    Master_2_Robot_Message_Handler = new RequestHandler;
 
     maze_xsize = 4; // hard coding 4x4 maze as used by sample maze
     maze_ysize = 4; // TODO: change constructor to assign maze size
@@ -17,31 +18,11 @@ Robot::Robot(int x, int y, RequestHandler* r){
                                   
     acknowledgement_sem = new sem_t; // semaphore to signal from robot to controller that the current response message has been analysed  
     sem_init(acknowledgement_sem, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
-                             
-    printf("ROBOT: calling robot master\n");
-    
-    // sending addRobot request to RobotMaster to get ID
-    Message* temp_message = new Message(); // buffer to load data into before sending message
+                    
+}
 
-    temp_message->request_type = 0; // request_type = 0 as addRobot request required
-
-    temp_message->msg_data.push_back((void*) &x); // adding x position of robot to [0]
-    temp_message->msg_data.push_back((void*) &y); // adding y position of robot to [1]
-
-    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
-    temp_message->ack_sem= acknowledgement_sem;
-
-    Message_Handler->sendMessage(temp_message); // sending message to robot controller
-
-    printf("ROBOT: waiting for id\n");
-
-    sem_wait(response_sem); // waiting for response to be ready from controller
-
-    id = *(unsigned int*)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
-    
-    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
-
-    printf("ROBOT: id = %d %x\n",id, temp_message);
+Robot::~Robot(){
+    delete Master_2_Robot_Message_Handler; // deleting Master_2_Robot_Message_Handler as no longer needed as object is being destroyed
 }
 
 std::vector<bool> Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all sides
@@ -366,13 +347,6 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
     return ret_value; 
 }
 
-void Robot::startRobot(GridGraph* maze){ // function to initialize robot before it starts operating
-    
-    scanCell(maze); // scans cell that the robot currently belongs to initialze local map before exploring
-
-    return;
-}
-
 void Robot::soloExplore(GridGraph* maze){
     while(1){
 
@@ -396,44 +370,143 @@ void Robot::soloExplore(GridGraph* maze){
     return;
 }
 
-void Robot::multiExplore(GridGraph* maze){
-    while(1){
+void Robot::multiRobotLoop(GridGraph* maze){ // function to initialize robot before it starts operating
 
-        std::vector<bool> connection_data = scanCell(maze); // scan cell 
+    getID(); // getting id from robotmaster before begining robot exploration
+    int status = 0; // tracks status of robot
+                    // -1 = shut down
+                    // 0 = stand by
+                    // 1 = explore
+    while(status != -1){
         
-        // sending message with scanned maze information
-        Message* temp_message = new Message(); // buffer to load data into before sending message
+        status = getRequestsFromMaster(status); // checking if master wants robot to update status
 
-        temp_message->request_type = 1; // request_type = 0 as updateGlobalMap request required
+        switch(status){
 
-        Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
-
-        temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
-        temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
-        temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
-        
-        temp_message->res_sem = response_sem; // attaching communication semaphores to message
-        temp_message->ack_sem = acknowledgement_sem;
-        
-        Message_Handler->sendMessage(temp_message); // sending message to message queue
-
-        sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
-        sem_post(acknowledgement_sem);
-
-        if(number_of_unexplored == 0){ // no more cells to explore therefore break from scan loop
-            printf("Done exploring!\n");
-            break;
-        }
-
-        BFS_pf2NearestUnknownCell(&planned_path); // move to nearest unseen cell
-
-        for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
-            move2Cell(&(planned_path[planned_path.size()-i-1]));
-        }
-        planned_path.clear(); // clear planned_path as movement has been completed
+            case 0: // while robot is on standby
+                {   
+                    // do nothing
+                    break;
+                }
+            case 1: // while on explore mode
+                {   
+                    // continuously explore until master changes operation
+                    multiExplore(maze); // do one cycle of exploration
+                    break;
+                }
+        }        
     }
+    scanCell(maze); // scans cell that the robot currently belongs to initialze local map before exploring
 
     return;
+}
+
+void Robot::multiExplore(GridGraph* maze){
+
+    std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
+    
+    // sending message with scanned maze information
+    Message* temp_message = new Message(); // buffer to load data into before sending message
+
+    temp_message->request_type = 1; // request_type = 0 as updateGlobalMap request required
+
+    Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
+
+    temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
+    temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
+    temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
+    
+    temp_message->res_sem = response_sem; // attaching communication semaphores to message
+    temp_message->ack_sem = acknowledgement_sem;
+    
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
+
+    sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
+    sem_post(acknowledgement_sem);
+
+    if(number_of_unexplored == 0){ // no more cells to explore therefore break from scan loop
+        printf("Done exploring!\n");
+        // TODO: send done exploring signal to Robot Master
+    }
+
+    BFS_pf2NearestUnknownCell(&planned_path); // move to nearest unseen cell
+
+    for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
+        move2Cell(&(planned_path[planned_path.size()-i-1]));
+    }
+    planned_path.clear(); // clear planned_path as movement has been completed
+
+    return;
+}
+
+void Robot::getIdFromMaster(){
+
+    printf("ROBOT: calling robot master\n");
+    // sending addRobot request to RobotMaster to get ID
+    Message* temp_message = new Message(); // buffer to load data into before sending message
+
+    temp_message->request_type = 0; // request_type = 0 as addRobot request required
+
+    temp_message->msg_data.push_back((void*) &x_position); // adding x position of robot to [0]
+    temp_message->msg_data.push_back((void*) &y_position); // adding y position of robot to [1]
+    temp_message->msg_data.push_back((void*) Master_2_Robot_Message_Handler); // adding request handler for master -> robot message to [2]
+
+    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
+    temp_message->ack_sem = acknowledgement_sem;
+
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
+
+    printf("ROBOT: waiting for id\n");
+
+    sem_wait(response_sem); // waiting for response to be ready from controller
+
+    id = *(unsigned int*)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
+    
+    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
+
+    printf("ROBOT: id = %d %x\n",id, temp_message);
+}
+
+
+int Robot::getRequestsFromMaster(int status){ // checking if RobotMaster wants robot to change states
+    
+    Message* request = Master_2_Robot_Message_Handler->getMessage(); // gathering request from msg_queue
+                                                                     // pointer is gathered so response can be gathered by robot threads
+                                                                     // returned pointer will be NULL is no messages to get
+    
+    int ret_variable; // return variable to update status in RobotLoop
+
+    if(request != NULL){ // if there is a a request to handle, process it
+        switch (request->request_type){ // determining type of request before processing
+                
+                case 0: // change state to standby mode
+                    {
+                        //ret_variable = request->request_type;
+                        //sem_post(request->res_sem);
+                        
+                        break;
+                    }
+                case 1: // change state to begin exploring
+                    {
+                        printf("ROBOT %d: Begin Exploring\n", id);
+                        // if a message of this type is recieved, no message contents
+                        // only the response semaphore is used to signal that the robot will begin exploring
+                        ret_variable = request->request_type; // gathering status from request type
+                        
+                        sem_post(request->res_sem); // telling RobotMaster that status has sucessfully been updated
+                        break;
+                    }
+                default: // TODO: Implement handling if improper messge type is recieved
+                    {
+                        break;
+                    }
+            }
+    }
+    else{ // if no message to handle, do nothing
+        ret_variable = status;
+    }
+    
+    return ret_variable;
 }
 
 bool Robot::printRobotMaze(){ // function to print robot's local map of maze

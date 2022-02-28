@@ -16,28 +16,34 @@
 
 class Robot{
     public:
-        // **Robot Constructors
+        // **Robot Constructors **
         Robot(int x, int y); // contrucutor for solo exploration purposes
         Robot(int x, int y, RequestHandler* r); // constructor for multi-robot exploration purposes
-
+        
+        // ** Destructor **
+        ~Robot();
         // ** Robot Loop**
-        void startRobot(GridGraph* maze); // loop used by robot to move through maze
+        void multiRobotLoop(GridGraph* maze); // loop used by robot to move through maze
 
-        // **Low Level Robot Operations**
+        // ** Low Level Robot Operations **
         std::vector<bool> scanCell(GridGraph* maze); // scans content of robots current cell using maze information
         bool move2Cell(int direction); // moves robot to cell if possible in specified direction
         bool move2Cell(Coordinates* destination); // moves robot to neighbouring cell using neighbouring cell coordinates
 
-        // **Path-Finding Functions
+        // ** Path-Finding Functions **
         bool pf_BFS(int x, int y); // modifies planned path with the fastest path to a specified location
         bool BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector); // modifies planned path with fastest path to the closest unknown cell on robot's local map
         
         std::vector<Coordinates> getValidNeighbours(unsigned int x, unsigned  int y); // gathers valid neighbours of a cell
                                                                                       // used in pathfinding functions
-        // **Robot Algorithms**
+        // ** Robot Algorithms **
         void soloExplore(GridGraph* maze); // algorithm used when robot is exploring alone
         void multiExplore(GridGraph* maze); // algorithm used when robot is exploring using RobotMaster
 
+        // ** General Purpose Functions **
+        void getIdFromMaster(); // gets an ID from a RobotMaster using a message
+        int getRequestsFromMaster(int status); // checks if master wants to change current status of robot
+        
         // **Printing Functions**
         bool printRobotMaze();
         void printRobotXMap();
@@ -58,7 +64,8 @@ class Robot{
         
         GridGraph LocalMap; // local_map maintained by robot of areas explored
 
-        RequestHandler* Message_Handler; // pointer to request handler shared by all Robot objects
+        RequestHandler* Robot_2_Master_Message_Handler; // pointer to request handler shared by all Robot objects
+        RequestHandler* Master_2_Robot_Message_Handler;
 
         sem_t* response_sem; // semaphores to be used for inter-thread synchornization when passing messages
         sem_t* acknowledgement_sem;

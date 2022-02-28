@@ -1,6 +1,6 @@
 #include "RobotMaster.h"
 
-RobotMaster::RobotMaster(RequestHandler* r){
+RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots): max_num_of_robots(num_of_robots){
     id_tracker = 0; // initializing id counter to zero
     Message_Handler = r; // gathering request handler to use for receiving robot -> master communications
     
@@ -115,6 +115,7 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
 }
 
 void RobotMaster::receiveRequests(){
+    
     Message* request = Message_Handler->getMessage(); // gathering request from msg_queue
                                                       // pointer is gathered so response can be gathered by robot threads
                                                       // returned pointer will be NULL is no messages to get
@@ -127,20 +128,48 @@ void RobotMaster::receiveRequests(){
                         // addRobot request msg_data layout:
                         // [0] = type: (unsigned int*), content: x coordinate of robot
                         // [1] = type: (unsigned int*), content: y coordinate of robot
+                        // [2] = type: (RequestHandler*), content: message handler for master -> robot messages
+                        
                         // gathering data from request
                         unsigned int* x = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
                         unsigned int* y = (unsigned int*)request->msg_data[1]; // second pointer of msg_data points to y coordinates
-                        
-                        unsigned int robot_id = addRobot(*x, *y); // add robot using coordinates
+                        RequestHandler* robot_request_handler = (RequestHandler*)request->msg_data[2];
+
+                        unsigned int robot_id = addRobot(*x, *y, robot_request_handler); // add robot using coordinates
                                                                   // return value is assigned id of robot
 
                         request->return_data.push_back((void*)&robot_id); // returning data to sender
-                        sem_post(request->res_sem);
-                        sem_wait(request->ack_sem);
+                        
+                        sem_post(request->res_sem); // signalling Robot that message is ready
+                        sem_wait(request->ack_sem); //  waiting for Robot to be finished with response so message can be deleted
                         
                         // sent message were dynamically allocated thus must be deleted
                         // this part of the code should be thread safe as the robot and Controller have finished using these variables
                         delete request;
+
+                        // if all robots have been added
+                        // send signal to all robots to begin exploration
+                        if(tracked_robots.size() == max_num_of_robots){
+
+                            printf("CONTROLLER: All Robots Added!\n");
+
+                            Message* start_exploration_message = new Message;
+                            start_exploration_message->request_type = 1; // specifying begin exploration message type
+                            
+                            start_exploration_message->res_sem = new sem_t; // creating semaphore to block RobotMaster until all robots have begun exploring
+                            sem_init(start_exploration_message->res_sem, 1,  1 + -1*tracked_robots.size());
+
+                            for(int i = 0; i < tracked_robots.size(); i++){
+                                tracked_robots[i].Robot_Message_Reciever->sendMessage(start_exploration_message);
+                                tracked_robots[i].robot_status = 1; // update robot status to exploring
+                            }
+                            
+                            sem_wait(start_exploration_message->res_sem); // waiting until all robots have begun exploring
+                                                                          // once all robots have begun exploring, other requests can be handled
+                            printf("CONTROLLER: Robots can now explore!\n");
+                            sem_destroy(start_exploration_message->res_sem); // destroying semaphore as no longer needed                                 
+                            delete start_exploration_message; // deleting dynamically allocated message
+                        }
 
                         break;
                     }
@@ -183,8 +212,8 @@ void RobotMaster::receiveRequests(){
     return;
 }
 
-unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y){ // adding robot to control system
-                                                                    // this must be completed by all robots before beginning exploration
+unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandler* r){ // adding robot to control system
+                                                                                       // this must be completed by all robots before beginning exploration
     
     number_of_unexplored++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
 
@@ -197,7 +226,8 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y){ // adding ro
     temp.robot_position.x = x;  // assigning position to new robot entry 
     temp.robot_position.y = y;
     temp.robot_status = 0;      // updating current robot status to 0 to leave it on stand by
-    
+    temp.Robot_Message_Reciever = r; // assigning Request handler for Master -> robot communications
+
     tracked_robots.push_back(temp); // adding robot info to tracked_robots
 
     printf("CONTROLLER: returning id = %d\n",temp.robot_id);
@@ -261,3 +291,4 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // upda
             tracked_robots[i].robot_position = *C;
     }
 }
+
