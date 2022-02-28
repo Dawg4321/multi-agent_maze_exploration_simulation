@@ -4,8 +4,8 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots): max_num_of_robot
     id_tracker = 0; // initializing id counter to zero
     Message_Handler = r; // gathering request handler to use for receiving robot -> master communications
     
-    maze_xsize = 4;
-    maze_ysize = 4;
+    maze_xsize = 5;
+    maze_ysize = 1;
 }
 
 RobotMaster::~RobotMaster(){
@@ -17,9 +17,11 @@ bool RobotMaster::checkIfOccupied(unsigned int x, unsigned int y, unsigned int* 
                                                                                                // if a robot is found, ret_variable is modified to contain the id of the found robot
     unsigned int temp = 0;
     for(int i = 0; i < tracked_robots.size(); i++){ // looping through robots position
-        if(tracked_robots[i].robot_position.x == x && tracked_robots[i].robot_position.y == y){ // if robot is occupying passed in cell
+        if(tracked_robots[i].robot_position.x == x && tracked_robots[i].robot_position.y == y){ // if robot is occupying the location passed in
             temp = tracked_robots[i].robot_id; // returning found robot id
             *ret_variable = temp;
+
+
             return true; // return true as robot is occupying the cell
         }
     }
@@ -124,67 +126,105 @@ bool RobotMaster::receiveRequests(){
         switch (request->request_type){ // determining type of request before processing
             
                 case 0: // addRobot request
-                    {
-                        // addRobot request msg_data layout:
-                        // [0] = type: (unsigned int*), content: x coordinate of robot
-                        // [1] = type: (unsigned int*), content: y coordinate of robot
-                        // [2] = type: (RequestHandler*), content: message handler for master -> robot messages
-                        
-                        // gathering data from request
-                        unsigned int* x = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
-                        unsigned int* y = (unsigned int*)request->msg_data[1]; // second pointer of msg_data points to y coordinates
-                        RequestHandler* robot_request_handler = (RequestHandler*)request->msg_data[2];
+                {
+                    // addRobot request msg_data layout:
+                    // [0] = type: (unsigned int*), content: x coordinate of robot
+                    // [1] = type: (unsigned int*), content: y coordinate of robot
+                    // [2] = type: (RequestHandler*), content: message handler for master -> robot messages
+                    
+                    // return data
+                    // [0] = type: (unsigned int*), content: id to be assigned to robot
 
-                        unsigned int robot_id = addRobot(*x, *y, robot_request_handler); // add robot using coordinates
-                                                                  // return value is assigned id of robot
+                    // gathering data from request
+                    unsigned int* x = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
+                    unsigned int* y = (unsigned int*)request->msg_data[1]; // second pointer of msg_data points to y coordinates
+                    RequestHandler* robot_request_handler = (RequestHandler*)request->msg_data[2];
 
-                        request->return_data.push_back((void*)&robot_id); // returning data to sender
-                        
-                        sem_post(request->res_sem); // signalling Robot that message is ready
-                        sem_wait(request->ack_sem); //  waiting for Robot to be finished with response so message can be deleted
-                        
-                        // sent message were dynamically allocated thus must be deleted
-                        // this part of the code should be thread safe as the robot and Controller have finished using these variables
-                        delete request;
+                    unsigned int robot_id = addRobot(*x, *y, robot_request_handler); // add robot using coordinates
+                                                                // return value is assigned id of robot
 
-                        // if all robots have been added
-                        // send signal to all robots to begin exploration
-                        if(tracked_robots.size() == max_num_of_robots)
-                            updateAllRobotState(1); // updating all robot states to 1
-                                                    // this causes them to all begin exploring
-                        break;
-                    }
+                    request->return_data.push_back((void*)&robot_id); // returning data to sender
+                    
+                    sem_post(request->res_sem); // signalling Robot that message is ready
+                    sem_wait(request->ack_sem); //  waiting for Robot to be finished with response so message can be deleted
+                    
+                    // sent message was dynamically allocated thus must be deleted
+                    // this part of the code should be thread safe as the robot and Controller have finished using these variables
+                    delete request;
+
+                    // if all robots have been added
+                    // send signal to all robots to begin exploration
+                    if(tracked_robots.size() == max_num_of_robots)
+                        updateAllRobotState(1); // updating all robot states to 1
+                                                // this causes them to all begin exploring
+                    break;
+                }
                 case 1: // updateGlobalMap request
-                    {   
-                        // updateGlobalMap request msg_data layout:
-                        // [0] = type: (unsigned int*), content: id of robot sending request
-                        // [1] = type: (vector<bool>*), content: vector containing information on walls surrounding robot
-                                                                 // [0] = north, [1] = south, [2] = east, [3] = west
-                                                                 // 0 = connection, 1 = wall
-                        // [2] = type: (Coordinates*), content: current coordinates of where the read occured
-                        unsigned int* robot_id = (unsigned int*)request->msg_data[0];
-                        std::vector<bool>* wall_info = (std::vector<bool>*)request->msg_data[1];
-                        Coordinates* cords = (Coordinates*)request->msg_data[2];
+                {   
+                    // updateGlobalMap request msg_data layout:
+                    // [0] = type: (unsigned int*), content: id of robot sending request
+                    // [1] = type: (vector<bool>*), content: vector containing information on walls surrounding robot
+                                                                // [0] = north, [1] = south, [2] = east, [3] = west
+                                                                // 0 = connection, 1 = wall
+                    // [2] = type: (Coordinates*), content: current coordinates of where the read occured
+                    
+                    // return data = none
 
-                        updateGlobalMap(robot_id, wall_info, cords); // updating global map with information
+                    // gathering passed in data
+                    unsigned int* robot_id = (unsigned int*)request->msg_data[0];
+                    std::vector<bool>* wall_info = (std::vector<bool>*)request->msg_data[1];
+                    Coordinates* cords = (Coordinates*)request->msg_data[2];
 
-                        //request->return_data.push_back((void*)&robot_id); // telling Robot that data was successfully added to GlobalMap and it can continue
+                    updateGlobalMap(robot_id, wall_info, cords); // updating global map with information
 
-                        sem_post(request->res_sem);
-    
-                        sem_wait(request->ack_sem);
+                    //request->return_data.push_back((void*)&robot_id); // telling Robot that data was successfully added to GlobalMap and it can continue
 
-                        // sent message were dynamically allocated thus must be deleted
-                        // this part of the code should be thread safe as the robot and Controller have finished using these variabless
-                        delete request;
+                    sem_post(request->res_sem); // signalling Robot that message is ready
+                    sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
 
-                        if(number_of_unexplored < 1){ // if no more cells to explore
-                            updateAllRobotState(-1); // tell all robots to shut down
-                            return true; // return true as maze exploration done
-                        }
+                    // sent message was dynamically allocated thus must be deleted
+                    // this part of the code should be thread safe as the robot and Controller have finished using these variabless
+                    delete request;
 
-                        break;
+                    if(number_of_unexplored < 1){ // if no more cells to explore
+                        updateAllRobotState(-1); // tell all robots to shut down
+                        return true; // return true as maze exploration done
                     }
+
+                    break;
+                }
+                case 2: // move2cell request
+                {
+                    // updateGlobalMap request msg_data layout:
+                    // [0] = type: (unsigned int*), content: id of robot sending request
+                    // [1] = type: (Coordinates*), content: target position of robot move request
+                    
+                    // gathering passed in data
+                    unsigned int* robot_id = (unsigned int*)request->msg_data[0];
+                    Coordinates* target_cell = (Coordinates*)request->msg_data[1];                    
+                    
+                    bool ret_value; // variable to store data to be returned to Robot
+                    unsigned int occupying_robot = *robot_id; // variable to store id of occupying robot
+                                                              // setting value to robot id to ensure that the a collision is not detected 
+
+                    if(checkIfOccupied(target_cell->x, target_cell->y, &occupying_robot)){ // if robot is occupying the target cell
+                        ret_value = false; // set return value to false as movement can't occur due to collision
+                    }
+                    else{ // if no robot is occupying target cell
+                        ret_value = true; // set return value to false as movement can occur
+                    }
+
+                    request->return_data.push_back((void*)ret_value); // adding return data
+
+                    sem_post(request->res_sem); // signalling Robot that message is ready
+                    sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
+
+                    // sent message was dynamically allocated thus must be deleted
+                    // this part of the code should be thread safe as the robot and Controller have finished using these variabless
+                    delete request;
+
+                    break;
+                }
                 default:
                     {
                         break;

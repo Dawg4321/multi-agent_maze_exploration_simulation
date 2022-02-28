@@ -152,9 +152,65 @@ bool Robot::move2Cell(Coordinates* destination){ // overloaded version of move2C
         return false; // return false as movement failed dur to invalid direction
     }
 
-    //
+    return move2Cell(direction); // moving robot and returning
+    
+}
 
-    return move2Cell(direction); 
+bool Robot::m_move2Cell(Coordinates* destination){ // overloaded version of move2Cell using destination
+                                                 // converts target destination to a direction then uses original move2Cell function
+
+    // first must determine direction based on two values
+    int dx = x_position - destination->x; // gather change in x and y directions
+    int dy = y_position - destination->y;
+
+    int direction = 0;  // variable to store determined direction 
+                        // direction = 1 ^ north
+                        // direction = 2 v south
+                        // direction = 3 < east
+                        // direction = 4 > west
+
+    if(dy == 1 && dx == 0){ // if moving north
+        direction = 1;
+    }
+    else if(dy == -1 && dx == 0){ // if moving south
+        direction = 2;
+    }
+    else if(dx == 1 && dy == 0){ // if moving east
+        direction = 3;
+    }
+    else if (dx == -1 && dy == 0){ // if moving west
+        direction = 4;
+    }
+    else{
+        printf("Error: invalid movement passed into move2Cell\n");
+        return false; // return false as movement failed dur to invalid direction
+    }
+
+    // need to message controller to see if target cell is occupied
+    Message* temp_message = new Message;
+
+    temp_message->request_type = 2; // request_type = 2 as moveRequest required
+
+    temp_message->msg_data.push_back((void*) &id); // adding id of robot to [0]
+    temp_message->msg_data.push_back((void*) destination); // adding target destination of robot to [1]
+
+    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
+    temp_message->ack_sem = acknowledgement_sem;
+
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
+
+    sem_wait(response_sem); // waiting for response to be ready from controller
+
+    bool is_not_occupied = (bool)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
+    
+    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
+    
+    if(is_not_occupied){ // attempt to move as cell unoccupied
+        return move2Cell(direction); // moving robot and returning
+    }
+    else {
+        return false; // return false as target cell occupied
+    }
     
 }
 
@@ -422,15 +478,11 @@ void Robot::multiExplore(GridGraph* maze){
     sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
     sem_post(acknowledgement_sem);
 
-    if(number_of_unexplored == 0){ // no more cells to explore therefore break from scan loop
-        printf("Done exploring!\n");
-        // TODO: send done exploring signal to Robot Master
-    }
-
     BFS_pf2NearestUnknownCell(&planned_path); // move to nearest unseen cell
 
     for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
-        move2Cell(&(planned_path[planned_path.size()-i-1]));
+        if(!m_move2Cell(&(planned_path[planned_path.size()-i-1]))) // if movement fails
+            break; // break from loop
     }
     planned_path.clear(); // clear planned_path as movement has been completed
 
@@ -463,6 +515,8 @@ void Robot::assignIdFromMaster(){
     sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
 
     printf("ROBOT: id = %d %x\n",id, temp_message);
+
+    return;
 }
 
 

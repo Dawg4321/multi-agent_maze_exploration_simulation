@@ -29,6 +29,7 @@ class Robot{
         std::vector<bool> scanCell(GridGraph* maze); // scans content of robots current cell using maze information
         bool move2Cell(int direction); // moves robot to cell if possible in specified direction
         bool move2Cell(Coordinates* destination); // moves robot to neighbouring cell using neighbouring cell coordinates
+        bool m_move2Cell(Coordinates* destination); // move robot operation used when exploring using controller
 
         // ** Path-Finding Functions **
         bool pf_BFS(int x, int y); // modifies planned path with the fastest path to a specified location

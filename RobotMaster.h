@@ -41,7 +41,7 @@ class RobotMaster{
         
         void updateRobotLocation(unsigned int* id, Coordinates* C); // updates the location of a robot to the location specified
         void updateAllRobotState(int status); // updates the state of all robots to the specified value
-    
+
     private:
         GridGraph GlobalMap; // Global Map 
 

@@ -69,6 +69,39 @@ void Maze::generate4x4SampleMaze(){
     return;
 }
 
+void Maze::generateCollisionTest(){
+    maze_xsize = 5; // setting maze x and y size to 4x4
+    maze_ysize = 1;
+
+    char n[1][5] = { // marking nodes for maze
+                        {1, 1, 1, 1, 1},
+                    };
+
+    for (int i = 0; i < sizeof(n)/sizeof(n[0]); i++) // passing nodes into graph struct
+        for (int j = 0; j < sizeof(n[0])/sizeof(n[0][0]); j++)
+            MazeMap.nodes[i][j] = n[i][j];
+    
+
+    char x[1][6] = { // marking x edges for maze
+                        {1, 0, 0, 0, 0, 1},
+                    };
+
+    for (int i = 0; i < sizeof(x)/sizeof(x[0]); i++) // passing x edges into graph struct
+        for (int j = 0; j < sizeof(x[0])/sizeof(x[0][0]); j++)
+            MazeMap.x_edges[i][j] = x[i][j];
+
+    char y[2][5] = { // marking y edges for maze
+                        {1, 1, 1, 1, 1}, 
+                        {1, 1, 1, 1, 1},
+                    };
+
+    for (int i = 0; i < sizeof(y)/sizeof(y[0]); i++) // passing y edges into graph struct
+        for (int j = 0; j < sizeof(y[0])/sizeof(y[0][0]); j++)
+            MazeMap.y_edges[i][j] = y[i][j];
+    
+    return;
+}
+
 void Maze::setMazeMap(GridGraph* m){
     MazeMap = *m;
 }
