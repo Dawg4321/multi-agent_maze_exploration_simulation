@@ -396,8 +396,6 @@ void Robot::multiRobotLoop(GridGraph* maze){ // function to initialize robot bef
                 }
         }        
     }
-    scanCell(maze); // scans cell that the robot currently belongs to initialze local map before exploring
-
     return;
 }
 
@@ -478,6 +476,17 @@ int Robot::getRequestsFromMaster(int status){ // checking if RobotMaster wants r
 
     if(request != NULL){ // if there is a a request to handle, process it
         switch (request->request_type){ // determining type of request before processing
+
+                case -1: // change state to shut down
+                    {  
+                        // if a message of this type is recieved, no message contents
+                        // only the response semaphore is used to tell the robot to shut down
+
+                        ret_variable = request->request_type; // gathering status from request type
+                        
+                        sem_post(request->res_sem); // telling RobotMaster that status has sucessfully been updated
+                        break;
+                    }
                 
                 case 0: // change state to standby mode
                     {

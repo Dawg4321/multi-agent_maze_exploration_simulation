@@ -114,7 +114,7 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
     return true; // return true as printing succeeded
 }
 
-void RobotMaster::receiveRequests(){
+bool RobotMaster::receiveRequests(){
     
     Message* request = Message_Handler->getMessage(); // gathering request from msg_queue
                                                       // pointer is gathered so response can be gathered by robot threads
@@ -149,28 +149,9 @@ void RobotMaster::receiveRequests(){
 
                         // if all robots have been added
                         // send signal to all robots to begin exploration
-                        if(tracked_robots.size() == max_num_of_robots){
-
-                            printf("CONTROLLER: All Robots Added!\n");
-
-                            Message* start_exploration_message = new Message;
-                            start_exploration_message->request_type = 1; // specifying begin exploration message type
-                            
-                            start_exploration_message->res_sem = new sem_t; // creating semaphore to block RobotMaster until all robots have begun exploring
-                            sem_init(start_exploration_message->res_sem, 1,  -1*tracked_robots.size());
-
-                            for(int i = 0; i < tracked_robots.size(); i++){
-                                tracked_robots[i].Robot_Message_Reciever->sendMessage(start_exploration_message);
-                                tracked_robots[i].robot_status = 1; // update robot status to exploring
-                            }
-                            
-                            sem_wait(start_exploration_message->res_sem); // waiting until all robots have begun exploring
-                                                                          // once all robots have begun exploring, other requests can be handled
-                            printf("CONTROLLER: Robots can now explore!\n");
-                            sem_destroy(start_exploration_message->res_sem); // destroying semaphore as no longer needed                                 
-                            delete start_exploration_message; // deleting dynamically allocated message
-                        }
-
+                        if(tracked_robots.size() == max_num_of_robots)
+                            updateAllRobotState(1); // updating all robot states to 1
+                                                    // this causes them to all begin exploring
                         break;
                     }
                 case 1: // updateGlobalMap request
@@ -197,6 +178,11 @@ void RobotMaster::receiveRequests(){
                         // this part of the code should be thread safe as the robot and Controller have finished using these variabless
                         delete request;
 
+                        if(number_of_unexplored < 1){ // if no more cells to explore
+                            updateAllRobotState(-1); // tell all robots to shut down
+                            return true; // return true as maze exploration done
+                        }
+
                         break;
                     }
                 default:
@@ -209,7 +195,7 @@ void RobotMaster::receiveRequests(){
 
     }
     
-    return;
+    return false; // return false as full maze has not been explored
 }
 
 unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandler* r){ // adding robot to control system
@@ -291,4 +277,32 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // upda
             tracked_robots[i].robot_position = *C;
     }
 }
+    
+void RobotMaster::updateAllRobotState(int status){
 
+    Message* messages = new Message[max_num_of_robots]; // creating new messages for each robot
+
+    for(int i = 0; i < max_num_of_robots; i++){ // sending update state message to all robots
+
+        messages[i].request_type = status; // specifying state to update all robots to
+        
+        messages[i].res_sem = new sem_t; // creating semaphore to block RobotMaster until all robots have begun exploring
+        
+        sem_init(messages[i].res_sem, 1, 0); // initializing semaphore to negative value of number of robots
+                                            // this ensures the robot master will be blocked until all robots have updated their status  
+
+        tracked_robots[i].Robot_Message_Reciever->sendMessage(&messages[i]); // sending message
+        tracked_robots[i].robot_status = status; // updating local robot information to current status
+    }
+    
+    for(int i = 0; i < max_num_of_robots; i ++){ // ensuring all messages have been recieved and used
+        
+        sem_wait(messages[i].res_sem); // waiting for robot to update its state
+                                       // this is when all robots have posted on the semaphore 
+
+        sem_destroy(messages[i].res_sem); // destroying semaphore as no longer needed
+    }
+
+    delete[] messages; // deleting dynamically allocated messages
+    
+}

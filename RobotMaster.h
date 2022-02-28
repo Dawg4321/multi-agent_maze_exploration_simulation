@@ -26,7 +26,8 @@ class RobotMaster{
         RobotMaster(RequestHandler* r, int num_of_robots);
         ~RobotMaster();
 
-        void receiveRequests();  // recieves and decodes request information from imcoming request
+        bool receiveRequests();  // recieves and decodes request information from imcoming request
+                                 // returns false until all cells have been explored
 
         bool checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable); // checks if a cell is occupied by a robot
 
@@ -39,7 +40,8 @@ class RobotMaster{
         bool printGlobalMap(); // prints global map with robot locations
         
         void updateRobotLocation(unsigned int* id, Coordinates* C); // updates the location of a robot to the location specified
-
+        void updateAllRobotState(int status); // updates the state of all robots to the specified value
+    
     private:
         GridGraph GlobalMap; // Global Map 
 
