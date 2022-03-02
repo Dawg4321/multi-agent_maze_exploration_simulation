@@ -45,9 +45,13 @@ class Robot{
         // ** General Purpose Functions **
         void assignIdFromMaster(); // gets an ID from a RobotMaster using a message
         int getRequestsFromMaster(int status); // checks if master wants to change current status of robot
-        
+        void updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status); // updates robot's map with information from vectors
+
         // ** Communication Functions **
         void requestShutDown(); // sends shutdown notification to RobotMaster
+                                // TODO: change to generic update status request
+        bool requestReserveCell(); // attempts to reserve a cell to explore from the RobotMaster
+                                   // if cell to reserve fails, LocalMap is updated with GlobalMap information
 
         // **Printing Functions**
         bool printRobotMaze();

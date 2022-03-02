@@ -505,29 +505,15 @@ void Robot::multiExplore(GridGraph* maze){
 
     sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
     sem_post(acknowledgement_sem);
+    
+    bool cell_reserved = false;
+    do{
 
-    //do{
-
-            BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
-
-    /*
-        Message* temp_message = new Message(); // buffer to load data into before sending message
-
-        temp_message->request_type = 1; // request_type = 0 as updateGlobalMap request required
-
-        temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
-        temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
-        temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
+        BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
         
-        temp_message->res_sem = response_sem; // attaching communication semaphores to message
-        temp_message->ack_sem = acknowledgement_sem;
-        
-        Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
+        cell_reserved = requestReserveCell();
 
-        sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
-        sem_post(acknowledgement_sem);
-
-    }while();*/
+    }while(!cell_reserved);
 
     for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
         if(!m_move2Cell(&(planned_path[i]))){ // if movement fails
@@ -639,6 +625,61 @@ void Robot::requestShutDown(){
     sem_wait(response_sem); // waiting for Master to acknowledge shutdown
 
     return;
+}
+
+void Robot::updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status){
+
+    for(int i = 0; i < map_info->size(); i++){ // iterate through node information
+        unsigned int x = (*map_info)[i].x; // gathering x and y position for data transfer
+        unsigned int y = (*map_info)[i].y;
+
+        LocalMap->nodes[y][x] = (*map_status)[i]; // passing map status of cell into LocalMap
+        
+        LocalMap->y_edges[y][x] = (*edge_info)[i][0]; // passing northern edge info into LocalMap
+        LocalMap->y_edges[y + 1][x] = (*edge_info)[i][1]; // passing southern edge info into map
+        LocalMap->x_edges[y][x] = (*edge_info)[i][2]; // passing eastern edge info into map
+        LocalMap->x_edges[y][x + 1] = (*edge_info)[i][2]; // passing western edge info into map
+    }   
+    return;
+}
+
+bool Robot::requestReserveCell(){
+    
+    Message* temp_message = new Message; // generating message
+
+    temp_message->request_type = 3; // request_type = 2 as moveRequest required
+
+    temp_message->msg_data.push_back((void*) &id); // adding id of robot to [0]
+    temp_message->msg_data.push_back((void*) &(planned_path[planned_path.size() - 1])); // adding target destination of robot to [1]
+
+    Coordinates c(x_position,y_position); // gathering current robot coordinates as it may be needed 
+    if(planned_path.size() > 1){ // if more than one element in planned_path, must pass second last element in deque as neigbouring cell
+        temp_message->msg_data.push_back((void*) &(planned_path[planned_path.size() - 2])); // passing second last element in planned_path as neighbouring cell
+    }
+    else{ // as planned_path has only 1 element, cell must be neighbouring current position thus pass current position as neighbouring cell
+        temp_message->msg_data.push_back((void*) &c); // passing current robot position as neighbouring cell
+    }
+
+    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
+    temp_message->ack_sem = acknowledgement_sem;
+
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
+
+    sem_wait(response_sem); // waiting for response to be ready from controller
+
+    bool reserved_succeed = (bool)temp_message->return_data[0]; // gather whether cell has been reserved
+    std::vector<Coordinates> map_info = *(std::vector<Coordinates>*)  temp_message->return_data[1]; // gather map nodes for map update
+    std::vector<std::vector<bool>> edge_info = *(std::vector<std::vector<bool>>*)  temp_message->return_data[2]; 
+    std::vector<char> map_status = *(std::vector<char>*)  temp_message->return_data[3]; 
+    
+    sem_post(acknowledgement_sem); // signalling to controller that the response data has been taken
+
+    if(!reserved_succeed){ // if failed to reserve cell found by pathfinding
+                           // must update map with returned data so next closest cell can be reserved
+        updateLocalMap(&map_info, &edge_info, &map_status);
+    }
+
+    return reserved_succeed; // return whether robot can proceed to target cell
 }
 
 bool Robot::printRobotMaze(){ // function to print robot's local map of maze

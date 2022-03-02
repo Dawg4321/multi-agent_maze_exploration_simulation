@@ -10,6 +10,8 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
     master_status = 0; // setting status
 
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
+
+    GlobalMapInfo.resize(maze_ysize,std::vector<CellInfo>(maze_xsize)); // resizing GlobalMap info to maze size
 }
 
 RobotMaster::~RobotMaster(){
@@ -24,7 +26,6 @@ bool RobotMaster::checkIfOccupied(unsigned int x, unsigned int y, unsigned int* 
         if(tracked_robots[i].robot_position.x == x && tracked_robots[i].robot_position.y == y){ // if robot is occupying the location passed in
             temp = tracked_robots[i].robot_id; // returning found robot id
             *ret_variable = temp;
-
 
             return true; // return true as robot is occupying the cell
         }
@@ -245,40 +246,55 @@ bool RobotMaster::receiveRequests(){
                     sem_post(request->res_sem); // signalling Robot that message is ready
                     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
 
- 
+
                     // sent message was dynamically allocated thus must be deleted
                     // this part of the code should be thread safe as the robot and Controller have finished using these variabless
                     delete request;
 
                     break;
                 }
-                /*
-                case 3: // reserveCell request ( robot wants to start exploring from a cell without other robots using it)
+                case 3: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
                 {
                     // reserveCell request msg_data layout:
                     // [0] = type: (unsigned int*), content: id of robot sending request
-                    // [1] = type: (Coordinates*), content: target position of robot move request
-                    
+                    // [1] = type: (Coordinates*), content: target unexplored cell to reseve
+                    // [2] = type: (Coordinates*), content: neighbouring cell used to enter target cell 
+                                                          // used to determine what aspect of tree must be sent back in event node has already been explored 
+                    // return data
+                    // [0] = type (bool*), content: whether cell has been reserved
+                    // [1] = type (vector<Coordinates>*), content: coordinates correspoonding to full map down a node path if path has been explored already
+                    // [2] = type (vector<vector<bool>*>), content: wall information corresponding to cell locations in [1] 
+                    // [3] = type (vector<char>*), content: information on node status
+
                     // gathering passed in data
                     unsigned int* robot_id = (unsigned int*)request->msg_data[0];
                     Coordinates* target_cell = (Coordinates*)request->msg_data[1];                    
+                    Coordinates* neighbouring_cell = (Coordinates*)request->msg_data[2];  
+
+                    bool ret_value; // variable to whether cell reservation is possible
                     
-                    bool ret_value; // variable to store data to be returned to Robot
-                    unsigned int occupying_robot = *robot_id; // variable to store id of occupying robot
-                                                              // setting value to robot id to ensure that the a collision is not detected 
+                    // vectors to return to robot with map information if cell can't be reserved
+                    std::vector<Coordinates>* map_coordinates;
+                    std::vector<std::vector<bool>>* map_connections;
+                    std::vector<char>* map_status;
 
-                    if(checkIfOccupied(target_cell->x, target_cell->y, &occupying_robot)){ // if robot is occupying the target cell
-                        ret_value = false; // set return value to false as movement can't occur due to collision
+                    if(GlobalMapInfo[target_cell->y][target_cell->x].reserved > 0 || GlobalMap->nodes[target_cell->y][target_cell->x] == 1){ // if the target cell has been reserved or already explored
+                        // gathering portion of map outwards from unexplored node to return to robot
+                        gatherPortionofMap(*target_cell, *neighbouring_cell, map_coordinates, map_connections, map_status);
                     }
-                    else{ // if no robot is occupying target cell
-                        ret_value = true; // set return value to false as movement can occur
-
-                        // as movement can occur, must update robots position
+                    else{ // if unreserved and unexplored
+                          // do nothing
                     }
 
-                    request->return_data.push_back((void*)ret_value); // adding return data
+                    // preparing return data
+                    request->return_data.push_back((void*) ret_value); // adding information is cell was reserved for scanning
+                    
+                    // adding map information to update robot map if cell already explored
+                    request->return_data.push_back((void*) map_coordinates);
+                    request->return_data.push_back((void*) map_connections);
+                    request->return_data.push_back((void*) map_status);
 
-                    sem_post(request->res_sem); // signalling Robot that message is ready
+                    sem_post(request->res_sem); // signalling Robot that return message is ready
                     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
 
  
@@ -287,7 +303,7 @@ bool RobotMaster::receiveRequests(){
                     delete request;
 
                     break;
-                }*/
+                }
                 default:
                     {
                         break;
@@ -338,6 +354,8 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 
     updateRobotLocation(id, C);
 
+    GlobalMapInfo[C->y][C->x].reserved = 0; // unreserving unknown cell as it has been scanned
+
     if (GlobalMap->nodes[C->y][C->x] != 1){ // checking if there is a need to update map (has the current node been explored?)
         
         number_of_unexplored--; // subtracting number of unexplored cells as new cell has been explored
@@ -383,11 +401,102 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
     return;
 }
 
+std::vector<bool> RobotMaster::getNodeEdgeInfo(Coordinates* C){
+    std::vector<bool> edge_info; // vector to return with information on edges surrounding node C
+
+    edge_info.push_back(GlobalMap->y_edges[C->y][C->x]);    // [0] = north edge
+    edge_info.push_back(GlobalMap->y_edges[C->y + 1][C->x]);// [1] = south edge
+    edge_info.push_back(GlobalMap->y_edges[C->y][C->x]);    // [2] = east edge
+    edge_info.push_back(GlobalMap->y_edges[C->y][C->x + 1]);// [3] = west edge
+
+    return edge_info;
+}
+
+std::vector<Coordinates> RobotMaster::getSeenNeighbours(unsigned int x, unsigned  int y){ // function to gather seen neighbouring cells of a selected cell based on global map
+
+    std::vector<Coordinates> ret_value; // vector of Coordinates to return
+                                        // this will contain the coordinates of valid neighbouring nodes
+    
+    Coordinates buffer; // buffer structor to gather positions of neighbouring nodes before pushing to vector
+
+    // check if neighbour to the north is valid and connected via an edge (no wall)
+    if(!GlobalMap->y_edges[y][x] && GlobalMap->nodes[y-1][x] > 0){
+        buffer.x = x; 
+        buffer.y = y - 1;
+        ret_value.push_back(buffer);
+    }
+    // check if neighbour to the south is valid and connected via an edge (no wall)
+    if(!GlobalMap->y_edges[y+1][x] && GlobalMap->nodes[y+1][x] > 0){
+        buffer.x = x; 
+        buffer.y = y + 1;
+        ret_value.push_back(buffer);
+    }
+    // check if neighbour to the east is valid and connected via an edge (no wall)
+    if(!GlobalMap->x_edges[y][x] && GlobalMap->nodes[y][x-1] > 0){
+        buffer.x = x - 1; 
+        buffer.y = y;
+        ret_value.push_back(buffer);
+    }
+    // check if neighbour to the west is valid and connected via an edge (no wall)
+    if(!GlobalMap->x_edges[y][x+1] && GlobalMap->nodes[y][x+1] > 0){
+        buffer.x = x + 1; 
+        buffer.y = y;
+        ret_value.push_back(buffer);
+    }
+
+    return ret_value; // returning vector
+}
+
+void RobotMaster::gatherPortionofMap(Coordinates curr_node, Coordinates neighbour_node, std::vector<Coordinates>* map_nodes, std::vector<std::vector<bool>>* map_connections, std::vector<char>* node_status){ // generates a portion of the map for transfer to robot using breadth first search
+
+    std::queue<Coordinates> node_queue; // creating node queue to store nodes to be "explored" by algorithm
+
+    // initializing value of queue and 
+    node_queue.push(curr_node); // adding first node to explore to node queue
+    
+    // gathering starting cell info for return
+    map_nodes->push_back(curr_node); // node coordinates
+    map_connections->push_back(getNodeEdgeInfo(&curr_node)); // node connections
+    node_status->push_back(GlobalMap->nodes[curr_node.y][curr_node.x]); // node status
+
+    while(node_queue.size() != 0){// while nodes to explore are in node_queue
+        
+        curr_node = node_queue.front(); // gathering node from front of queue
+
+        //printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
+
+        node_queue.pop(); // removing node from front of the queue as new nodes must be added to queue
+
+        std::vector<Coordinates> valid_neighbours = getSeenNeighbours(curr_node.x, curr_node.y); // gathering neighbours of current node
+
+        for(int i = 0; i < valid_neighbours.size(); i++){ // iterate through all of the current node's neighbours to see if they have been explored
+            
+            bool already_visited = false;
+            for(int j = 0; j < map_nodes->size(); j++){
+                if(valid_neighbours[i] == (*map_nodes)[j]){
+                    already_visited = true;
+                    break;
+                }
+            }
+
+            if(!already_visited){
+                map_nodes->push_back(valid_neighbours[i]); // node coordinates
+                map_connections->push_back(getNodeEdgeInfo(&valid_neighbours[i])); // node connections
+                node_status->push_back(GlobalMap->nodes[valid_neighbours[i].y][valid_neighbours[i].x]); // node status
+            }
+        }
+    }
+
+    return; // can return with map information
+}
+
 void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // updates the location of a robot to the location specified
 
-    for(int i = 0; i < tracked_robots.size(); i++){
-        if (tracked_robots[i].robot_id == *id)
-            tracked_robots[i].robot_position = *C;
+    for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update
+        if (tracked_robots[i].robot_id == *id){ // if robot found using id
+            tracked_robots[i].robot_position = *C; // update position in RobotInfo
+            // TODO: update occupying robot information in CellInfo matrix
+        }
     }
 }
     

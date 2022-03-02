@@ -49,7 +49,15 @@ class RobotMaster{
         int changeRobotState(); // changes robot state using return variable
 
         bool printGlobalMap(); // prints global map with robot locations
-        
+
+        void gatherPortionofMap(Coordinates curr_node, Coordinates neighbour_node, std::vector<Coordinates>* map_nodes, std::vector<std::vector<bool>>* map_connections, std::vector<char>* node_status); // generates portion of map to be transfered to robot using two final vectors as return values
+        std::vector<Coordinates> getSeenNeighbours(unsigned int x, unsigned  int y); // Gets explored and seen neighbours to a node
+        std::vector<bool> getNodeEdgeInfo(Coordinates* C); // gets connection information surrounding a node
+                                                           // [0] = north edge
+                                                           // [1] = south edge
+                                                           // [2] = east edge
+                                                           // [3] = west edge
+
         void updateRobotLocation(unsigned int* id, Coordinates* C); // updates the location of a robot to the location specified
         void updateAllRobotState(int status); // updates the state of all robots to the specified value
 
