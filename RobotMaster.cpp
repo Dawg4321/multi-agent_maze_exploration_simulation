@@ -7,6 +7,8 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
     maze_xsize = xsize;
     maze_ysize = ysize;
 
+    master_status = 0; // setting status
+
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
 }
 
@@ -123,10 +125,30 @@ bool RobotMaster::receiveRequests(){
     Message* request = Message_Handler->getMessage(); // gathering request from msg_queue
                                                       // pointer is gathered so response can be gathered by robot threads
                                                       // returned pointer will be NULL is no messages to get
-    
+
     if(request != NULL){ // if there is a a request to handle, process it
         switch (request->request_type){ // determining type of request before processing
-            
+                case -1: // shutDown confirmation request ( telling master robot has finished exploring)
+                {
+                    // shutDown request
+                    // [0] = type (unsigned int*), content: id of robot shutting down
+                    
+                    // no return data
+
+                    // gathering data from request
+                    unsigned int* robot_id = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
+
+                    removeRobot(*robot_id); // remove robot from system
+                    
+                    sem_post(request->res_sem);  // tell robot that shutdown can occur
+
+                    delete request;
+                    if(tracked_robots.size() == 0){ // if all robots have successfully shut down
+                        return true; // maze exploration done
+                    }
+                    
+                    break;
+                }
                 case 0: // addRobot request
                 {
                     // addRobot request msg_data layout:
@@ -190,14 +212,14 @@ bool RobotMaster::receiveRequests(){
 
                     if(number_of_unexplored < 1){ // if no more cells to explore
                         updateAllRobotState(-1); // tell all robots to shut down
-                        return true; // return true as maze exploration done
+                        master_status = -1; // maze completely mapped, can ignore any incoming requests that do not contain shut down complete messages
                     }
 
                     break;
                 }
                 case 2: // move2cell request
                 {
-                    // updateGlobalMap request msg_data layout:
+                    // move2cell request msg_data layout:
                     // [0] = type: (unsigned int*), content: id of robot sending request
                     // [1] = type: (Coordinates*), content: target position of robot move request
                     
@@ -230,17 +252,54 @@ bool RobotMaster::receiveRequests(){
 
                     break;
                 }
+                /*
+                case 3: // reserveCell request ( robot wants to start exploring from a cell without other robots using it)
+                {
+                    // reserveCell request msg_data layout:
+                    // [0] = type: (unsigned int*), content: id of robot sending request
+                    // [1] = type: (Coordinates*), content: target position of robot move request
+                    
+                    // gathering passed in data
+                    unsigned int* robot_id = (unsigned int*)request->msg_data[0];
+                    Coordinates* target_cell = (Coordinates*)request->msg_data[1];                    
+                    
+                    bool ret_value; // variable to store data to be returned to Robot
+                    unsigned int occupying_robot = *robot_id; // variable to store id of occupying robot
+                                                              // setting value to robot id to ensure that the a collision is not detected 
+
+                    if(checkIfOccupied(target_cell->x, target_cell->y, &occupying_robot)){ // if robot is occupying the target cell
+                        ret_value = false; // set return value to false as movement can't occur due to collision
+                    }
+                    else{ // if no robot is occupying target cell
+                        ret_value = true; // set return value to false as movement can occur
+
+                        // as movement can occur, must update robots position
+                    }
+
+                    request->return_data.push_back((void*)ret_value); // adding return data
+
+                    sem_post(request->res_sem); // signalling Robot that message is ready
+                    sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
+
+ 
+                    // sent message was dynamically allocated thus must be deleted
+                    // this part of the code should be thread safe as the robot and Controller have finished using these variabless
+                    delete request;
+
+                    break;
+                }*/
                 default:
                     {
                         break;
                     }
             }
+
     }
     else{ // if no message to handle, do nothing
 
     }
     
-    return false; // return false as full maze has not been explored
+    return false; // return false as requests still to handle and maze is not completely mapped
 }
 
 unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandler* r){ // adding robot to control system
@@ -264,6 +323,15 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     printf("CONTROLLER: returning id = %d\n",temp.robot_id);
 
     return temp.robot_id; // returning id to be assigned to the robot which triggered this function
+}
+
+void RobotMaster::removeRobot(unsigned int id){
+    for(int i = 0; i < tracked_robots.size(); i++){ // search for robot in tracked_robots
+        if(tracked_robots[i].robot_id == id){ // if robot has been identified
+            tracked_robots.erase(tracked_robots.begin()+i); // delete it from tracked_robots
+        }
+    }
+    return;
 }
 
 void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C){
@@ -325,29 +393,15 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // upda
     
 void RobotMaster::updateAllRobotState(int status){
 
-    Message* messages = new Message[max_num_of_robots]; // creating new messages for each robot
+    for(int i = 0; i < max_num_of_robots; i++){ // creating messages to update state of all robots
 
-    for(int i = 0; i < max_num_of_robots; i++){ // sending update state message to all robots
+        Message* messages = new Message; // creating new messages for each robot
 
-        messages[i].request_type = status; // specifying state to update all robots to
+        messages->request_type = status; // specifying state to update all robots to
         
-        messages[i].res_sem = new sem_t; // creating semaphore to block RobotMaster until all robots have begun exploring
-        
-        sem_init(messages[i].res_sem, 1, 0); // initializing semaphore to negative value of number of robots
-                                            // this ensures the robot master will be blocked until all robots have updated their status  
-
-        tracked_robots[i].Robot_Message_Reciever->sendMessage(&messages[i]); // sending message
+        tracked_robots[i].Robot_Message_Reciever->sendMessage(messages); // sending message
         tracked_robots[i].robot_status = status; // updating local robot information to current status
     }
-    
-    for(int i = 0; i < max_num_of_robots; i ++){ // ensuring all messages have been recieved and used
-        
-        sem_wait(messages[i].res_sem); // waiting for robot to update its state
-                                       // this is when all robots have posted on the semaphore 
 
-        sem_destroy(messages[i].res_sem); // destroying semaphore as no longer needed
-    }
-
-    delete[] messages; // deleting dynamically allocated messages
-    
+    return;    
 }

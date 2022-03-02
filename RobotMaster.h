@@ -41,6 +41,8 @@ class RobotMaster{
         bool checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable); // checks if a cell is occupied by a robot
 
         unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r); // adds robots to tracked_robots This is important to allow for the robot to be synchronized by the control system
+        void removeRobot(unsigned int robot_id); // removes robot from tracked_robots
+
         void updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C); // updates global map with information from robot scan
         bool robotMoveCheck(); // function to aid in preventing robot collisions
 
@@ -69,6 +71,10 @@ class RobotMaster{
 
         const int max_num_of_robots; // variable which specifies number of robots needed for exploration
                                      // exploration won't begin until enough robots have been added
+
+        int master_status; // status of robotmaster
+                           // if status == -1, finish remaining requests and shutdown
+                           // if status == 0, receive requests                         
 };
 
 #endif

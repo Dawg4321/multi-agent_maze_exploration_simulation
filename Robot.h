@@ -46,6 +46,9 @@ class Robot{
         void assignIdFromMaster(); // gets an ID from a RobotMaster using a message
         int getRequestsFromMaster(int status); // checks if master wants to change current status of robot
         
+        // ** Communication Functions **
+        void requestShutDown(); // sends shutdown notification to RobotMaster
+
         // **Printing Functions**
         bool printRobotMaze();
         void printRobotXMap();

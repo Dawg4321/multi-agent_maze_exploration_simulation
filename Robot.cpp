@@ -20,7 +20,6 @@ Robot::Robot(int x, int y, RequestHandler* outgoing_req, unsigned int xsize, uns
                                   
     acknowledgement_sem = new sem_t; // semaphore to signal from robot to controller that the current response message has been analysed  
     sem_init(acknowledgement_sem, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
-                    
 }
 
 Robot::~Robot(){
@@ -298,12 +297,19 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
         std::vector<Coordinates> valid_neighbours = getValidNeighbours(curr_node.x, curr_node.y); // gathering neighbours of current node
 
         for(int i = 0; i < valid_neighbours.size(); i ++){ // iterate through all of the current node's neighbours to see if they have been explored
-
-            for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
-                if (key == valid_neighbours[i]){  // if current neighbour has not been visited
-                    node_queue.push(valid_neighbours[i]);       // TODO: fix map.contains, still causes same error where not detecting key         
-                    visited_nodes.insert({valid_neighbours[i], curr_node});
-                } 
+            
+            bool node_in_map = false; // variable to track whether neighbour is in map
+            
+            for(auto [key, val]: visited_nodes){ // iterate through visited_nodes
+                if (key == valid_neighbours[i]){ // if current neighbour is in map
+                    node_in_map = true;          // set node_in_map
+                    break;
+                    
+                }
+            }
+            if(!node_in_map){ // if neighbour not found in map
+                node_queue.push(valid_neighbours[i]); // add to node_queue and visited nodes
+                visited_nodes.insert({valid_neighbours[i], curr_node}); 
             }
         }
     }
@@ -362,9 +368,9 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
             ret_value = true; // return true as path to unexplored node found
             break; // break from while loop
         }
-        else if(node_queue.size() < 1){ // if node_queue is empty, no unexplored nodes found 
-                                        // true can be returned as no errors occured in pathfinding
-            return true;                // ret_stack will be empty as no unexplored nodes found therefore no need to move
+        else if(number_of_unexplored == 0 || node_queue.size() == 0){ // no unexplored nodes  
+                                                                      // true can be returned as no errors occured in pathfinding
+            return true;                                              // ret_stack will be empty as no unexplored nodes found therefore no need to move
         }
 
         node_queue.pop(); // removing node from front of the queue as new nodes must be added to queue
@@ -372,12 +378,18 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
         std::vector<Coordinates> valid_neighbours = getValidNeighbours(curr_node.x, curr_node.y); // gathering neighbours of current node
 
         for(int i = 0; i < valid_neighbours.size(); i ++){ // iterate through all of the current node's neighbours to see if they have been explored
+            bool node_in_map = false; // variable to track whether neighbour is in map
             
-            for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
-                if (key != valid_neighbours[i]){  // if current neighbour has not been visited
-                    node_queue.push(valid_neighbours[i]);       // TODO: fix map.contains, still causes same error where not detecting key         
-                    visited_nodes.insert({valid_neighbours[i], curr_node});   
+            for(auto [key, val]: visited_nodes){ // iterate through visited_nodes
+                if (key == valid_neighbours[i]){ // if current neighbour is in map
+                    node_in_map = true;          // set node_in_map
+                    break;
+                    
                 }
+            }
+            if(!node_in_map){ // if neighbour not found in map
+                node_queue.push(valid_neighbours[i]); // add to node_queue and visited nodes
+                visited_nodes.insert({valid_neighbours[i], curr_node}); 
             }
         }
     }
@@ -441,12 +453,20 @@ void Robot::multiRobotLoop(GridGraph* maze){ // function to initialize robot bef
                     // -1 = shut down
                     // 0 = stand by
                     // 1 = explore
-    while(status != -1){
+
+    bool loop_break = false; // bool to break for loop if shutdown has occured
+
+    while(!loop_break){
         
         status = getRequestsFromMaster(status); // checking if master wants robot to update status
 
         switch(status){
-
+            case -1: // shutdown mode
+            {
+                requestShutDown(); // notify master that robot is ready to shutdown
+                loop_break = true; // setting loop break to ensure break while loop
+                break;
+            }
             case 0: // while robot is on standby
                 {   
                     // do nothing
@@ -477,7 +497,7 @@ void Robot::multiExplore(GridGraph* maze){
     temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
     temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
     temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
-    
+
     temp_message->res_sem = response_sem; // attaching communication semaphores to message
     temp_message->ack_sem = acknowledgement_sem;
     
@@ -487,8 +507,9 @@ void Robot::multiExplore(GridGraph* maze){
     sem_post(acknowledgement_sem);
 
     //do{
-        
-        BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
+
+            BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
+
     /*
         Message* temp_message = new Message(); // buffer to load data into before sending message
 
@@ -569,14 +590,13 @@ int Robot::getRequestsFromMaster(int status){ // checking if RobotMaster wants r
 
                         ret_variable = request->request_type; // gathering status from request type
                         
-                        sem_post(request->res_sem); // telling RobotMaster that status has sucessfully been updated
+                        
                         break;
                     }
                 
                 case 0: // change state to standby mode
                     {
-                        //ret_variable = request->request_type;
-                        //sem_post(request->res_sem);
+                        ret_variable = request->request_type;
                         
                         break;
                     }
@@ -587,7 +607,6 @@ int Robot::getRequestsFromMaster(int status){ // checking if RobotMaster wants r
                         // only the response semaphore is used to signal that the robot will begin exploring
                         ret_variable = request->request_type; // gathering status from request type
                         
-                        sem_post(request->res_sem); // telling RobotMaster that status has sucessfully been updated
                         break;
                     }
                 default: // TODO: Implement handling if improper messge type is recieved
@@ -595,12 +614,31 @@ int Robot::getRequestsFromMaster(int status){ // checking if RobotMaster wants r
                         break;
                     }
             }
+
+            delete request; // deleting recieved message as no longer needed
     }
     else{ // if no message to handle, do nothing
-        ret_variable = status;
+        ret_variable = status; // set status as current status
     }
     
     return ret_variable;
+}
+
+void Robot::requestShutDown(){
+    // sending message to notidy RobotMaster that robot is ready to shutdown
+    Message* temp_message = new Message(); // buffer to load data into before sending message
+
+    temp_message->request_type = -1; // request_type = -1 as shutDown request
+
+    temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
+
+    temp_message->res_sem = response_sem; // attaching communication semaphores to message
+    
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
+
+    sem_wait(response_sem); // waiting for Master to acknowledge shutdown
+
+    return;
 }
 
 bool Robot::printRobotMaze(){ // function to print robot's local map of maze
