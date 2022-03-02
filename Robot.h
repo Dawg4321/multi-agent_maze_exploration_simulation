@@ -17,8 +17,8 @@
 class Robot{
     public:
         // **Robot Constructors **
-        Robot(int x, int y); // contrucutor for solo exploration purposes
-        Robot(int x, int y, RequestHandler* r); // constructor for multi-robot exploration purposes
+        Robot(int x, int y, int xsize, int ysize); // contrucutor for solo exploration purposes
+        Robot(int x, int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
         
         // ** Destructor **
         ~Robot();
@@ -63,7 +63,7 @@ class Robot{
 
         std::vector<Coordinates> planned_path; 
         
-        GridGraph LocalMap; // local_map maintained by robot of areas explored
+        GridGraph* LocalMap; // local_map maintained by robot of areas explored
 
         RequestHandler* Robot_2_Master_Message_Handler; // pointer to request handler shared by all Robot objects
         RequestHandler* Master_2_Robot_Message_Handler;

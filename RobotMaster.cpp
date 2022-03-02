@@ -1,15 +1,17 @@
 #include "RobotMaster.h"
 
-RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots): max_num_of_robots(num_of_robots){
+RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): max_num_of_robots(num_of_robots){
     id_tracker = 0; // initializing id counter to zero
     Message_Handler = r; // gathering request handler to use for receiving robot -> master communications
     
-    maze_xsize = 5;
-    maze_ysize = 1;
+    maze_xsize = xsize;
+    maze_ysize = ysize;
+
+    GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
 }
 
 RobotMaster::~RobotMaster(){
-    
+    delete GlobalMap; // deallocating GlobalMap
 }
 
 bool RobotMaster::checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable){ // checks if a robot is within the cell passed into the function
@@ -51,7 +53,7 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
 
             for(int j = 0; j < maze_xsize; j++){
 
-                if(GlobalMap.y_edges[i][j]){ // if there is no edge between two nodes
+                if(GlobalMap->y_edges[i][j]){ // if there is no edge between two nodes
                     string_pointer = 1; // print horizontal line
                 }
                 else{ // if there is an edge between two nodes
@@ -67,7 +69,7 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
             for(int j = 0; j < maze_xsize + 1; j++){
 
                 // checking the walls between two nodes (e.g. wall?, no wall?)
-                if(GlobalMap.x_edges[i][j]){ // if there is no edge between two nodes
+                if(GlobalMap->x_edges[i][j]){ // if there is no edge between two nodes
                     string_pointer = 2; // print horizontal line
                 }
                 else{ // if there is an edge between two nodes
@@ -86,10 +88,10 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
                                                // TODO: print 3 width digit numbers in centre of cell without error
                     string_pointer = -1; // print nothing after this ifelse statement as the printing has been handled locally
                 }
-                else if(GlobalMap.nodes[i][j] == 0){ // if current node is invalid (unseen and unexplored)
+                else if(GlobalMap->nodes[i][j] == 0){ // if current node is invalid (unseen and unexplored)
                     string_pointer = 6; // print I for invalid cell
                 }
-                else if(GlobalMap.nodes[i][j] == 2){ // if current node has been seen but not explored
+                else if(GlobalMap->nodes[i][j] == 2){ // if current node has been seen but not explored
                     string_pointer = 7; // print * for seen node
                 }
                 else{ // if current cell has been seen and explored (valid)
@@ -212,6 +214,8 @@ bool RobotMaster::receiveRequests(){
                     }
                     else{ // if no robot is occupying target cell
                         ret_value = true; // set return value to false as movement can occur
+
+                        // as movement can occur, must update robots position
                     }
 
                     request->return_data.push_back((void*)ret_value); // adding return data
@@ -219,6 +223,7 @@ bool RobotMaster::receiveRequests(){
                     sem_post(request->res_sem); // signalling Robot that message is ready
                     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
 
+ 
                     // sent message was dynamically allocated thus must be deleted
                     // this part of the code should be thread safe as the robot and Controller have finished using these variabless
                     delete request;
@@ -265,39 +270,39 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 
     updateRobotLocation(id, C);
 
-    if (GlobalMap.nodes[C->y][C->x] != 1){ // checking if there is a need to update map (has the current node been explored?)
+    if (GlobalMap->nodes[C->y][C->x] != 1){ // checking if there is a need to update map (has the current node been explored?)
         
         number_of_unexplored--; // subtracting number of unexplored cells as new cell has been explored
 
         // updating vertical edges in GlobalMap using robot reading
-        GlobalMap.y_edges[C->y][C->x] = (*connections)[0]; // north
-        GlobalMap.y_edges[C->y + 1][C->x] = (*connections)[1]; // south
+        GlobalMap->y_edges[C->y][C->x] = (*connections)[0]; // north
+        GlobalMap->y_edges[C->y + 1][C->x] = (*connections)[1]; // south
 
-        GlobalMap.x_edges[C->y][C->x] = (*connections)[2]; // east
-        GlobalMap.x_edges[C->y][C->x + 1] = (*connections)[3]; // west
+        GlobalMap->x_edges[C->y][C->x] = (*connections)[2]; // east
+        GlobalMap->x_edges[C->y][C->x + 1] = (*connections)[3]; // west
 
-        GlobalMap.nodes[C->y][C->x] = 1; // updating state of node to be 1 as it has been explored
+        GlobalMap->nodes[C->y][C->x] = 1; // updating state of node to be 1 as it has been explored
 
         // now we will update the neighbouring cells to see if they have previously been explored
         // if not, they will be marked with a '2' on the GlobalMap Nodes Array
 
-        if(!GlobalMap.y_edges[C->y][C->x] && GlobalMap.nodes[C->y - 1][C->x] == 0){ // checking if node to north hasn't been explored by a Robot
-            GlobalMap.nodes[C->y - 1][C->x] = 2; // if unexplored and no wall between robot and cell, set northern node to unexplored
+        if(!GlobalMap->y_edges[C->y][C->x] && GlobalMap->nodes[C->y - 1][C->x] == 0){ // checking if node to north hasn't been explored by a Robot
+            GlobalMap->nodes[C->y - 1][C->x] = 2; // if unexplored and no wall between robot and cell, set northern node to unexplored
             number_of_unexplored++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
         // checking south
-        if(!GlobalMap.y_edges[C->y + 1][C->x] && GlobalMap.nodes[C->y + 1][C->x] == 0){ // checking if node to north hasn't been explored by a Robot
-            GlobalMap.nodes[C->y + 1][C->x] = 2; // if unexplored and no wall between robot and cell, set southern node to unexplored
+        if(!GlobalMap->y_edges[C->y + 1][C->x] && GlobalMap->nodes[C->y + 1][C->x] == 0){ // checking if node to north hasn't been explored by a Robot
+            GlobalMap->nodes[C->y + 1][C->x] = 2; // if unexplored and no wall between robot and cell, set southern node to unexplored
             number_of_unexplored++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
         // checking east
-        if(!GlobalMap.x_edges[C->y][C->x] && GlobalMap.nodes[C->y][C->x - 1] == 0){ // checking if node to north hasn't been explored by a Robot
-            GlobalMap.nodes[C->y][C->x - 1] = 2; // if unexplored and no wall between robot and cell, set eastern node to unexplored
+        if(!GlobalMap->x_edges[C->y][C->x] && GlobalMap->nodes[C->y][C->x - 1] == 0){ // checking if node to north hasn't been explored by a Robot
+            GlobalMap->nodes[C->y][C->x - 1] = 2; // if unexplored and no wall between robot and cell, set eastern node to unexplored
             number_of_unexplored++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
         // checking wast
-        if(!GlobalMap.x_edges[C->y][C->x + 1] && GlobalMap.nodes[C->y][C->x + 1] == 0){ // checking if node to north hasn't been explored by a Robot
-            GlobalMap.nodes[C->y][C->x + 1] = 2; // if unexplored and no wall between robot and cell, set western node to unexplored
+        if(!GlobalMap->x_edges[C->y][C->x + 1] && GlobalMap->nodes[C->y][C->x + 1] == 0){ // checking if node to north hasn't been explored by a Robot
+            GlobalMap->nodes[C->y][C->x + 1] = 2; // if unexplored and no wall between robot and cell, set western node to unexplored
             number_of_unexplored++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
     }

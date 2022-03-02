@@ -1,6 +1,6 @@
 #include "Robot.h"
 
-Robot::Robot(int x, int y, RequestHandler* outgoing_req){
+Robot::Robot(int x, int y, RequestHandler* outgoing_req, unsigned int xsize, unsigned int ysize){
     // Object Initialization
     x_position = x; // initialising robots current position with passed in values
     y_position = y;
@@ -8,10 +8,12 @@ Robot::Robot(int x, int y, RequestHandler* outgoing_req){
     Robot_2_Master_Message_Handler = outgoing_req; // assigning message handler for robot -> master communications
     Master_2_Robot_Message_Handler = new RequestHandler;
 
-    maze_xsize = 4; // hard coding 4x4 maze as used by sample maze
-    maze_ysize = 4; // TODO: change constructor to assign maze size
+    maze_xsize = xsize; // getting maze size for print out and map allocation purposes
+    maze_ysize = ysize;
 
-    number_of_unexplored = 1; // set to 1 as current occupied cell is unknown to robot
+    LocalMap = new GridGraph(xsize,ysize);
+
+    number_of_unexplored = 1; // set unknown cells to 1 as current occupied cell is unknown to robot
 
     response_sem = new sem_t; // semaphore to signal from controller to robot that the response message is ready 
     sem_init(response_sem, 0, 0); // initializing semaphore to value of 0. this will cause robot to wait until response is ready
@@ -23,6 +25,7 @@ Robot::Robot(int x, int y, RequestHandler* outgoing_req){
 
 Robot::~Robot(){
     delete Master_2_Robot_Message_Handler; // deleting Master_2_Robot_Message_Handler as no longer needed as object is being destroyed
+    delete LocalMap; // deleting LocalMap as dynamically allocated
 }
 
 std::vector<bool> Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all sides
@@ -32,12 +35,12 @@ std::vector<bool> Robot::scanCell(GridGraph* maze){ // scans current cell for wa
     number_of_unexplored--;
     
     // gathering x edges within maze at robot's current position
-    LocalMap.x_edges[y_position][x_position] = maze->x_edges[y_position][x_position]; // east
-    LocalMap.x_edges[y_position][x_position+1] = maze->x_edges[y_position][x_position+1]; // west
+    LocalMap->x_edges[y_position][x_position] = maze->x_edges[y_position][x_position]; // east
+    LocalMap->x_edges[y_position][x_position+1] = maze->x_edges[y_position][x_position+1]; // west
     
     // gathering y edges within maze at robot's current position
-    LocalMap.y_edges[y_position][x_position] = maze->y_edges[y_position][x_position]; // north
-    LocalMap.y_edges[y_position+1][x_position] = maze->y_edges[y_position+1][x_position]; // south
+    LocalMap->y_edges[y_position][x_position] = maze->y_edges[y_position][x_position]; // north
+    LocalMap->y_edges[y_position+1][x_position] = maze->y_edges[y_position+1][x_position]; // south
 
     // placing edges within return vector for usage by RobotMaster -> [0] = north, [1] = south, [2] = east, [3] = west
     ret_vector.push_back(maze->y_edges[y_position][x_position]); // north
@@ -47,28 +50,28 @@ std::vector<bool> Robot::scanCell(GridGraph* maze){ // scans current cell for wa
     
 
     // updating state of current node 
-    LocalMap.nodes[y_position][x_position] = 1; // setting currently scanned node to 1 to signifiy its been scanned 
+    LocalMap->nodes[y_position][x_position] = 1; // setting currently scanned node to 1 to signifiy its been scanned 
 
     // updating state of neighbouring nodes to unexplored if possible
     
     // checking north
-    if(!LocalMap.y_edges[y_position][x_position] && LocalMap.nodes[y_position - 1][x_position] != 1){ // checking if node to north hasn't been explored
-        LocalMap.nodes[y_position - 1][x_position] = 2; // if unexplored and no wall between robot and cell, set northern node to unexplored
+    if(!LocalMap->y_edges[y_position][x_position] && LocalMap->nodes[y_position - 1][x_position] != 1){ // checking if node to north hasn't been explored
+        LocalMap->nodes[y_position - 1][x_position] = 2; // if unexplored and no wall between robot and cell, set northern node to unexplored
         number_of_unexplored++;
     }
     // checking south
-    if(!LocalMap.y_edges[y_position + 1][x_position] && LocalMap.nodes[y_position + 1][x_position] != 1){ // checking if node to north hasn't been explored
-        LocalMap.nodes[y_position + 1][x_position] = 2; // if unexplored and no wall between robot and cell, set southern node to unexplored
+    if(!LocalMap->y_edges[y_position + 1][x_position] && LocalMap->nodes[y_position + 1][x_position] != 1){ // checking if node to north hasn't been explored
+        LocalMap->nodes[y_position + 1][x_position] = 2; // if unexplored and no wall between robot and cell, set southern node to unexplored
         number_of_unexplored++;
     }
     // checking east
-    if(!LocalMap.x_edges[y_position][x_position] && LocalMap.nodes[y_position][x_position - 1] != 1){ // checking if node to north hasn't been explored
-        LocalMap.nodes[y_position][x_position - 1] = 2; // if unexplored and no wall between robot and cell, set eastern node to unexplored
+    if(!LocalMap->x_edges[y_position][x_position] && LocalMap->nodes[y_position][x_position - 1] != 1){ // checking if node to north hasn't been explored
+        LocalMap->nodes[y_position][x_position - 1] = 2; // if unexplored and no wall between robot and cell, set eastern node to unexplored
         number_of_unexplored++;
     }
     // checking wast
-    if(!LocalMap.x_edges[y_position][x_position + 1] && LocalMap.nodes[y_position][x_position + 1] != 1){ // checking if node to north hasn't been explored
-        LocalMap.nodes[y_position][x_position + 1] = 2; // if unexplored and no wall between robot and cell, set western node to unexplored
+    if(!LocalMap->x_edges[y_position][x_position + 1] && LocalMap->nodes[y_position][x_position + 1] != 1){ // checking if node to north hasn't been explored
+        LocalMap->nodes[y_position][x_position + 1] = 2; // if unexplored and no wall between robot and cell, set western node to unexplored
         number_of_unexplored++;
     }
     return ret_vector;
@@ -86,28 +89,28 @@ bool Robot::move2Cell(int direction){ // function to move robot depending on loc
 
     switch (direction){ // switch statement to move robot in specific direction based on know information from local map
     case 1:
-        if (!LocalMap.y_edges[y_position][x_position]){ // if there is an edge between current node and node above
+        if (!LocalMap->y_edges[y_position][x_position]){ // if there is an edge between current node and node above
             y_position--; // move robot to node above
             ret_value = true; // ret_value = true as movement was a success
         }
         break;
 
     case 2:
-        if (!LocalMap.y_edges[y_position+1][x_position]){ // if there is an edge between current node and node below
+        if (!LocalMap->y_edges[y_position+1][x_position]){ // if there is an edge between current node and node below
             y_position++; // move robot to node below
             ret_value = true; // ret_value = true as movement was a success
         }
         break;
 
     case 3:
-        if (!LocalMap.x_edges[y_position][x_position]){ // if there is an edge between current node and node to the left
+        if (!LocalMap->x_edges[y_position][x_position]){ // if there is an edge between current node and node to the left
             x_position--; // move robot to node to the left
             ret_value = true; // ret_value = true as movement was a success
         }
         break;
 
     case 4:
-        if (!LocalMap.x_edges[y_position][x_position+1]){ // if there is an edge between current node and node to the right 
+        if (!LocalMap->x_edges[y_position][x_position+1]){ // if there is an edge between current node and node to the right 
             x_position++; // move robot to node to the right
             ret_value = true; // ret_value = true as movement was a success
         }
@@ -222,25 +225,25 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
     Coordinates buffer; // buffer structor to gather positions of neighbouring nodes before pushing to vector
 
     // check if neighbour to the north is valid and connected via an edge (no wall)
-    if(!LocalMap.y_edges[y][x] && LocalMap.nodes[y-1][x] > 0){
+    if(!LocalMap->y_edges[y][x] && LocalMap->nodes[y-1][x] > 0){
         buffer.x = x; 
         buffer.y = y - 1;
         ret_value.push_back(buffer);
     }
     // check if neighbour to the south is valid and connected via an edge (no wall)
-    if(!LocalMap.y_edges[y+1][x] && LocalMap.nodes[y+1][x] > 0){
+    if(!LocalMap->y_edges[y+1][x] && LocalMap->nodes[y+1][x] > 0){
         buffer.x = x; 
         buffer.y = y + 1;
         ret_value.push_back(buffer);
     }
     // check if neighbour to the east is valid and connected via an edge (no wall)
-    if(!LocalMap.x_edges[y][x] && LocalMap.nodes[y][x-1] > 0){
+    if(!LocalMap->x_edges[y][x] && LocalMap->nodes[y][x-1] > 0){
         buffer.x = x - 1; 
         buffer.y = y;
         ret_value.push_back(buffer);
     }
     // check if neighbour to the west is valid and connected via an edge (no wall)
-    if(!LocalMap.x_edges[y][x+1] && LocalMap.nodes[y][x+1] > 0){
+    if(!LocalMap->x_edges[y][x+1] && LocalMap->nodes[y][x+1] > 0){
         buffer.x = x + 1; 
         buffer.y = y;
         ret_value.push_back(buffer);
@@ -261,7 +264,7 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
 
     // initial checks to ensure path needs to be planned
     // no point using computation if robot is at destination or destination does not exist on robot's local map
-    if(LocalMap.nodes[y_dest][x_dest] == 0) // if the destination node has not been explored
+    if(LocalMap->nodes[y_dest][x_dest] == 0) // if the destination node has not been explored
         return false;                       // can't create a path thus return false;
 
     else if(x_position == x_dest && y_position == y_dest) // if robot is at the destination already
@@ -351,7 +354,7 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
 
         //printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
 
-        if (LocalMap.nodes[curr_node.y][curr_node.x] == 2){ // if an unexplored node has been found
+        if (LocalMap->nodes[curr_node.y][curr_node.x] == 2){ // if an unexplored node has been found
             ret_value = true; // return true as path to unexplored node found
             break; // break from while loop
         }
@@ -462,7 +465,7 @@ void Robot::multiExplore(GridGraph* maze){
     // sending message with scanned maze information
     Message* temp_message = new Message(); // buffer to load data into before sending message
 
-    temp_message->request_type = 1; // request_type = 0 as updateGlobalMap request required
+    temp_message->request_type = 1; // request_type = 1 as updateGlobalMap request required
 
     Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
 
@@ -478,7 +481,27 @@ void Robot::multiExplore(GridGraph* maze){
     sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
     sem_post(acknowledgement_sem);
 
-    BFS_pf2NearestUnknownCell(&planned_path); // move to nearest unseen cell
+ //   do{
+        
+        BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
+
+  /*      Message* temp_message = new Message(); // buffer to load data into before sending message
+
+        temp_message->request_type = 1; // request_type = 0 as updateGlobalMap request required
+
+        temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
+        temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
+        temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
+        
+        temp_message->res_sem = response_sem; // attaching communication semaphores to message
+        temp_message->ack_sem = acknowledgement_sem;
+        
+        Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
+
+        sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
+        sem_post(acknowledgement_sem);
+
+    }while();*/
 
     for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
         if(!m_move2Cell(&(planned_path[planned_path.size()-i-1]))) // if movement fails
@@ -595,7 +618,7 @@ bool Robot::printRobotMaze(){ // function to print robot's local map of maze
 
             for(int j = 0; j < maze_xsize; j++){
 
-                if(LocalMap.y_edges[i][j]){ // if there is no edge between two nodes
+                if(LocalMap->y_edges[i][j]){ // if there is no edge between two nodes
                     string_pointer = 1; // print horizontal line
                 }
                 else{ // if there is an edge between two nodes
@@ -611,7 +634,7 @@ bool Robot::printRobotMaze(){ // function to print robot's local map of maze
             for(int j = 0; j < maze_xsize + 1; j++){
 
                 // checking the walls between two nodes (e.g. wall?, no wall?)
-                if(LocalMap.x_edges[i][j]){ // if there is no edge between two nodes
+                if(LocalMap->x_edges[i][j]){ // if there is no edge between two nodes
                     string_pointer = 2; // print horizontal line
                 }
                 else{ // if there is an edge between two nodes
@@ -626,10 +649,10 @@ bool Robot::printRobotMaze(){ // function to print robot's local map of maze
                 else if(j == x_position && i == y_position){ // if current node is the robot's location
                     string_pointer = 4; // print R for robot
                 }
-                else if(LocalMap.nodes[i][j] == 0){ // if current node is invalid (unseen and unexplored)
+                else if(LocalMap->nodes[i][j] == 0){ // if current node is invalid (unseen and unexplored)
                     string_pointer = 6; // print I for invalid cell
                 }
-                else if(LocalMap.nodes[i][j] == 2){ // if current node has been seen but not explored
+                else if(LocalMap->nodes[i][j] == 2){ // if current node has been seen but not explored
                     string_pointer = 7; // print * for seen node
                 }
                 else{ // if current cell has been seen and explored (valid)
@@ -656,12 +679,12 @@ bool Robot::printRobotMaze(){ // function to print robot's local map of maze
 }
 
 void Robot::printRobotNodes(){ // function to print Robot's map of explored nodes
-    printNodes(&LocalMap);
+    printNodes(LocalMap);
 }
 
 void Robot::printRobotXMap(){ // function to print Robot's X edge map 
-    printXEdges(&LocalMap);
+    printXEdges(LocalMap);
 }
 void Robot::printRobotYMap(){ // function to print Robot's Y edge map 
-    printYEdges(&LocalMap);
+    printYEdges(LocalMap);
 }

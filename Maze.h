@@ -10,8 +10,9 @@ class Maze
 {
     public:
         Maze();
+        ~Maze();
 
-        void generateInterconnectedMaze(int x_size, int y_size); // function to generate a x * y sized maze with no walls
+        void generateInterconnectedMaze(unsigned int x_size, unsigned int y_size); // function to generate a x * y sized maze with no walls
         void generate4x4SampleMaze();
         void generateCollisionTest();
 
@@ -19,12 +20,14 @@ class Maze
         GridGraph* getMazeMapPointer(); // returns pointer to MazeMap
                                         // be careful when using it as modifying this will modify private data member which is undesireable
                                         // using this over getMazeMap allows for performance improvements as large maze will not need to be copied
-        void setMazeMap(GridGraph* m); // MazeMap setter
+
+        unsigned int getMazeXSize(); // gets x size of maze
+        unsigned int getMazeYSize(); // gets x size of maze
 
         bool printMaze();
 
     private:
-        GridGraph MazeMap;
+        GridGraph* MazeMap;
         unsigned int maze_xsize;
         unsigned int maze_ysize;
 
