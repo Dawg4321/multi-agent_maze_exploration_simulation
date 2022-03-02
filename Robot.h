@@ -5,6 +5,7 @@
 #include <vector>
 #include <queue>
 #include <map>
+#include <deque>
 #include <string>
 
 #include <pthread.h>
@@ -33,7 +34,7 @@ class Robot{
 
         // ** Path-Finding Functions **
         bool pf_BFS(int x, int y); // modifies planned path with the fastest path to a specified location
-        bool BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector); // modifies planned path with fastest path to the closest unknown cell on robot's local map
+        bool BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_vector); // modifies planned path with fastest path to the closest unknown cell on robot's local map
         
         std::vector<Coordinates> getValidNeighbours(unsigned int x, unsigned  int y); // gathers valid neighbours of a cell
                                                                                       // used in pathfinding functions
@@ -61,7 +62,7 @@ class Robot{
 
         unsigned int id; // robot id assigned by controller
 
-        std::vector<Coordinates> planned_path; 
+        std::deque<Coordinates> planned_path; 
         
         GridGraph* LocalMap; // local_map maintained by robot of areas explored
 

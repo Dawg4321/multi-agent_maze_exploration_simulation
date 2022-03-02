@@ -11,7 +11,7 @@ Robot::Robot(int x, int y, RequestHandler* outgoing_req, unsigned int xsize, uns
     maze_xsize = xsize; // getting maze size for print out and map allocation purposes
     maze_ysize = ysize;
 
-    LocalMap = new GridGraph(xsize,ysize);
+    LocalMap = new GridGraph(xsize,ysize); // allocating local map to be size of maze
 
     number_of_unexplored = 1; // set unknown cells to 1 as current occupied cell is unknown to robot
 
@@ -55,22 +55,22 @@ std::vector<bool> Robot::scanCell(GridGraph* maze){ // scans current cell for wa
     // updating state of neighbouring nodes to unexplored if possible
     
     // checking north
-    if(!LocalMap->y_edges[y_position][x_position] && LocalMap->nodes[y_position - 1][x_position] != 1){ // checking if node to north hasn't been explored
+    if(!LocalMap->y_edges[y_position][x_position] && LocalMap->nodes[y_position - 1][x_position] == 0){ // checking if node to north hasn't been explored
         LocalMap->nodes[y_position - 1][x_position] = 2; // if unexplored and no wall between robot and cell, set northern node to unexplored
         number_of_unexplored++;
     }
     // checking south
-    if(!LocalMap->y_edges[y_position + 1][x_position] && LocalMap->nodes[y_position + 1][x_position] != 1){ // checking if node to north hasn't been explored
+    if(!LocalMap->y_edges[y_position + 1][x_position] && LocalMap->nodes[y_position + 1][x_position] == 0){ // checking if node to north hasn't been explored
         LocalMap->nodes[y_position + 1][x_position] = 2; // if unexplored and no wall between robot and cell, set southern node to unexplored
         number_of_unexplored++;
     }
     // checking east
-    if(!LocalMap->x_edges[y_position][x_position] && LocalMap->nodes[y_position][x_position - 1] != 1){ // checking if node to north hasn't been explored
+    if(!LocalMap->x_edges[y_position][x_position] && LocalMap->nodes[y_position][x_position - 1] == 0){ // checking if node to north hasn't been explored
         LocalMap->nodes[y_position][x_position - 1] = 2; // if unexplored and no wall between robot and cell, set eastern node to unexplored
         number_of_unexplored++;
     }
     // checking wast
-    if(!LocalMap->x_edges[y_position][x_position + 1] && LocalMap->nodes[y_position][x_position + 1] != 1){ // checking if node to north hasn't been explored
+    if(!LocalMap->x_edges[y_position][x_position + 1] && LocalMap->nodes[y_position][x_position + 1] == 0){ // checking if node to north hasn't been explored
         LocalMap->nodes[y_position][x_position + 1] = 2; // if unexplored and no wall between robot and cell, set western node to unexplored
         number_of_unexplored++;
     }
@@ -299,9 +299,11 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
 
         for(int i = 0; i < valid_neighbours.size(); i ++){ // iterate through all of the current node's neighbours to see if they have been explored
 
-            if(visited_nodes.contains(valid_neighbours[i]) == 0){ // if current neighbour has not been visited
-                node_queue.push(valid_neighbours[i]);       // TODO: fix map.contains, still causes same error where not detecting key         
-                visited_nodes.insert({valid_neighbours[i], curr_node});   
+            for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
+                if (key == valid_neighbours[i]){  // if current neighbour has not been visited
+                    node_queue.push(valid_neighbours[i]);       // TODO: fix map.contains, still causes same error where not detecting key         
+                    visited_nodes.insert({valid_neighbours[i], curr_node});
+                } 
             }
         }
     }
@@ -316,10 +318,10 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
     
     while(!(curr_node.x == x_position && curr_node.y == y_position)){ // while the starting node has not been found from parents
 
-        planned_path.push_back(curr_node); // add current node to planned path
+        planned_path.push_front(curr_node); // add current node to top of planned path "stack"
 
         for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
-            if (key == curr_node){
+            if (key != curr_node){
                 curr_node = val;
                 break;
             }
@@ -334,7 +336,9 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
     return ret_value; 
 }
 
-bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
+bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
+
+    ret_stack->clear(); // clearing planned_path as new path is to be planned using breadth first search
 
     bool ret_value = false; // return value
 
@@ -360,7 +364,7 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
         }
         else if(node_queue.size() < 1){ // if node_queue is empty, no unexplored nodes found 
                                         // true can be returned as no errors occured in pathfinding
-            return true;                // ret_vector will be empty as no unexplored nodes found therefore no need to move
+            return true;                // ret_stack will be empty as no unexplored nodes found therefore no need to move
         }
 
         node_queue.pop(); // removing node from front of the queue as new nodes must be added to queue
@@ -368,9 +372,12 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
         std::vector<Coordinates> valid_neighbours = getValidNeighbours(curr_node.x, curr_node.y); // gathering neighbours of current node
 
         for(int i = 0; i < valid_neighbours.size(); i ++){ // iterate through all of the current node's neighbours to see if they have been explored
-            if(visited_nodes.contains(valid_neighbours[i]) == 0){ // TODO: fix map.contains, still causes same error where not detecting key
-                node_queue.push(valid_neighbours[i]);              
-                visited_nodes.insert({valid_neighbours[i], curr_node});   
+            
+            for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
+                if (key != valid_neighbours[i]){  // if current neighbour has not been visited
+                    node_queue.push(valid_neighbours[i]);       // TODO: fix map.contains, still causes same error where not detecting key         
+                    visited_nodes.insert({valid_neighbours[i], curr_node});   
+                }
             }
         }
     }
@@ -384,11 +391,9 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
     // as a valid path has been found from current position to target using robot's local map
     // must travel from destination back through parent nodes to reconstruct path
 
-    ret_vector->clear(); // clearing planned_path as new path is to be planned using breadth first search
-
     while(!(curr_node.x == x_position && curr_node.y == y_position)){ // while the starting node has not been found from parents
 
-        ret_vector->push_back(curr_node); // add current node to planned path
+        ret_stack->push_front(curr_node); // add current node to top of planned path "stack"
 
         for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
             if (key == curr_node){
@@ -399,8 +404,8 @@ bool Robot::BFS_pf2NearestUnknownCell(std::vector<Coordinates>* ret_vector){
     }
 
     /*printf("Planned Path\n"); // printing planned path
-    for(int i = 0; i <  ret_vector->size(); i++){ // TODO: Remove after further debugging
-        printf("%d,%d\n",(*ret_vector)[i].x,(*ret_vector)[i].y);
+    for(int i = 0; i <  ret_stack->size(); i++){ // TODO: Remove after further debugging
+        printf("%d,%d\n",(*ret_stack)[i].x,(*ret_stack)[i].y);
     }*/
 
     return ret_value; 
@@ -421,9 +426,9 @@ void Robot::soloExplore(GridGraph* maze){
         BFS_pf2NearestUnknownCell(&planned_path); // move to nearest unseen cell
 
         for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
-            move2Cell(&(planned_path[planned_path.size()-i-1]));
+            move2Cell(&(planned_path.front())); // gathering next movement from top of the stack
+            planned_path.pop_front(); // deleting from stack as movement is completed
         }
-        planned_path.clear(); // clear planned_path as movement has been completed
     }
 
     return;
@@ -481,11 +486,11 @@ void Robot::multiExplore(GridGraph* maze){
     sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
     sem_post(acknowledgement_sem);
 
- //   do{
+    //do{
         
         BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
-
-  /*      Message* temp_message = new Message(); // buffer to load data into before sending message
+    /*
+        Message* temp_message = new Message(); // buffer to load data into before sending message
 
         temp_message->request_type = 1; // request_type = 0 as updateGlobalMap request required
 
@@ -504,10 +509,13 @@ void Robot::multiExplore(GridGraph* maze){
     }while();*/
 
     for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
-        if(!m_move2Cell(&(planned_path[planned_path.size()-i-1]))) // if movement fails
-            break; // break from loop
+        if(!m_move2Cell(&(planned_path[i]))){ // if movement fails
+            break; // break from outerloop as no movements can occur now
+        }
     }
-    planned_path.clear(); // clear planned_path as movement has been completed
+
+
+    planned_path.clear(); // clearing planned_path as movement is complete / failed
 
     return;
 }
