@@ -116,12 +116,12 @@ bool Robot::move2Cell(int direction){ // function to move robot depending on loc
                       // ret_value = false if robot failed to move
 }
 
-bool Robot::move2Cell(Coordinates* destination){ // overloaded version of move2Cell using destination
+bool Robot::move2Cell(Coordinates destination){ // overloaded version of move2Cell using destination
                                                  // converts target destination to a direction then uses original move2Cell function
 
     // first must determine direction based on two values
-    int dx = x_position - destination->x; // gather change in x and y directions
-    int dy = y_position - destination->y;
+    int dx = x_position - destination.x; // gather change in x and y directions
+    int dy = y_position - destination.y;
 
     int direction = 0;  // variable to store determined direction 
                         // direction = 1 ^ north

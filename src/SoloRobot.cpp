@@ -25,7 +25,7 @@ void SoloRobot::robotLoop(GridGraph* maze){
         BFS_pf2NearestUnknownCell(&planned_path); // move to nearest unseen cell
 
         for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
-            move2Cell(&(planned_path.front())); // gathering next movement from top of the stack
+            move2Cell((planned_path.front())); // gathering next movement from top of the stack
             planned_path.pop_front(); // deleting from stack as movement is completed
         }
     }

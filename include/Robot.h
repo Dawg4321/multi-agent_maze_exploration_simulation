@@ -20,12 +20,12 @@ class Robot{ // parent class used as a template for further robot implementation
         ~Robot();
 
         // ** Robot Loop Function **
-        virtual void robotLoop(GridGraph* maze) = 0;
+        virtual void robotLoop(GridGraph* maze) = 0; // function used by robots to run exploration behaviour
 
         // ** Low Level Robot Operations **
         std::vector<bool> scanCell(GridGraph* maze); // scans content of robots current cell using maze information
         bool move2Cell(int direction); // moves robot to cell if possible in specified direction
-        bool move2Cell(Coordinates* destination); // moves robot to neighbouring cell using neighbouring cell coordinates
+        bool move2Cell(Coordinates destination); // moves robot to neighbouring cell using neighbouring cell coordinates
 
         // ** Path-Finding Functions **
         bool pf_BFS(int x, int y); // modifies planned path with the fastest path to a specified location
@@ -49,6 +49,7 @@ class Robot{ // parent class used as a template for further robot implementation
         
         GridGraph* LocalMap; // local_map maintained by robot of areas explored
 
+    private:
         unsigned int maze_xsize; // size of maze
         unsigned int maze_ysize; // this is not used by exploration algorithms
                                  // only for printing purposes

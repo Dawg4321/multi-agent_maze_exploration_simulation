@@ -16,12 +16,12 @@ MultiRobot::~MultiRobot(){
     delete Master_2_Robot_Message_Handler; // deleting Master_2_Robot_Message_Handler as no longer needed as object is being destroyed
 }
 
-bool MultiRobot::move2Cell(Coordinates* destination){ // overriden version of move2Cell using destination
+bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of move2Cell using destination
                                                       // converts target destination to a direction then uses original move2Cell function
                                                       // messages master to confirm wh
     // first must determine direction based on two values
-    int dx = x_position - destination->x; // gather change in x and y directions
-    int dy = y_position - destination->y;
+    int dx = x_position - destination.x; // gather change in x and y directions
+    int dy = y_position - destination.y;
 
     int direction = 0;  // variable to store determined direction 
                         // direction = 1 ^ north
@@ -46,25 +46,8 @@ bool MultiRobot::move2Cell(Coordinates* destination){ // overriden version of mo
         return false; // return false as movement failed dur to invalid direction
     }
 
-    // need to message controller to see if target cell is occupied
-    Message* temp_message = new Message;
+     bool is_not_occupied = requestMove2Cell(destination); // checking if target cell is unoccupied
 
-    temp_message->request_type = 2; // request_type = 2 as moveRequest required
-
-    temp_message->msg_data.push_back((void*) &id); // adding id of robot to [0]
-    temp_message->msg_data.push_back((void*) destination); // adding target destination of robot to [1]
-
-    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
-    temp_message->ack_sem = acknowledgement_sem;
-
-    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
-
-    sem_wait(response_sem); // waiting for response to be ready from controller
-
-    bool is_not_occupied = (bool)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
-    
-    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
-    
     if(is_not_occupied){ // attempt to move as cell unoccupied
         return Robot::move2Cell(direction); // moving robot using Robot classes move function
     }
@@ -145,11 +128,10 @@ void MultiRobot::multiExplore(GridGraph* maze){
     }while(!cell_reserved);
 
     for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
-        if(!move2Cell(&(planned_path[i]))){ // if movement fails
+        if(!move2Cell((planned_path[i]))){ // if movement fails
             break; // break from outerloop as no movements can occur now
         }
     }
-
 
     planned_path.clear(); // clearing planned_path as movement is complete / failed
 
@@ -237,6 +219,33 @@ int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wa
     }
     
     return ret_variable;
+}
+
+bool MultiRobot::requestMove2Cell(Coordinates target_cell){
+    // need to message controller to see if target cell is occupied
+    // if unoccupied, robot can move to cell
+    // if cell is unoccupied (e.g. robot can move to cell), return true
+    // if cell is occupied, return false
+
+    Message* temp_message = new Message;
+
+    temp_message->request_type = 2; // request_type = 2 as moveRequest required
+
+    temp_message->msg_data.push_back((void*) &id); // adding id of robot to [0]
+    temp_message->msg_data.push_back((void*) &target_cell); // adding target destination of robot to [1]
+
+    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
+    temp_message->ack_sem = acknowledgement_sem;
+
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
+
+    sem_wait(response_sem); // waiting for response to be ready from controller
+
+    bool is_not_occupied = (bool)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
+    
+    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
+    
+    return is_not_occupied;
 }
 
 void MultiRobot::requestShutDown(){
