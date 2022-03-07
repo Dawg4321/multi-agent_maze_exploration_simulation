@@ -33,6 +33,8 @@ class MultiRobot: public Robot{
                                     // if cell to reserve fails, LocalMap is updated with GlobalMap information
         bool requestMove2Cell(Coordinates target_cell); // checks if a cell is occupied by another robot
 
+        void requestGlobalMapUpdate(std::vector<bool> connection_data); // updating Global Map information of master with connection data
+
         // ** Master -> Robot Communication Functions **
         int getRequestsFromMaster(int status); // checks if master wants to change current status of robot
 

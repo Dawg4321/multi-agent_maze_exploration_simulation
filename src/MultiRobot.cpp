@@ -46,14 +46,14 @@ bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of mov
         return false; // return false as movement failed dur to invalid direction
     }
 
-     bool is_not_occupied = requestMove2Cell(destination); // checking if target cell is unoccupied
+    // bool is_not_occupied = requestMove2Cell(destination); // checking if target cell is unoccupied
 
-    if(is_not_occupied){ // attempt to move as cell unoccupied
+    //if(is_not_occupied){ // attempt to move as cell unoccupied
         return Robot::move2Cell(direction); // moving robot using Robot classes move function
-    }
+    /*}
     else {
         return false; // return false as target cell occupied
-    }
+    }*/
     
 }
 
@@ -99,24 +99,7 @@ void MultiRobot::multiExplore(GridGraph* maze){
 
     std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
     
-    // sending message with scanned maze information
-    Message* temp_message = new Message(); // buffer to load data into before sending message
-
-    temp_message->request_type = 1; // request_type = 1 as updateGlobalMap request required
-
-    Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
-
-    temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
-    temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
-    temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
-
-    temp_message->res_sem = response_sem; // attaching communication semaphores to message
-    temp_message->ack_sem = acknowledgement_sem;
-    
-    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
-
-    sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
-    sem_post(acknowledgement_sem);
+    requestGlobalMapUpdate(connection_data); // sending message to master with scanned maze information
     
     bool cell_reserved = false;
     do{
@@ -263,6 +246,27 @@ void MultiRobot::requestShutDown(){
     sem_wait(response_sem); // waiting for Master to acknowledge shutdown
 
     return;
+}
+
+void MultiRobot::requestGlobalMapUpdate(std::vector<bool> connection_data){
+    // sending message with scanned maze information
+    Message* temp_message = new Message(); // buffer to load data into before sending message
+
+    temp_message->request_type = 1; // request_type = 1 as updateGlobalMap request required
+
+    Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
+
+    temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
+    temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
+    temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
+
+    temp_message->res_sem = response_sem; // attaching communication semaphores to message
+    temp_message->ack_sem = acknowledgement_sem;
+    
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
+
+    sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
+    sem_post(acknowledgement_sem);
 }
 
 void MultiRobot::updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status){

@@ -15,8 +15,7 @@ Robot::Robot(unsigned int x, unsigned int y, unsigned int xsize, unsigned int ys
 }
 
 Robot::~Robot(){
-    printf("destroying from parent\n");
-    delete LocalMap; // deleting LocalMap as dynamically allocated
+    delete LocalMap; // deleting LocalMap as it was dynamically allocated
 }
 
 std::vector<bool> Robot::scanCell(GridGraph* maze){ // scans current cell for walls on all sides

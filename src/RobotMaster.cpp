@@ -306,6 +306,7 @@ bool RobotMaster::receiveRequests(){
 
                     break;
                 }
+                case 4: // movedCell notification (tells master that robot has completed move operation)
                 default:
                     {
                         break;
