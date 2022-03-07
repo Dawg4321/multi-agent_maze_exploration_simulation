@@ -189,8 +189,8 @@ bool RobotMaster::receiveRequests(){
                     // updateGlobalMap request msg_data layout:
                     // [0] = type: (unsigned int*), content: id of robot sending request
                     // [1] = type: (vector<bool>*), content: vector containing information on walls surrounding robot
-                                                                // [0] = north, [1] = south, [2] = east, [3] = west
-                                                                // 0 = connection, 1 = wall
+                            // [0] = north, [1] = south, [2] = east, [3] = west
+                            // 0 = connection, 1 = wall
                     // [2] = type: (Coordinates*), content: current coordinates of where the read occured
                     
                     // return data = none
@@ -274,25 +274,27 @@ bool RobotMaster::receiveRequests(){
                     bool ret_value; // variable to whether cell reservation is possible
                     
                     // vectors to return to robot with map information if cell can't be reserved
-                    std::vector<Coordinates>* map_coordinates;
-                    std::vector<std::vector<bool>>* map_connections;
-                    std::vector<char>* map_status;
+                    std::vector<Coordinates> map_coordinates;
+                    std::vector<std::vector<bool>> map_connections;
+                    std::vector<char> map_status;
 
                     if(GlobalMapInfo[target_cell->y][target_cell->x].reserved > 0 || GlobalMap->nodes[target_cell->y][target_cell->x] == 1){ // if the target cell has been reserved or already explored
                         // gathering portion of map outwards from unexplored node to return to robot
-                        gatherPortionofMap(*target_cell, *neighbouring_cell, map_coordinates, map_connections, map_status);
+                        gatherPortionofMap(*target_cell, *neighbouring_cell, &map_coordinates, &map_connections, &map_status);
+                        ret_value = false; // cell has not been reserved
                     }
                     else{ // if unreserved and unexplored
-                          // do nothing
+                        GlobalMapInfo[target_cell->y][target_cell->x].reserved = *robot_id; // reserving cell for exploration
+                        ret_value = true; // cell has been reserved
                     }
 
                     // preparing return data
                     request->return_data.push_back((void*) ret_value); // adding information is cell was reserved for scanning
                     
                     // adding map information to update robot map if cell already explored
-                    request->return_data.push_back((void*) map_coordinates);
-                    request->return_data.push_back((void*) map_connections);
-                    request->return_data.push_back((void*) map_status);
+                    request->return_data.push_back((void*) &map_coordinates);
+                    request->return_data.push_back((void*) &map_connections);
+                    request->return_data.push_back((void*) &map_status);
 
                     sem_post(request->res_sem); // signalling Robot that return message is ready
                     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
@@ -354,7 +356,7 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 
     updateRobotLocation(id, C);
 
-    GlobalMapInfo[C->y][C->x].reserved = 0; // unreserving unknown cell as it has been scanned
+    GlobalMapInfo[C->y][C->x].reserved = 0; // unreserving cell as it has been scanned
 
     if (GlobalMap->nodes[C->y][C->x] != 1){ // checking if there is a need to update map (has the current node been explored?)
         
@@ -420,30 +422,37 @@ std::vector<Coordinates> RobotMaster::getSeenNeighbours(unsigned int x, unsigned
     Coordinates buffer; // buffer structor to gather positions of neighbouring nodes before pushing to vector
 
     // check if neighbour to the north is valid and connected via an edge (no wall)
-    if(!GlobalMap->y_edges[y][x] && GlobalMap->nodes[y-1][x] > 0){
-        buffer.x = x; 
-        buffer.y = y - 1;
-        ret_value.push_back(buffer);
+    if(y != 0){ // protection to ensure invalid part of nodes is not accessed if y = 0
+        if(!GlobalMap->y_edges[y][x] && GlobalMap->nodes[y-1][x] > 0){
+            buffer.x = x; 
+            buffer.y = y - 1;
+            ret_value.push_back(buffer);
+        }
     }
     // check if neighbour to the south is valid and connected via an edge (no wall)
-    if(!GlobalMap->y_edges[y+1][x] && GlobalMap->nodes[y+1][x] > 0){
-        buffer.x = x; 
-        buffer.y = y + 1;
-        ret_value.push_back(buffer);
+    if(y != maze_ysize - 1){
+        if(!GlobalMap->y_edges[y+1][x] && GlobalMap->nodes[y+1][x] > 0){
+            buffer.x = x; 
+            buffer.y = y + 1;
+            ret_value.push_back(buffer);
+        }
     }
     // check if neighbour to the east is valid and connected via an edge (no wall)
-    if(!GlobalMap->x_edges[y][x] && GlobalMap->nodes[y][x-1] > 0){
-        buffer.x = x - 1; 
-        buffer.y = y;
-        ret_value.push_back(buffer);
+    if(x != 0){ // protection to ensure invalid part of nodes is not accessed if x = 0
+        if(!GlobalMap->x_edges[y][x] && GlobalMap->nodes[y][x-1] > 0){
+            buffer.x = x - 1; 
+            buffer.y = y;
+            ret_value.push_back(buffer);
+        }
     }
     // check if neighbour to the west is valid and connected via an edge (no wall)
-    if(!GlobalMap->x_edges[y][x+1] && GlobalMap->nodes[y][x+1] > 0){
-        buffer.x = x + 1; 
-        buffer.y = y;
-        ret_value.push_back(buffer);
+    if(x != maze_xsize - 1){
+        if(!GlobalMap->x_edges[y][x+1] && GlobalMap->nodes[y][x+1] > 0){
+            buffer.x = x + 1; 
+            buffer.y = y;
+            ret_value.push_back(buffer);
+        }
     }
-
     return ret_value; // returning vector
 }
 

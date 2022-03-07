@@ -224,10 +224,12 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
     Coordinates buffer; // buffer structor to gather positions of neighbouring nodes before pushing to vector
 
     // check if neighbour to the north is valid and connected via an edge (no wall)
-    if(!LocalMap->y_edges[y][x] && LocalMap->nodes[y-1][x] > 0){
-        buffer.x = x; 
-        buffer.y = y - 1;
-        ret_value.push_back(buffer);
+    if(y != 0){ // protection to ensure invalid part of nodes is not accessed if y = 0
+        if(!LocalMap->y_edges[y][x] && LocalMap->nodes[y-1][x] > 0){
+            buffer.x = x; 
+            buffer.y = y - 1;
+            ret_value.push_back(buffer);
+        }
     }
     // check if neighbour to the south is valid and connected via an edge (no wall)
     if(!LocalMap->y_edges[y+1][x] && LocalMap->nodes[y+1][x] > 0){
@@ -236,10 +238,12 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
         ret_value.push_back(buffer);
     }
     // check if neighbour to the east is valid and connected via an edge (no wall)
-    if(!LocalMap->x_edges[y][x] && LocalMap->nodes[y][x-1] > 0){
-        buffer.x = x - 1; 
-        buffer.y = y;
-        ret_value.push_back(buffer);
+    if(x != 0){ // protection to ensure invalid part of nodes is not accessed if x = 0
+        if(!LocalMap->x_edges[y][x] && LocalMap->nodes[y][x-1] > 0){
+            buffer.x = x - 1; 
+            buffer.y = y;
+            ret_value.push_back(buffer);
+        }
     }
     // check if neighbour to the west is valid and connected via an edge (no wall)
     if(!LocalMap->x_edges[y][x+1] && LocalMap->nodes[y][x+1] > 0){
@@ -468,16 +472,16 @@ void Robot::multiRobotLoop(GridGraph* maze){ // function to initialize robot bef
                 break;
             }
             case 0: // while robot is on standby
-                {   
+            {   
                     // do nothing
                     break;
-                }
+            }
             case 1: // while on explore mode
-                {   
+            {   
                     // continuously explore until master changes operation
                     multiExplore(maze); // do one cycle of exploration
                     break;
-                }
+            }
         }        
     }
     return;
@@ -668,16 +672,17 @@ bool Robot::requestReserveCell(){
     sem_wait(response_sem); // waiting for response to be ready from controller
 
     bool reserved_succeed = (bool)temp_message->return_data[0]; // gather whether cell has been reserved
-    std::vector<Coordinates> map_info = *(std::vector<Coordinates>*)  temp_message->return_data[1]; // gather map nodes for map update
-    std::vector<std::vector<bool>> edge_info = *(std::vector<std::vector<bool>>*)  temp_message->return_data[2]; 
-    std::vector<char> map_status = *(std::vector<char>*)  temp_message->return_data[3]; 
-    
-    sem_post(acknowledgement_sem); // signalling to controller that the response data has been taken
+    std::vector<Coordinates>* map_info = (std::vector<Coordinates>*)  temp_message->return_data[1]; // gather map nodes for map update
+    std::vector<std::vector<bool>>* edge_info = (std::vector<std::vector<bool>>*)  temp_message->return_data[2]; 
+    std::vector<char>* map_status = (std::vector<char>*)  temp_message->return_data[3];
 
     if(!reserved_succeed){ // if failed to reserve cell found by pathfinding
                            // must update map with returned data so next closest cell can be reserved
-        updateLocalMap(&map_info, &edge_info, &map_status);
+        updateLocalMap(map_info, edge_info, map_status);
     }
+        
+    sem_post(acknowledgement_sem); // signalling to controller that the response data has been taken
+
 
     return reserved_succeed; // return whether robot can proceed to target cell
 }
