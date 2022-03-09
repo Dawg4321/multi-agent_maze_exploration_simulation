@@ -15,10 +15,8 @@ class MultiRobot: public Robot{
         
         bool move2Cell(Coordinates destination); // move robot operation used when exploring using controller
 
-        void robotLoop(GridGraph* maze); // loop used by robot to move through maze
-
-        // ** Robot Algorithms **    
-        void multiExplore(GridGraph* maze); // algorithm used when robot is exploring using RobotMaster
+        // ** Robot Loop Function **  
+        virtual void robotLoop(GridGraph* maze) = 0; // loop used by robot to move through maze
 
         // ** General Purpose Functions **
         unsigned int getID() { return id;} // returns robot id

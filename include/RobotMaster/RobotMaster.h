@@ -44,7 +44,7 @@ class RobotMaster{
         void shutDownRequest(Message* request);
         void addRobotRequest(Message* request);
         void updateGlobalMapRequest(Message* request);
-        void move2CellRequest(Message* request);
+        virtual void move2CellRequest(Message* request);
         void reserveCellRequest(Message* request);
         void updateRobotLocationRequest(Message* request);
 

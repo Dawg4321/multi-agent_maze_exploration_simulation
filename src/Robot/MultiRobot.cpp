@@ -19,38 +19,13 @@ MultiRobot::~MultiRobot(){
 bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of move2Cell using destination
                                                       // converts target destination to a direction then uses original move2Cell function
                                                       // messages master to confirm wh
-    // first must determine direction based on two values
-    int dx = x_position - destination.x; // gather change in x and y directions
-    int dy = y_position - destination.y;
 
-    int direction = 0;  // variable to store determined direction 
-                        // direction = 1 ^ north
-                        // direction = 2 v south
-                        // direction = 3 < east
-                        // direction = 4 > west
-
-    if(dy == 1 && dx == 0){ // if moving north
-        direction = 1;
-    }
-    else if(dy == -1 && dx == 0){ // if moving south
-        direction = 2;
-    }
-    else if(dx == 1 && dy == 0){ // if moving east
-        direction = 3;
-    }
-    else if (dx == -1 && dy == 0){ // if moving west
-        direction = 4;
-    }
-    else{
-        printf("Error: invalid movement passed into move2Cell\n");
-        return false; // return false as movement failed dur to invalid direction
-    }
 
     // bool is_not_occupied = requestMove2Cell(destination); // checking if target cell is unoccupied
 
     //if(is_not_occupied){ // attempt to move as cell unoccupied
 
-    bool movement_occurred = Robot::move2Cell(direction); // moving robot using Robot classes move function
+    bool movement_occurred = Robot::move2Cell(destination); // moving robot using Robot classes move function
     requestRobotLocationUpdate(); // notifying master of robot position update
 
     return movement_occurred; // returning whether movement occured successfully
@@ -59,49 +34,6 @@ bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of mov
         return false; // return false as target cell occupied
     }*/
     
-}
-
-
-void MultiRobot::robotLoop(GridGraph* maze){ // function to initialize robot before it starts operating
-
-    assignIdFromMaster(); // getting id from robotmaster before begining robot exploration
-    int status = 0; // tracks status of robot
-                    // -1 = shut down
-                    // 0 = stand by
-                    // 1 = explore
-
-    bool loop_break = false; // bool to break for loop if shutdown has occured
-
-    while(!loop_break){
-        
-        status = getRequestsFromMaster(status); // checking if master wants robot to update status
-
-        switch(status){
-            case -1: // shutdown mode
-            {
-                requestShutDown(); // notify master that robot is ready to shutdown
-                loop_break = true; // setting loop break to ensure break while loop
-                break;
-            }
-            case 0: // while robot is on standby
-            {   
-                    // do nothing
-                    break;
-            }
-            case 1: // while on explore mode
-            {   
-                    // continuously explore until master changes operation
-                    multiExplore(maze); // do one cycle of exploration
-                    break;
-            }
-        }        
-    }
-    return;
-}
-
-void MultiRobot::multiExplore(GridGraph* maze){
-
-    return;
 }
 
 void MultiRobot::assignIdFromMaster(){
@@ -191,7 +123,6 @@ bool MultiRobot::requestMove2Cell(Coordinates target_cell){
     // if unoccupied, robot can move to cell
     // if cell is unoccupied (e.g. robot can move to cell), return true
     // if cell is occupied, return false
-
     Message* temp_message = new Message;
 
     temp_message->request_type = 2; // request_type = 2 as moveRequest required

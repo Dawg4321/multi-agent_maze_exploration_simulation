@@ -1,10 +1,10 @@
-#include "MultiRobot_NC_UI.h"
+#include "MultiRobot_NC_IE.h"
 
-MultiRobot_NC_UI::MultiRobot_NC_UI(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize): MultiRobot(x, y, r, xsize, ysize){
+MultiRobot_NC_IE::MultiRobot_NC_IE(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize): MultiRobot(x, y, r, xsize, ysize){
 
 }
 
-void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
+void MultiRobot_NC_IE::robotLoop(GridGraph* maze){
     
     assignIdFromMaster(); // getting id from robotmaster before begining robot exploration
     
@@ -44,11 +44,19 @@ void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
             }
             case 2: // planned path
             {   
-                  
-                BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
- 
-                status = 3; // setting status to 3 so movement will occur on next loop cycle
+                bool cell_reserved = false;
 
+                // repeat loop until cell which is being planned to has been reserved
+                
+                BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
+                    
+                cell_reserved = MultiRobot::requestReserveCell();
+                
+
+                if(cell_reserved) // if cell was reserved, update status to 3 so that the robot will move on the next iteration of the loop
+                    status = 3; // setting status to 3 so movement will occur on next loop cycle
+                else // if no cell was reserved, set status to 2 so that another cell will be located
+                    status = 2;
                 break;
             }
             case 3: // move robot to next cell to scan

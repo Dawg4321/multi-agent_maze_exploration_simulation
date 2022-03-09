@@ -75,7 +75,7 @@ bool RobotMaster::receiveRequests(){
                 }
                 case 2: // move2cell request
                 {
-                    move2CellRequest(request);
+                    move2CellRequest(request); // unimplemented in this vparent class as collision management is used in child class 
 
                     break;
                 }
@@ -181,37 +181,9 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
 }
 
 void RobotMaster::move2CellRequest(Message* request){
-    // move2cell request msg_data layout:
-    // [0] = type: (unsigned int*), content: id of robot sending request
-    // [1] = type: (Coordinates*), content: target position of robot move request
+
+    // does nothing in parent class as this type of request is only handled in child class
     
-    // gathering passed in data
-    unsigned int* robot_id = (unsigned int*)request->msg_data[0];
-    Coordinates* target_cell = (Coordinates*)request->msg_data[1];                    
-    
-    bool ret_value; // variable to store data to be returned to Robot
-    unsigned int occupying_robot = *robot_id; // variable to store id of occupying robot
-                                            // setting value to robot id to ensure that the a collision is not detected 
-
-    if(checkIfOccupied(target_cell->x, target_cell->y, &occupying_robot)){ // if robot is occupying the target cell
-        ret_value = false; // set return value to false as movement can't occur due to collision
-    }
-    else{ // if no robot is occupying target cell
-        ret_value = true; // set return value to false as movement can occur
-
-        // as movement can occur, must update robots position
-    }
-
-    request->return_data.push_back((void*)ret_value); // adding return data
-
-    sem_post(request->res_sem); // signalling Robot that message is ready
-    sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
-
-
-    // sent message was dynamically allocated thus must be deleted
-    // this part of the code should be thread safe as the robot and Controller have finished using these variabless
-    delete request;
-
     return;
 }
 
@@ -482,9 +454,13 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // upda
     for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update
         if (tracked_robots[i].robot_id == *id){ // if robot found using id
             tracked_robots[i].robot_position = *C; // update position in RobotInfo
+            
             // TODO: update occupying robot information in CellInfo matrix
+            
+            break; 
         }
     }
+    return;
 }
     
 void RobotMaster::updateAllRobotState(int status){
