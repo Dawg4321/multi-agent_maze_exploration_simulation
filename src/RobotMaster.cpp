@@ -306,11 +306,39 @@ bool RobotMaster::receiveRequests(){
 
                     break;
                 }
-                case 4: // movedCell notification (tells master that robot has completed move operation)
-                default:
-                    {
-                        break;
+                case 4: // update Robot Location  (tells master that robot has completed move operation)
+                {
+                    // reserveCell request msg_data layout:
+                    // [0] = type: (unsigned int*), content: id of robot sending request
+                    // [1] = type: (Coordinates*), content: cell which robot now occupies
+                
+                    // no return data
+
+                    // gathering passed in data
+                    unsigned int* robot_id = (unsigned int*)request->msg_data[0];
+                    Coordinates* new_robot_location = (Coordinates*)request->msg_data[1];                    
+                    
+                    for(int i = 0; i < tracked_robots.size(); i++){
+                        if(tracked_robots[i].robot_id == *robot_id){
+                            tracked_robots[i].robot_position = *new_robot_location;
+                            break;
+                        }
                     }
+                    
+                    sem_post(request->res_sem); // signalling Robot that message is ready
+                    sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
+
+
+                    // sent message was dynamically allocated thus must be deleted
+                    // this part of the code should be thread safe as the robot and Controller have finished using these variabless
+                    delete request;
+
+                    break;
+                }
+                default:
+                {
+                    break;
+                }
             }
 
     }

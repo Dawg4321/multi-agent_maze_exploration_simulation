@@ -49,7 +49,11 @@ bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of mov
     // bool is_not_occupied = requestMove2Cell(destination); // checking if target cell is unoccupied
 
     //if(is_not_occupied){ // attempt to move as cell unoccupied
-        return Robot::move2Cell(direction); // moving robot using Robot classes move function
+
+    bool movement_occurred = Robot::move2Cell(direction); // moving robot using Robot classes move function
+    requestRobotLocationUpdate(); // notifying master of robot position update
+
+    return movement_occurred; // returning whether movement occured successfully
     /*}
     else {
         return false; // return false as target cell occupied
@@ -96,27 +100,6 @@ void MultiRobot::robotLoop(GridGraph* maze){ // function to initialize robot bef
 }
 
 void MultiRobot::multiExplore(GridGraph* maze){
-
-    std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
-    
-    requestGlobalMapUpdate(connection_data); // sending message to master with scanned maze information
-    
-    bool cell_reserved = false;
-    do{
-
-        BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
-        
-        cell_reserved = requestReserveCell();
-
-    }while(!cell_reserved);
-
-    for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
-        if(!move2Cell((planned_path[i]))){ // if movement fails
-            break; // break from outerloop as no movements can occur now
-        }
-    }
-
-    planned_path.clear(); // clearing planned_path as movement is complete / failed
 
     return;
 }
@@ -169,8 +152,7 @@ int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wa
                         // only the response semaphore is used to tell the robot to shut down
 
                         ret_variable = request->request_type; // gathering status from request type
-                        
-                        
+                             
                         break;
                     }
                 
@@ -248,6 +230,28 @@ void MultiRobot::requestShutDown(){
     return;
 }
 
+void MultiRobot::requestRobotLocationUpdate(){
+    // sending message with new robot position
+    Message* temp_message = new Message(); // buffer to load data into before sending message
+
+    temp_message->request_type = 4; // request_type = 1 as updateGlobalMap request required
+
+    Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
+
+    temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
+    temp_message->msg_data.push_back((void*) &robot_cords); // adding robot location to [1]
+
+    temp_message->res_sem = response_sem; // attaching communication semaphores to message
+    temp_message->ack_sem = acknowledgement_sem;
+    
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
+
+    sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
+    sem_post(acknowledgement_sem);
+
+    return;
+}
+
 void MultiRobot::requestGlobalMapUpdate(std::vector<bool> connection_data){
     // sending message with scanned maze information
     Message* temp_message = new Message(); // buffer to load data into before sending message
@@ -267,6 +271,8 @@ void MultiRobot::requestGlobalMapUpdate(std::vector<bool> connection_data){
 
     sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
     sem_post(acknowledgement_sem);
+
+    return;
 }
 
 void MultiRobot::updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status){
@@ -282,6 +288,7 @@ void MultiRobot::updateLocalMap(std::vector<Coordinates>* map_info, std::vector<
         LocalMap->x_edges[y][x] = (*edge_info)[i][2]; // passing eastern edge info into map
         LocalMap->x_edges[y][x + 1] = (*edge_info)[i][2]; // passing western edge info into map
     }   
+    
     return;
 }
 

@@ -35,6 +35,8 @@ class MultiRobot: public Robot{
 
         void requestGlobalMapUpdate(std::vector<bool> connection_data); // updating Global Map information of master with connection data
 
+        void requestRobotLocationUpdate(); // updates robot position to Robot Master after movement has been complete
+
         // ** Master -> Robot Communication Functions **
         int getRequestsFromMaster(int status); // checks if master wants to change current status of robot
 

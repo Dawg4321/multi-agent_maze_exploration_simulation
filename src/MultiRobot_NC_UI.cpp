@@ -27,16 +27,50 @@ void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
                 loop_break = true; // setting loop break to ensure break while loop
                 break;
             }
-            case 0: // while robot is on standby
+            case 0: // standby
             {   
-                    // do nothing
-                    break;
+                // do nothing
+                break;
             }
-            case 1: // while on explore mode
+            case 1: // scan cell
             {   
-                    // continuously explore until master changes operation
-                    multiExplore(maze); // do one cycle of exploration
-                    break;
+                std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
+
+                requestGlobalMapUpdate(connection_data); // sending message to master with scanned maze information
+
+                status = 2; // setting status to 2 so pathfinding will occur on next loop cycle
+
+                break;
+            }
+            case 2: // scan cell
+            {   
+                /*bool cell_reserved = false;
+
+                do{ // repeat loop until cell which is being planned to has been reserved
+                */
+                    BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
+                    
+                /*    cell_reserved = requestReserveCell();
+                
+                }while(!cell_reserved);
+                */
+                status = 3; // setting status to 3 so movement will occur on next loop cycle
+
+                break;
+            }
+            case 3: // scan cell
+            {   
+                for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
+                    if(!MultiRobot::move2Cell((planned_path[i]))){ // if movement fails
+                        break; // break from outerloop as no movements can occur now
+                    }
+                }
+
+                planned_path.clear(); // clearing planned_path as movement is complete / failed
+
+                status = 1; // setting status to 1 so scan cell will occur on next loop cycle
+
+                break;
             }
         }        
     }
