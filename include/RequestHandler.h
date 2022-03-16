@@ -7,18 +7,14 @@
 #include <semaphore.h>
 
 struct Message{
-    int request_type; // type of request sent to Robot Controller
-                       // 0 = add_Robot
-                       // 1 = updateGlobalMap
-                       // 2 = beginExploration
-                       
-    std::vector<void*> msg_data; // message data for controller to unpack
+    int request_type;
+    // content of messages and responses, information will be encapsulated using messages defined in RequestTemplates.h
+    void* msg_data; // message data for controller to unpack
+    void* return_data; //  data returned from message request
 
     // semaphores used to synchronize thread communication
     sem_t* res_sem; // semaphore to control whether response has sent read
     sem_t* ack_sem; // semaphore to control whether response has been analysed
-
-    std::vector<void*> return_data; //  data returned from message request
 };
 
 class RequestHandler{

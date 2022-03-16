@@ -104,13 +104,27 @@ struct m_reserveCellRequest:m_genericRequest{
         
     }  
 };
-struct m_reserveCellResponse:m_genericRequest{
-    bool cell_reserved; // bool determining whether cell was successfully reserved
-    // returned data from global map
+struct m_reserveCellResponse{
+    bool* cell_reserved; // bool determining whether cell was successfully reserved
+    
+    // returned portion of global map
     // this is only used if the cell was not reserved
-    std::vector<Coordinates> map_coordinates; // coordinates correspoonding to full map down the requested node path
-    std::vector<std::vector<bool>*> map_connections; // wall information corresponding to nodes in map_coordinates
-    std::vector<char> map_status; // node status information of nodes in map_coordinates
+    std::vector<Coordinates>* map_coordinates; // coordinates correspoonding to full map down the requested node path
+    std::vector<std::vector<bool>>* map_connections; // wall information corresponding to nodes in map_coordinates
+    std::vector<char>* map_status; // node status information of nodes in map_coordinates
+
+    m_reserveCellResponse(){ // allocating various vectors
+        cell_reserved = new bool;
+        map_coordinates = new std::vector<Coordinates>;
+        map_connections = new std::vector<std::vector<bool>>;
+        map_status = new std::vector<char>;
+    }
+    
+    ~m_reserveCellResponse(){ // deallocating variou vectors
+        delete map_connections;
+        delete map_coordinates;
+        delete map_status;
+    }
 };
 
 // ** updateRobotLocationRequest **
@@ -137,8 +151,7 @@ struct m_move2CellRequest:m_genericRequest{
     }  
 };
 struct m_move2CellResponse{
-    unsigned int robot_id; // id of robot sending request
-    Coordinates target_cell; // target cell of robot move request
+    bool can_movement_occur;
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~

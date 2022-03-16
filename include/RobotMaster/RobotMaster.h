@@ -8,6 +8,7 @@
 #include "GridGraph.h"
 #include "Coordinates.h"
 #include "RequestHandler.h"
+#include "RequestTemplates.h"
 
 #include "json.hpp" // using json.hpp from https://github.com/nlohmann/json
                     // this library is used to export tracked data into a json format

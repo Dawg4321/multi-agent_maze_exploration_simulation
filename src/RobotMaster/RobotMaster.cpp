@@ -44,8 +44,10 @@ bool RobotMaster::receiveRequests(){
 
         // tracking this request
         request_id_tracker++; // get next request number to assign to id
+        m_genericRequest* r = (m_genericRequest*) request->msg_data;
+        int request_type = r->request_type;
 
-        switch (request->request_type){ // determining type of request before processing
+        switch (request_type){ // determining type of request before processing
                 case -1: // shutDown confirmation request ( telling master robot has finished exploring)
                 {
                     shutDownRequest(request);
@@ -80,7 +82,7 @@ bool RobotMaster::receiveRequests(){
                 }
                 case 2: // move2cell request
                 {
-                    move2CellRequest(request); // unimplemented in this vparent class as collision management is used in child class 
+                    move2CellRequest(request); // unimplemented in parent class as collision management is used in child class 
 
                     break;
                 }
@@ -117,8 +119,9 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
     // no return data
 
     // gathering data from request
-    unsigned int* robot_id = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to robot id
-    removeRobot(*robot_id); // remove robot from system
+    m_shutDownRequest* request_data = (m_shutDownRequest*)request->msg_data; // first pointer of msg_data points to robot id
+    
+    removeRobot(request_data->robot_id); // remove robot which is shutting down from system
     
     sem_post(request->res_sem);  // tell robot that shutdown can occur
 
@@ -136,17 +139,25 @@ void RobotMaster::addRobotRequest(Message* request){ // adds robot to controller
     // return data
     // [0] = type: (unsigned int*), content: id to be assigned to robot
 
-    // gathering data from request
-    unsigned int* x = (unsigned int*)request->msg_data[0]; // first pointer of msg_data points to x coordinates
-    unsigned int* y = (unsigned int*)request->msg_data[1]; // second pointer of msg_data points to y coordinates
-    RequestHandler* robot_request_handler = (RequestHandler*)request->msg_data[2];
+    // gathering incoming request
+    m_addRobotRequest* request_data = (m_addRobotRequest*)request->msg_data;
+    
+    // processing request data
+    unsigned int x = request_data->x;
+    unsigned int y = request_data->y;
+    RequestHandler* robot_request_handler = request_data->robot_request_handler;
 
-    unsigned int robot_id = addRobot(*x, *y, robot_request_handler); // add robot using coordinates
+    unsigned int robot_id = addRobot(x, y, robot_request_handler); // add robot using coordinates
                                                 // return value is assigned id of robot
 
-    request->return_data.push_back((void*)&robot_id); // returning data to sender
+    // gathering response data
+    m_addRobotResponse* response_data = new m_addRobotResponse;
+    response_data->robot_id = robot_id;
+
+    // assigning response to message
+    request->return_data = (void*) response_data;
     
-    sem_post(request->res_sem); // signalling Robot that message is ready
+    sem_post(request->res_sem); // signalling Robot that response message is ready
     sem_wait(request->ack_sem); //  waiting for Robot to be finished with response so message can be deleted
     
     // sent message was dynamically allocated thus must be deleted
@@ -166,12 +177,14 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
     
     // return data = none
 
-    // gathering passed in data
-    unsigned int* robot_id = (unsigned int*)request->msg_data[0];
-    std::vector<bool>* wall_info = (std::vector<bool>*)request->msg_data[1];
-    Coordinates* cords = (Coordinates*)request->msg_data[2];
+    // gathering incoming request data
+    m_updateGlobalMapRequest* request_data = (m_updateGlobalMapRequest*)request->msg_data;
 
-    updateGlobalMap(robot_id, wall_info, cords); // updating global map with information
+    unsigned int robot_id = request_data->robot_id;
+    std::vector<bool> wall_info = request_data->wall_info;
+    Coordinates cords = request_data->cords; // gathering position of scanned reading
+
+    updateGlobalMap(&robot_id, &wall_info, &cords); // updating global map with information
 
     //request->return_data.push_back((void*)&robot_id); // telling Robot that data was successfully added to GlobalMap and it can continue
 
@@ -201,42 +214,41 @@ void RobotMaster::reserveCellRequest(Message* request){
     // return data
     // [0] = type (bool*), content: whether cell has been reserved
     // [1] = type (vector<Coordinates>*), content: coordinates correspoonding to full map down a node path if path has been explored already
-    // [2] = type (vector<vector<bool>*>), content: wall information corresponding to cell locations in [1] 
+    // [2] = type (vector<vector<bool>>*), content: wall information corresponding to cell locations in [1] 
     // [3] = type (vector<char>*), content: information on node status
 
-    // gathering passed in data
-    unsigned int* robot_id = (unsigned int*)request->msg_data[0];
-    Coordinates* target_cell = (Coordinates*)request->msg_data[1];                    
-    Coordinates* neighbouring_cell = (Coordinates*)request->msg_data[2];  
+    // gathering incoming request data
+    m_reserveCellRequest* request_data = (m_reserveCellRequest*)request->msg_data;
+
+    unsigned int robot_id = request_data->robot_id;
+    Coordinates target_cell = request_data->target_cell;                    
+    Coordinates neighbouring_cell = request_data->neighbouring_cell; 
+
+    // return data allocation
+    m_reserveCellResponse* response_data = new m_reserveCellResponse; // response message
 
     bool cell_reserved; // variable to whether cell reservation is possible
-    
-    // vectors to return to robot with map information if cell can't be reserved
-    std::vector<Coordinates> map_coordinates;
-    std::vector<std::vector<bool>> map_connections;
-    std::vector<char> map_status;
 
-    if(GlobalMap->nodes[target_cell->y][target_cell->x] == 1){ // if the target cell has already been explored
+    // processing if cell can be reserved
+    // in this case, vectors allocated in response_data will be modified
+    if(GlobalMap->nodes[target_cell.y][target_cell.x] == 1){ // if the target cell has already been explored
         // gathering portion of map outwards from unexplored node to return to robot
-        gatherPortionofMap(*target_cell, *neighbouring_cell, &map_coordinates, &map_connections, &map_status);
+        gatherPortionofMap(target_cell, neighbouring_cell, response_data->map_coordinates, response_data->map_connections, response_data->map_status);
         cell_reserved = false; // cell has not been successfully reserved for requesting robot
     }
-    else if (GlobalMapInfo[target_cell->y][target_cell->x].reserved > 0){ // if the target cell has already been reserved
+    else if (GlobalMapInfo[target_cell.y][target_cell.x].reserved > 0){ // if the target cell has already been reserved
         cell_reserved = false; // return false as cell has not been reserved
     }
     else{ // if unreserved and unexplored
-        GlobalMapInfo[target_cell->y][target_cell->x].reserved = *robot_id; // reserving cell for exploration
+        GlobalMapInfo[target_cell.y][target_cell.x].reserved = robot_id; // reserving cell for exploration
         cell_reserved = true; // cell has been reserved
     }
 
-    // preparing return data
-    request->return_data.push_back((void*) cell_reserved); // adding information is cell was reserved for scanning
-    
-    // adding map information to update robot map if cell already explored
-    request->return_data.push_back((void*) &map_coordinates);
-    request->return_data.push_back((void*) &map_connections);
-    request->return_data.push_back((void*) &map_status);
+    *response_data->cell_reserved = cell_reserved; // adding information is cell was reserved to response
 
+    // attaching response data
+    request->return_data = (void*)response_data;
+    
     sem_post(request->res_sem); // signalling Robot that return message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
 
@@ -255,13 +267,14 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
 
     // no return data
 
-    // gathering passed in data
-    unsigned int* robot_id = (unsigned int*)request->msg_data[0];
-    Coordinates* new_robot_location = (Coordinates*)request->msg_data[1];                    
+    // gathering incoming request data
+    m_updateRobotLocationRequest* request_data = (m_updateRobotLocationRequest*)request->msg_data; 
+    unsigned int robot_id = request_data->robot_id;
+    Coordinates new_robot_location = request_data->new_robot_location;                    
 
     for(int i = 0; i < tracked_robots.size(); i++){
-        if(tracked_robots[i].robot_id == *robot_id){
-            tracked_robots[i].robot_position = *new_robot_location;
+        if(tracked_robots[i].robot_id == robot_id){
+            tracked_robots[i].robot_position = new_robot_location;
             break;
         }
     }
@@ -485,11 +498,11 @@ void RobotMaster::updateAllRobotState(int status){
 
     return;    
 }
-
+/*
 void RobotMaster::printRequestInfo(Message* request){
     // gathering request information
     unsigned int request_id = request_id_tracker;
-    int request_type = request->request_type;
+    int request_type = request->msg_data;
     
     //printing general request information
     printf("~~~~~\n");
@@ -549,7 +562,7 @@ void RobotMaster::printRequestInfo(Message* request){
     }
 
     printf("~~~~~\n");
-}
+}*/
 
 bool RobotMaster::printGlobalMap(){ // function to print global map of maze including robot location
                                      // maze design based off what can be seen here: https://www.chegg.com/homework-help/questions-and-answers/using-c-1-write-maze-solving-program-following-functionality-note-implementation-details-a-q31826669

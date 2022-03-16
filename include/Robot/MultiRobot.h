@@ -6,6 +6,7 @@
 
 #include "Robot.h"
 #include "RequestHandler.h"
+#include "RequestTemplates.h"
 
 class MultiRobot: public Robot{
     public:

@@ -36,36 +36,6 @@ bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of mov
     
 }
 
-void MultiRobot::assignIdFromMaster(){
-
-    printf("ROBOT: calling robot master\n");
-    // sending addRobot request to RobotMaster to get ID
-    Message* temp_message = new Message(); // buffer to load data into before sending message
-
-    temp_message->request_type = 0; // request_type = 0 as addRobot request required
-
-    temp_message->msg_data.push_back((void*) &x_position); // adding x position of robot to [0]
-    temp_message->msg_data.push_back((void*) &y_position); // adding y position of robot to [1]
-    temp_message->msg_data.push_back((void*) Master_2_Robot_Message_Handler); // adding request handler for master -> robot message to [2]
-
-    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
-    temp_message->ack_sem = acknowledgement_sem;
-
-    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
-
-    printf("ROBOT: waiting for id\n");
-
-    sem_wait(response_sem); // waiting for response to be ready from controller
-
-    id = *(unsigned int*)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
-    
-    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
-
-    printf("ROBOT: id = %d %x\n",id, temp_message);
-
-    return;
-}
-
 
 int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wants robot to change states
     
@@ -79,34 +49,33 @@ int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wa
         switch (request->request_type){ // determining type of request before processing
 
                 case -1: // change state to shut down
-                    {  
-                        // if a message of this type is recieved, no message contents
-                        // only the response semaphore is used to tell the robot to shut down
+                {  
+                    // if a message of this type is recieved, no message contents
+                    // only the response semaphore is used to tell the robot to shut down
 
-                        ret_variable = request->request_type; // gathering status from request type
-                             
-                        break;
-                    }
-                
+                    ret_variable = request->request_type; // gathering status from request type
+                            
+                    break;
+                } 
                 case 0: // change state to standby mode
-                    {
-                        ret_variable = request->request_type;
-                        
-                        break;
-                    }
+                {
+                    ret_variable = request->request_type;
+                    
+                    break;
+                }
                 case 1: // change state to begin exploring
-                    {
-                        printf("ROBOT %d: Begin Exploring\n", id);
-                        // if a message of this type is recieved, no message contents
-                        // only the response semaphore is used to signal that the robot will begin exploring
-                        ret_variable = request->request_type; // gathering status from request type
-                        
-                        break;
-                    }
+                {
+                    printf("ROBOT %d: Begin Exploring\n", id);
+                    // if a message of this type is recieved, no message contents
+                    // only the response semaphore is used to signal that the robot will begin exploring
+                    ret_variable = request->request_type; // gathering status from request type
+                    
+                    break;
+                }
                 default: // TODO: Implement handling if improper messge type is recieved
-                    {
-                        break;
-                    }
+                {
+                    break;
+                }
             }
 
             delete request; // deleting recieved message as no longer needed
@@ -118,6 +87,43 @@ int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wa
     return ret_variable;
 }
 
+void MultiRobot::assignIdFromMaster(){
+
+    printf("ROBOT: calling robot master\n");
+    // sending addRobot request to RobotMaster to get ID
+    Message* temp_message = new Message(); // buffer to load data into before sending message
+
+    // defining new addRobotRequest
+    m_addRobotRequest* message_data = new m_addRobotRequest;
+    
+    // gather request data
+    message_data->x = x_position; // adding x position of robot
+    message_data->y = y_position; // adding y position of robot 
+    message_data->robot_request_handler =  Master_2_Robot_Message_Handler; // adding request handler for master -> robot message to [2]
+
+    // attaching message data to request
+    temp_message->msg_data = (void*) message_data;
+
+    // attaching robot communication semaphores to message
+    temp_message->res_sem = response_sem; 
+    temp_message->ack_sem = acknowledgement_sem;
+
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
+
+    printf("ROBOT: waiting for id\n");
+
+    sem_wait(response_sem); // waiting for response to be ready from controller
+
+    m_addRobotResponse* message_response = (m_addRobotResponse*)temp_message->return_data; // gathering response data
+    id = message_response->robot_id; // assigning id from RobotMaster's response
+    
+    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
+
+    printf("ROBOT: id = %d %x\n",id, temp_message);
+
+    return;
+}
+
 bool MultiRobot::requestMove2Cell(Coordinates target_cell){
     // need to message controller to see if target cell is occupied
     // if unoccupied, robot can move to cell
@@ -125,33 +131,42 @@ bool MultiRobot::requestMove2Cell(Coordinates target_cell){
     // if cell is occupied, return false
     Message* temp_message = new Message;
 
-    temp_message->request_type = 2; // request_type = 2 as moveRequest required
+    // defining new Move2CellRequest
+    m_move2CellRequest* message_data = new m_move2CellRequest;
 
-    temp_message->msg_data.push_back((void*) &id); // adding id of robot to [0]
-    temp_message->msg_data.push_back((void*) &target_cell); // adding target destination of robot to [1]
+    // attaching message data to request
+    message_data->robot_id = id; // adding id of robot
+    message_data->target_cell = target_cell; // adding target destination of robot
+    temp_message->msg_data = (void*) temp_message;
 
-    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
+    // attaching robot communication semaphores to message
+    temp_message->res_sem = response_sem; 
     temp_message->ack_sem = acknowledgement_sem;
 
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
     sem_wait(response_sem); // waiting for response to be ready from controller
 
-    bool is_not_occupied = (bool)temp_message->return_data[0]; // gather assigned id from RobotMaster's response
+    m_move2CellResponse* message_response = (m_move2CellResponse*)temp_message->return_data;
+
+    bool can_movement_occur = message_response->can_movement_occur; // gather whether movement can occur
     
     sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
     
-    return is_not_occupied;
+    return can_movement_occur;
 }
 
 void MultiRobot::requestShutDown(){
     // sending message to notidy RobotMaster that robot is ready to shutdown
     Message* temp_message = new Message(); // buffer to load data into before sending message
 
-    temp_message->request_type = -1; // request_type = -1 as shutDown request
+    // defining new shutDownRequest
+    m_shutDownRequest* message_data = new m_shutDownRequest;
 
-    temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
-
+    // attaching message data to request
+    message_data->robot_id = id; // adding id of robot sending request
+    temp_message->msg_data = (void*) message_data;
+    
     temp_message->res_sem = response_sem; // attaching communication semaphores to message
     
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
@@ -165,14 +180,16 @@ void MultiRobot::requestRobotLocationUpdate(){
     // sending message with new robot position
     Message* temp_message = new Message(); // buffer to load data into before sending message
 
-    temp_message->request_type = 4; // request_type = 1 as updateGlobalMap request required
-
+    // attaching message data to request
+    m_updateRobotLocationRequest* message_data = new m_updateRobotLocationRequest;    
+    message_data->robot_id = id; // adding id of robot sending request
     Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
+    message_data->new_robot_location = robot_cords; // adding robot location
 
-    temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
-    temp_message->msg_data.push_back((void*) &robot_cords); // adding robot location to [1]
+    temp_message->msg_data = (void*) message_data;
 
-    temp_message->res_sem = response_sem; // attaching communication semaphores to message
+    // attaching communication semaphores to message
+    temp_message->res_sem = response_sem; 
     temp_message->ack_sem = acknowledgement_sem;
     
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
@@ -187,15 +204,17 @@ void MultiRobot::requestGlobalMapUpdate(std::vector<bool> connection_data){
     // sending message with scanned maze information
     Message* temp_message = new Message(); // buffer to load data into before sending message
 
-    temp_message->request_type = 1; // request_type = 1 as updateGlobalMap request required
-
+    // attaching message data to request
+    m_updateGlobalMapRequest* message_data = new m_updateGlobalMapRequest;  
+    message_data->robot_id = id; // adding id of robot sending request
+    message_data->wall_info = connection_data; // adding vector containing information on walls surrounding robot to [1]
     Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
+    message_data->cords = robot_cords; // current coordinates of where the read occured
 
-    temp_message->msg_data.push_back((void*) &id); // adding id of robot sending request to [0]
-    temp_message->msg_data.push_back((void*) &connection_data); // adding vector containing information on walls surrounding robot to [1]
-    temp_message->msg_data.push_back((void*) &robot_cords); // current coordinates of where the read occured
+    temp_message->msg_data = (void*) message_data;
 
-    temp_message->res_sem = response_sem; // attaching communication semaphores to message
+    // attaching communication semaphores to message
+    temp_message->res_sem = response_sem; 
     temp_message->ack_sem = acknowledgement_sem;
     
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
@@ -227,18 +246,22 @@ bool MultiRobot::requestReserveCell(){
     
     Message* temp_message = new Message; // generating message
 
-    temp_message->request_type = 3; // request_type = 3 as moveRequest required
+    // gathering message data
+    m_reserveCellRequest* message_data = new m_reserveCellRequest;  
 
-    temp_message->msg_data.push_back((void*) &id); // adding id of robot to [0]
-    temp_message->msg_data.push_back((void*) &(planned_path[planned_path.size() - 1])); // adding target destination of robot to [1]
-
-    Coordinates c(x_position,y_position); // gathering current robot coordinates as it may be needed 
+    message_data->robot_id = id; // adding id of robot
+    message_data->target_cell = planned_path[planned_path.size() - 1]; // adding target destination (end of planned path) of robot
+     
     if(planned_path.size() > 1){ // if more than one element in planned_path, must pass second last element in deque as neigbouring cell
-        temp_message->msg_data.push_back((void*) &(planned_path[planned_path.size() - 2])); // passing second last element in planned_path as neighbouring cell
+        message_data->neighbouring_cell = planned_path[planned_path.size() - 2]; // passing second last element in planned_path as neighbouring cell
     }
     else{ // as planned_path has only 1 element, cell must be neighbouring current position thus pass current position as neighbouring cell
-        temp_message->msg_data.push_back((void*) &c); // passing current robot position as neighbouring cell
+        Coordinates c(x_position,y_position); // gathering current robot coordinates
+        message_data->neighbouring_cell = c; // passing current robot position as neighbouring cell
     }
+
+    // attaching message data
+    temp_message->msg_data = (void*) message_data;
 
     temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
     temp_message->ack_sem = acknowledgement_sem;
@@ -247,10 +270,12 @@ bool MultiRobot::requestReserveCell(){
 
     sem_wait(response_sem); // waiting for response to be ready from controller
 
-    bool reserved_succeed = (bool)temp_message->return_data[0]; // gather whether cell has been reserved
-    std::vector<Coordinates>* map_info = (std::vector<Coordinates>*)  temp_message->return_data[1]; // gather map nodes for map update
-    std::vector<std::vector<bool>>* edge_info = (std::vector<std::vector<bool>>*)  temp_message->return_data[2]; 
-    std::vector<char>* map_status = (std::vector<char>*)  temp_message->return_data[3];
+    m_reserveCellResponse* message_response = (m_reserveCellResponse*) temp_message->return_data;
+    bool reserved_succeed = *message_response->cell_reserved; // gather whether cell has been reserved
+    
+    std::vector<Coordinates>* map_info = message_response->map_coordinates; // gather node map for map update
+    std::vector<std::vector<bool>>* edge_info = message_response->map_connections; // gather wall information for each node in map
+    std::vector<char>* map_status = message_response->map_status; // gather status of nodes tracked in returned map
 
     if(!reserved_succeed){ // if failed to reserve cell found by pathfinding
                            // must update map with returned data so next closest cell can be reserved
