@@ -9,6 +9,9 @@
 #include "Coordinates.h"
 #include "RequestHandler.h"
 
+#include "json.hpp" // using json.hpp from https://github.com/nlohmann/json
+                    // this library is used to export tracked data into a json format
+
 struct RobotInfo{ // structure to track information of various robots in the swarm
     unsigned int robot_id; // tracks the id of a robot in order for robot differentiation
 
@@ -52,7 +55,8 @@ class RobotMaster{
         bool checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable); // checks if a cell is occupied by a robot
 
         // ** Tracked_Robots Functions **
-        unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r); // adds robots to tracked_robots This is important to allow for the robot to be synchronized by the control system
+        unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r); // adds robots to tracked_robots t
+                                                                                  // this is important to allow for the robot to be synchronized by the control system
         
         void removeRobot(unsigned int robot_id); // removes robot from tracked_robots
         
@@ -74,8 +78,11 @@ class RobotMaster{
                                                            // [1] = south edge
                                                            // [2] = east edge
                                                            // [3] = west edge
+        // ** Metric Tracking Functions **
+        void exportRequestInfo2CSV(); // exports information regarding a recieved request to a csv file
 
         // ** print functions **
+        void printRequestInfo(Message* Request); // prints information on outcome of receieve request
         bool printGlobalMap(); // prints global map with robot locations
 
     protected:
@@ -87,7 +94,7 @@ class RobotMaster{
 
         RequestHandler* Message_Handler; // pointer to request handler shared by all Robots and a RobotMaster objects
 
-        unsigned int id_tracker; // tracks next id to give to robot
+        unsigned int id_tracker; // tracks next id to give to a robot
 
         int number_of_unexplored; // number of unexplored cells encountered by Robots
 
@@ -97,9 +104,12 @@ class RobotMaster{
         const int max_num_of_robots; // variable which specifies number of robots needed for exploration
                                      // exploration won't begin until enough robots have been added
 
-        int master_status; // status of robotmaster
+        unsigned int request_id_tracker; // tracks the number of requests handled
+
+        // TODO: Implement master_status to cause any new incoming requests to be left incomplete                
+        //int master_status; // status of robotmaster
                            // if status == -1, finish remaining requests and shutdown
-                           // if status == 0, receive requests                         
+                           // if status == 0, receive requests  
 };
 
 #endif

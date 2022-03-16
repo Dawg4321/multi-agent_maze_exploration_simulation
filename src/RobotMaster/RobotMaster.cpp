@@ -7,7 +7,8 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
     maze_xsize = xsize;
     maze_ysize = ysize;
 
-    master_status = 0; // setting status
+    // TODO: Implement master_status to cause any new incoming requests to be left incomplete
+    //master_status = 0; // setting status
 
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
 
@@ -40,6 +41,10 @@ bool RobotMaster::receiveRequests(){
                                                       // returned pointer will be NULL is no messages to get
 
     if(request != NULL){ // if there is a a request to handle, process it
+
+        // tracking this request
+        request_id_tracker++; // get next request number to assign to id
+
         switch (request->request_type){ // determining type of request before processing
                 case -1: // shutDown confirmation request ( telling master robot has finished exploring)
                 {
@@ -68,7 +73,7 @@ bool RobotMaster::receiveRequests(){
 
                     if(number_of_unexplored < 1){ // if no more cells to explore
                         updateAllRobotState(-1); // tell all robots to shut down
-                        master_status = -1; // maze completely mapped, can ignore any incoming requests that do not contain shut down complete messages
+                        //master_status = -1; // maze completely mapped, can ignore any incoming requests that do not contain shut down complete messages
                     }
 
                     break;
@@ -476,6 +481,71 @@ void RobotMaster::updateAllRobotState(int status){
     }
 
     return;    
+}
+
+void RobotMaster::printRequestInfo(Message* request){
+    // gathering request information
+    unsigned int request_id = request_id_tracker;
+    int request_type = request->request_type;
+    
+    //printing general request information
+    printf("~~~~~\n");
+    printf("Request %d\n", request_id);
+    printf("Type = %d", request_type);
+    
+    switch(request_type){
+        case -1: // shutDown confirmation request ( telling master robot has finished exploring)
+        {
+            printf(" - Shut Down Request\n");
+            printf("~~~~~\n");
+            printf("Robot Shutting Down: %d", request->msg_data[0]);
+            
+            break;
+        }
+        case 0: // addRobot request
+        {
+            printf(" - Add Robot Request\n");
+
+            printf("~~~~~\n");
+            printf("Request Data:\n");
+            printf("Robot X Position: %d\n", request->msg_data[0]);
+            printf("Robot Y Position: %d\n", request->msg_data[1]);
+
+            printf("~~~~~\n");
+            printf("Response Data:\n");
+            printf("Robot Assigned id: %d", request->return_data[0]);
+            
+            break;
+        }
+        case 1: // updateGlobalMap request
+        {   
+            printf(" - Update Global Map Request\n");
+
+            printf("~~~~~\n");
+            printf("Request Data:\n");
+            printf("Robot ID: %d\n", request->msg_data[0]);
+
+            // TODO: print wall information
+
+            printf("Scan Position: x - %d, y = %d\n", )
+
+            break;
+        }
+        case 2: // move2cell request
+        {
+            break;
+        }
+        case 3: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
+        {
+            break;
+        }
+        case 4: // update Robot Location  (tells master that robot has completed move operation)
+        {
+            break;
+        }
+    }
+
+    printf("~~~~~\n");
 }
 
 bool RobotMaster::printGlobalMap(){ // function to print global map of maze including robot location

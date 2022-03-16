@@ -227,7 +227,7 @@ bool MultiRobot::requestReserveCell(){
     
     Message* temp_message = new Message; // generating message
 
-    temp_message->request_type = 3; // request_type = 2 as moveRequest required
+    temp_message->request_type = 3; // request_type = 3 as moveRequest required
 
     temp_message->msg_data.push_back((void*) &id); // adding id of robot to [0]
     temp_message->msg_data.push_back((void*) &(planned_path[planned_path.size() - 1])); // adding target destination of robot to [1]
@@ -262,4 +262,3 @@ bool MultiRobot::requestReserveCell(){
 
     return reserved_succeed; // return whether robot can proceed to target cell
 }
-

@@ -39,7 +39,7 @@ class MultiRobot: public Robot{
         int getRequestsFromMaster(int status); // checks if master wants to change current status of robot
 
     protected:
-        unsigned int id; // robot id assigned by controller
+        unsigned int id; // robot id assigned to robot by robot controller
 
         RequestHandler* Robot_2_Master_Message_Handler; // pointer to request handler shared by all Robot objects
         RequestHandler* Master_2_Robot_Message_Handler;
