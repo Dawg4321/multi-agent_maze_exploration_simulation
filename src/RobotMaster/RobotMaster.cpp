@@ -175,7 +175,7 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
 
     //request->return_data.push_back((void*)&robot_id); // telling Robot that data was successfully added to GlobalMap and it can continue
 
-    sem_post(request->res_sem); // signalling Robot that message is ready
+    sem_post(request->res_sem); // signalling Robot that response message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
 
     // sent message was dynamically allocated thus must be deleted
@@ -209,25 +209,28 @@ void RobotMaster::reserveCellRequest(Message* request){
     Coordinates* target_cell = (Coordinates*)request->msg_data[1];                    
     Coordinates* neighbouring_cell = (Coordinates*)request->msg_data[2];  
 
-    bool ret_value; // variable to whether cell reservation is possible
+    bool cell_reserved; // variable to whether cell reservation is possible
     
     // vectors to return to robot with map information if cell can't be reserved
     std::vector<Coordinates> map_coordinates;
     std::vector<std::vector<bool>> map_connections;
     std::vector<char> map_status;
 
-    if(GlobalMapInfo[target_cell->y][target_cell->x].reserved > 0 || GlobalMap->nodes[target_cell->y][target_cell->x] == 1){ // if the target cell has been reserved or already explored
+    if(GlobalMap->nodes[target_cell->y][target_cell->x] == 1){ // if the target cell has already been explored
         // gathering portion of map outwards from unexplored node to return to robot
         gatherPortionofMap(*target_cell, *neighbouring_cell, &map_coordinates, &map_connections, &map_status);
-        ret_value = false; // cell has not been reserved
+        cell_reserved = false; // cell has not been successfully reserved for requesting robot
+    }
+    else if (GlobalMapInfo[target_cell->y][target_cell->x].reserved > 0){ // if the target cell has already been reserved
+        cell_reserved = false; // return false as cell has not been reserved
     }
     else{ // if unreserved and unexplored
         GlobalMapInfo[target_cell->y][target_cell->x].reserved = *robot_id; // reserving cell for exploration
-        ret_value = true; // cell has been reserved
+        cell_reserved = true; // cell has been reserved
     }
 
     // preparing return data
-    request->return_data.push_back((void*) ret_value); // adding information is cell was reserved for scanning
+    request->return_data.push_back((void*) cell_reserved); // adding information is cell was reserved for scanning
     
     // adding map information to update robot map if cell already explored
     request->return_data.push_back((void*) &map_coordinates);
@@ -527,7 +530,7 @@ void RobotMaster::printRequestInfo(Message* request){
 
             // TODO: print wall information
 
-            printf("Scan Position: x - %d, y = %d\n", )
+            printf("Scan Position: x - %d, y = %d\n");
 
             break;
         }
