@@ -43,12 +43,13 @@ bool RobotMaster::receiveRequests(){
     if(request != NULL){ // if there is a a request to handle, process it
 
         // tracking this request
-        request_id_tracker++; // get next request number to assign to id
-        m_genericRequest* r = (m_genericRequest*) request->msg_data;
-        int request_type = r->request_type;
+        request_id_tracker++; // get next request id for request tracking purposes
 
-        switch (request_type){ // determining type of request before processing
-                case -1: // shutDown confirmation request ( telling master robot has finished exploring)
+        // gathering request type for switch statement
+        m_genericRequest* r = (m_genericRequest*) request->msg_data; // use generic message pointer to gather request type
+
+        switch (r->request_type){ // determining type of request before processing
+                case shutDownRequestID: // shutDown confirmation request ( telling master robot has finished exploring)
                 {
                     shutDownRequest(request);
 
@@ -58,7 +59,7 @@ bool RobotMaster::receiveRequests(){
                     
                     break;
                 }
-                case 0: // addRobot request
+                case addRobotRequestID: // addRobot request
                 {
                     addRobotRequest(request);
 
@@ -69,7 +70,7 @@ bool RobotMaster::receiveRequests(){
                                                 // this causes them to all begin exploring
                     break;
                 }
-                case 1: // updateGlobalMap request
+                case updateGlobalMapRequestID: // updateGlobalMap request
                 {   
                     updateGlobalMapRequest(request);
 
@@ -80,19 +81,19 @@ bool RobotMaster::receiveRequests(){
 
                     break;
                 }
-                case 2: // move2cell request
+                case move2CellRequestID: // move2cell request
                 {
                     move2CellRequest(request); // unimplemented in parent class as collision management is used in child class 
 
                     break;
                 }
-                case 3: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
+                case reserveCellRequestID: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
                 {
                     reserveCellRequest(request);
 
                     break;
                 }
-                case 4: // update Robot Location  (tells master that robot has completed move operation)
+                case updateRobotLocationRequestID: // update Robot Location  (tells master that robot has completed move operation)
                 {
                     updateRobotLocationRequest(request);
 
@@ -123,6 +124,8 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
     
     removeRobot(request_data->robot_id); // remove robot which is shutting down from system
     
+    delete request_data; // deleting dynamically allocated message data
+
     sem_post(request->res_sem);  // tell robot that shutdown can occur
 
     delete request; // delete dynamically allocated request
@@ -149,6 +152,8 @@ void RobotMaster::addRobotRequest(Message* request){ // adds robot to controller
 
     unsigned int robot_id = addRobot(x, y, robot_request_handler); // add robot using coordinates
                                                 // return value is assigned id of robot
+
+    delete request_data; // deleting dynamically allocated message data
 
     // gathering response data
     m_addRobotResponse* response_data = new m_addRobotResponse;
@@ -187,6 +192,8 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
     updateGlobalMap(&robot_id, &wall_info, &cords); // updating global map with information
 
     //request->return_data.push_back((void*)&robot_id); // telling Robot that data was successfully added to GlobalMap and it can continue
+
+    delete request_data; // deleting dynamically allocated message data
 
     sem_post(request->res_sem); // signalling Robot that response message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
@@ -249,6 +256,8 @@ void RobotMaster::reserveCellRequest(Message* request){
     // attaching response data
     request->return_data = (void*)response_data;
     
+    delete request_data; // deleting dynamically allocated message data
+
     sem_post(request->res_sem); // signalling Robot that return message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
 
@@ -278,6 +287,8 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
             break;
         }
     }
+
+    delete request_data; // deleting dynamically allocated message data
 
     sem_post(request->res_sem); // signalling Robot that message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
@@ -490,7 +501,11 @@ void RobotMaster::updateAllRobotState(int status){
 
         Message* messages = new Message; // creating new messages for each robot
 
-        messages->request_type = status; // specifying state to update all robots to
+        // assigning data to message
+        m_updateRobotStateRequest* message_data = new m_updateRobotStateRequest;
+        message_data->target_state = status;
+
+        messages->msg_data = (void*) message_data; // specifying state to update all robots to
         
         tracked_robots[i].Robot_Message_Reciever->sendMessage(messages); // sending message
         tracked_robots[i].robot_status = status; // updating local robot information to current status
@@ -498,6 +513,7 @@ void RobotMaster::updateAllRobotState(int status){
 
     return;    
 }
+
 /*
 void RobotMaster::printRequestInfo(Message* request){
     // gathering request information

@@ -7,7 +7,6 @@
 #include <semaphore.h>
 
 struct Message{
-    int request_type;
     // content of messages and responses, information will be encapsulated using messages defined in RequestTemplates.h
     void* msg_data; // message data for controller to unpack
     void* return_data; //  data returned from message request

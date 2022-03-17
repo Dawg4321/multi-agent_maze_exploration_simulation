@@ -25,8 +25,10 @@
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
-// Request Template
+// Generic Request Template
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+// important as it is used to gather the request type before processing the request
 
 struct m_genericRequest{ // template structure used by all requests
     const int request_type; // defines type of request sent

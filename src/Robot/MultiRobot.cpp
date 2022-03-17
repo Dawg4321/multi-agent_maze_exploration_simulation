@@ -46,29 +46,20 @@ int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wa
     int ret_variable; // return variable to update status in RobotLoop
 
     if(request != NULL){ // if there is a a request to handle, process it
-        switch (request->request_type){ // determining type of request before processing
 
-                case -1: // change state to shut down
-                {  
-                    // if a message of this type is recieved, no message contents
-                    // only the response semaphore is used to tell the robot to shut down
+        // gathering request type for switch statement
+        m_genericRequest* r = (m_genericRequest*) request->msg_data; // use generic message pointer to gather request type
 
-                    ret_variable = request->request_type; // gathering status from request type
-                            
-                    break;
-                } 
-                case 0: // change state to standby mode
-                {
-                    ret_variable = request->request_type;
+        switch (r->request_type){ // determining type of request before processing
+
+                case updateRobotStateRequestID: // update robot state
+                {   
+                    // updating robot state to specified value
+                    m_updateRobotStateRequest* data = (m_updateRobotStateRequest*) request->msg_data;
+                    ret_variable = data->target_state;
                     
-                    break;
-                }
-                case 1: // change state to begin exploring
-                {
-                    printf("ROBOT %d: Begin Exploring\n", id);
-                    // if a message of this type is recieved, no message contents
-                    // only the response semaphore is used to signal that the robot will begin exploring
-                    ret_variable = request->request_type; // gathering status from request type
+                    delete data; // deleting data receieved in the request as its no longer needed
+                    delete request; // deleting recieved message as no longer needed
                     
                     break;
                 }
@@ -77,8 +68,6 @@ int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wa
                     break;
                 }
             }
-
-            delete request; // deleting recieved message as no longer needed
     }
     else{ // if no message to handle, do nothing
         ret_variable = status; // set status as current status
