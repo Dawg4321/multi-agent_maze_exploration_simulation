@@ -78,7 +78,6 @@ int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wa
 
 void MultiRobot::assignIdFromMaster(){
 
-    printf("ROBOT: calling robot master\n");
     // sending addRobot request to RobotMaster to get ID
     Message* temp_message = new Message(); // buffer to load data into before sending message
 
@@ -99,16 +98,12 @@ void MultiRobot::assignIdFromMaster(){
 
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
-    printf("ROBOT: waiting for id\n");
-
     sem_wait(response_sem); // waiting for response to be ready from controller
 
     m_addRobotResponse* message_response = (m_addRobotResponse*)temp_message->return_data; // gathering response data
     id = message_response->robot_id; // assigning id from RobotMaster's response
     
     sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
-
-    printf("ROBOT: id = %d %x\n",id, temp_message);
 
     return;
 }

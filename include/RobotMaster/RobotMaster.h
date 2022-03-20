@@ -40,6 +40,7 @@ class RobotMaster{
         ~RobotMaster();
 
         // ** Master Operation Function **
+        void runRobotMaster();
         bool receiveRequests();  // recieves and decodes request information from imcoming request
                                  // returns false until all cells have been explored
 

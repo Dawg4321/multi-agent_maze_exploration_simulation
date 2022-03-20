@@ -19,22 +19,19 @@ RobotMaster::~RobotMaster(){
     delete GlobalMap; // deallocating GlobalMap
 }
 
-bool RobotMaster::checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable){ // checks if a robot is within the cell passed into the function
-                                                                                               // returns true is a robot is detected
-                                                                                               // if a robot is found, ret_variable is modified to contain the id of the found robot
-    unsigned int temp = 0;
-    for(int i = 0; i < tracked_robots.size(); i++){ // looping through robots position
-        if(tracked_robots[i].robot_position.x == x && tracked_robots[i].robot_position.y == y){ // if robot is occupying the location passed in
-            temp = tracked_robots[i].robot_id; // returning found robot id
-            *ret_variable = temp;
+void RobotMaster::runRobotMaster(){ // function to continously run RobotMaster until the maze has been mapped
+    
+    bool maze_mapped = false;
 
-            return true; // return true as robot is occupying the cell
-        }
-    }
-    return false; // returning false as robot is not found within the occupied cell
+    // RobotMaster continues to receive requests until the maze is fully mapped
+    while(!maze_mapped){
+        maze_mapped = receiveRequests(); 
+    } 
+
+    return;
 }
 
-bool RobotMaster::receiveRequests(){
+bool RobotMaster::receiveRequests(){ // function to handle incoming requests from robots
     
     Message* request = Message_Handler->getMessage(); // gathering request from msg_queue
                                                       // pointer is gathered so response can be gathered by robot threads
@@ -67,7 +64,7 @@ bool RobotMaster::receiveRequests(){
                     // send signal to all robots to begin exploration
                     if(tracked_robots.size() == max_num_of_robots)
                         updateAllRobotState(1); // updating all robot states to 1
-                                                // this causes them to all begin exploring
+                                                // this causes them to all begin exploring by first scanning their cell
                     break;
                 }
                 case updateGlobalMapRequestID: // updateGlobalMap request
@@ -110,7 +107,7 @@ bool RobotMaster::receiveRequests(){
 
     }
     
-    return false; // return false as requests still to handle and maze is not completely mapped
+    return false; // return false as maze is not completely mapped
 }
 
 void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from system
@@ -306,7 +303,6 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     
     number_of_unexplored++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
 
-    printf("CONTROLLER: adding robot\n");
     id_tracker++; // incrementing inorder to determine next id to give a robot
 
     RobotInfo temp; // buffer to store robot info before pushing it to the tracked_robots vecto
@@ -318,8 +314,6 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     temp.Robot_Message_Reciever = r; // assigning Request handler for Master -> robot communications
 
     tracked_robots.push_back(temp); // adding robot info to tracked_robots
-
-    printf("CONTROLLER: returning id = %d\n",temp.robot_id);
 
     return temp.robot_id; // returning id to be assigned to the robot which triggered this function
 }
@@ -479,6 +473,21 @@ void RobotMaster::gatherPortionofMap(Coordinates curr_node, Coordinates neighbou
     }
 
     return; // can return with map information
+}
+
+bool RobotMaster::checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable){ // checks if a robot is within the cell passed into the function
+                                                                                               // returns true is a robot is detected
+                                                                                               // if a robot is found, ret_variable is modified to contain the id of the found robot
+    unsigned int temp = 0;
+    for(int i = 0; i < tracked_robots.size(); i++){ // looping through robots position
+        if(tracked_robots[i].robot_position.x == x && tracked_robots[i].robot_position.y == y){ // if robot is occupying the location passed in
+            temp = tracked_robots[i].robot_id; // returning found robot id
+            *ret_variable = temp;
+
+            return true; // return true as robot is occupying the cell
+        }
+    }
+    return false; // returning false as robot is not found within the occupied cell
 }
 
 void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // updates the location of a robot to the location specified
