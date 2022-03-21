@@ -107,11 +107,6 @@ class RobotMaster{
                                      // exploration won't begin until enough robots have been added
 
         unsigned int request_id_tracker; // tracks the number of requests handled
-
-        // TODO: Implement master_status to cause any new incoming requests to be left incomplete                
-        //int master_status; // status of robotmaster
-                           // if status == -1, finish remaining requests and shutdown
-                           // if status == 0, receive requests  
 };
 
 #endif

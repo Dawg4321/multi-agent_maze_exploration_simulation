@@ -7,9 +7,6 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
     maze_xsize = xsize;
     maze_ysize = ysize;
 
-    // TODO: Implement master_status to cause any new incoming requests to be left incomplete
-    //master_status = 0; // setting status
-
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
 
     GlobalMapInfo.resize(maze_ysize,std::vector<CellInfo>(maze_xsize)); // resizing GlobalMap info to maze size
@@ -73,7 +70,6 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
 
                     if(number_of_unexplored < 1){ // if no more cells to explore
                         updateAllRobotState(-1); // tell all robots to shut down
-                        //master_status = -1; // maze completely mapped, can ignore any incoming requests that do not contain shut down complete messages
                     }
 
                     break;

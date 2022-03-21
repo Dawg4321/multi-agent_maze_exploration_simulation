@@ -137,7 +137,7 @@ bool Maze::printMaze(){ // function to print layout of maze in an intuitive mann
         return false; // return false as printing failed
     }
 
-    printf("**Maze Simulation**\n"); // printing title and maze information
+    printf("**Generated Maze**\n"); // printing title and maze information
     printf("Size = %d x %d\n", maze_xsize, maze_ysize);
 
     int string_pointer = 0; // integer used to determine which logo needs to be printed from logo vector

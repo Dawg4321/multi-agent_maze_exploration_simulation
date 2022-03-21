@@ -160,6 +160,7 @@ int main(){
     // ~~~ Deleting Dynamically Allocated Memory ~~
 
     delete Robot_Controller; // deleting RobotMaster
+    
     for(int i = 0; i < number_of_robots; i++) // deleting all generated robots
         delete Robots_Array[i];
 
