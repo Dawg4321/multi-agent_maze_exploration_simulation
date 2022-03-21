@@ -13,16 +13,15 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // IDs used for Robot -> Master Requests
-#define shutDownRequestID -1
-#define addRobotRequestID 0
-#define updateGlobalMapRequestID 1
-#define move2CellRequestID 2
-#define reserveCellRequestID 3
-#define updateRobotLocationRequestID 4
+#define shutDownRequest_ID -1
+#define addRobotRequest_ID 0
+#define updateGlobalMapRequest_ID 1
+#define move2CellRequest_ID 2
+#define reserveCellRequest_ID 3
+#define updateRobotLocationRequest_ID 4
 
 // IDs used for Robot -> Master Requests
-#define updateRobotStateRequestID 0
-
+#define updateRobotStateRequest_ID 0
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 // Generic Request Template
@@ -49,7 +48,7 @@ struct m_shutDownRequest:m_genericRequest{ // request to notify robot master of 
     unsigned int robot_id; // id of robot shutting down
 
     // Constructor
-    m_shutDownRequest():m_genericRequest(shutDownRequestID){ // assigning request id to request message    
+    m_shutDownRequest():m_genericRequest(shutDownRequest_ID){ // assigning request id to request message    
     
     }    
 };
@@ -67,7 +66,7 @@ struct m_addRobotRequest:m_genericRequest{ // request to notify controller of ro
     RequestHandler* robot_request_handler; // pointer to request handler for master -> robot communications
 
     // Constructor
-    m_addRobotRequest():m_genericRequest(addRobotRequestID){ // assigning request id to request message
+    m_addRobotRequest():m_genericRequest(addRobotRequest_ID){ // assigning request id to request message
        
     }  
 
@@ -87,7 +86,7 @@ struct m_updateGlobalMapRequest:m_genericRequest{
     Coordinates cords; // current coordinates of where the read occured
 
     // Constructor
-    m_updateGlobalMapRequest():m_genericRequest(updateGlobalMapRequestID){ // assigning request id to request message
+    m_updateGlobalMapRequest():m_genericRequest(updateGlobalMapRequest_ID){ // assigning request id to request message
 
     }  
 };
@@ -102,7 +101,7 @@ struct m_reserveCellRequest:m_genericRequest{
     Coordinates neighbouring_cell; // neighbouring cell used to enter target cell 
                                    // used to determine what aspect of tree must be sent back in event node has already been explored 
     // Constructor
-    m_reserveCellRequest():m_genericRequest(reserveCellRequestID){ // assigning request id to request message
+    m_reserveCellRequest():m_genericRequest(reserveCellRequest_ID){ // assigning request id to request message
         
     }  
 };
@@ -122,7 +121,7 @@ struct m_reserveCellResponse{
         map_status = new std::vector<char>;
     }
     
-    ~m_reserveCellResponse(){ // deallocating variou vectors
+    ~m_reserveCellResponse(){ // deallocating various vectors
         delete map_connections;
         delete map_coordinates;
         delete map_status;
@@ -135,7 +134,7 @@ struct m_updateRobotLocationRequest:m_genericRequest{
     Coordinates new_robot_location; // cell which robot now occupies
 
     // Constructor
-    m_updateRobotLocationRequest():m_genericRequest(updateRobotLocationRequestID){ // assigning request id to request message
+    m_updateRobotLocationRequest():m_genericRequest(updateRobotLocationRequest_ID){ // assigning request id to request message
         
     }  
 };
@@ -143,12 +142,13 @@ struct m_updateRobotLocationResponse{ // no response needed hence empty
 
 };
 
+// ** move2CellRequest **
 struct m_move2CellRequest:m_genericRequest{
     unsigned int robot_id; // id of robot sending request
     Coordinates target_cell; // target cell of robot move request
 
     // Constructor
-    m_move2CellRequest():m_genericRequest(move2CellRequestID){ // assigning request id to request message
+    m_move2CellRequest():m_genericRequest(move2CellRequest_ID){ // assigning request id to request message
         
     }  
 };
@@ -163,7 +163,7 @@ struct m_move2CellResponse{
 struct m_updateRobotStateRequest:m_genericRequest{
     int target_state; // target state to set robot to
 
-    m_updateRobotStateRequest():m_genericRequest(updateRobotStateRequestID){ // assigning request id to request message
+    m_updateRobotStateRequest():m_genericRequest(updateRobotStateRequest_ID){ // assigning request id to request message
         
     }
 };

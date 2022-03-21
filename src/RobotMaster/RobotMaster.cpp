@@ -1,7 +1,7 @@
 #include "RobotMaster.h"
 
 RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): max_num_of_robots(num_of_robots){
-    id_tracker = 0; // initializing id counter to zero
+    robot_id_tracker = 0; // initializing id counter to zero
     Message_Handler = r; // gathering request handler to use for receiving robot -> master communications
     
     maze_xsize = xsize;
@@ -37,13 +37,13 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
     if(request != NULL){ // if there is a a request to handle, process it
 
         // tracking this request
-        request_id_tracker++; // get next request id for request tracking purposes
+        transaction_id_tracker++; // get next request id for request tracking purposes
 
         // gathering request type for switch statement
         m_genericRequest* r = (m_genericRequest*) request->msg_data; // use generic message pointer to gather request type
 
         switch (r->request_type){ // determining type of request before processing
-                case shutDownRequestID: // shutDown confirmation request ( telling master robot has finished exploring)
+                case shutDownRequest_ID: // shutDown confirmation request ( telling master robot has finished exploring)
                 {
                     shutDownRequest(request);
 
@@ -53,7 +53,7 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
                     
                     break;
                 }
-                case addRobotRequestID: // addRobot request
+                case addRobotRequest_ID: // addRobot request
                 {
                     addRobotRequest(request);
 
@@ -64,7 +64,7 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
                                                 // this causes them to all begin exploring by first scanning their cell
                     break;
                 }
-                case updateGlobalMapRequestID: // updateGlobalMap request
+                case updateGlobalMapRequest_ID: // updateGlobalMap request
                 {   
                     updateGlobalMapRequest(request);
 
@@ -74,19 +74,19 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
 
                     break;
                 }
-                case move2CellRequestID: // move2cell request
+                case move2CellRequest_ID: // move2cell request
                 {
                     move2CellRequest(request); // unimplemented in parent class as collision management is used in child class 
 
                     break;
                 }
-                case reserveCellRequestID: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
+                case reserveCellRequest_ID: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
                 {
                     reserveCellRequest(request);
 
                     break;
                 }
-                case updateRobotLocationRequestID: // update Robot Location  (tells master that robot has completed move operation)
+                case updateRobotLocationRequest_ID: // update Robot Location  (tells master that robot has completed move operation)
                 {
                     updateRobotLocationRequest(request);
 
@@ -299,11 +299,11 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     
     number_of_unexplored++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
 
-    id_tracker++; // incrementing inorder to determine next id to give a robot
+    robot_id_tracker++; // incrementing inorder to determine next id to give a robot
 
     RobotInfo temp; // buffer to store robot info before pushing it to the tracked_robots vecto
 
-    temp.robot_id = id_tracker; // assigning id to new robot entry 
+    temp.robot_id = robot_id_tracker; // assigning id to new robot entry 
     temp.robot_position.x = x;  // assigning position to new robot entry 
     temp.robot_position.y = y;
     temp.robot_status = 0;      // updating current robot status to 0 to leave it on stand by
@@ -584,6 +584,184 @@ void RobotMaster::printRequestInfo(Message* request){
 
     printf("~~~~~\n");
 }*/
+
+void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericRequest* response, unsigned int transaction_id){
+    // creating jsons
+    json request_buffer_json, response_buffer; // buffer jsons to store request and response information 
+
+    switch(request->request_type){ // switch to determine which type of request has been received
+                                   // this is required inorder to typecast and export the appropriate information
+        case shutDownRequest_ID:
+        {
+            // typecast to appropriate child class to gather request data
+            m_shutDownRequest* request_cast = (m_shutDownRequest*) request;
+            
+            // adding request infomation to buffer json
+            request_buffer_json["ID"] = request_cast->robot_id;
+
+            break;
+        }
+        case addRobotRequest_ID:
+        {
+            // typecast to appropriate child class to gather request data
+            m_addRobotRequest* request_cast = (m_addRobotRequest*) request;
+            
+            // adding request infomation to buffer json
+            request_buffer_json["x_pos"] = request_cast->x;
+            request_buffer_json["y_pos"] = request_cast->y;
+
+            break;
+        }
+        case updateGlobalMapRequest_ID:
+        {
+            // typecast to appropriate child class to gather request data
+            m_updateGlobalMapRequest* request_cast = (m_updateGlobalMapRequest*) request;
+            
+            // adding request infomation to buffer json
+            request_buffer_json["ID"] = request_cast->robot_id;
+
+            request_buffer_json["Current_Cell"] = { {"x_pos", request_cast->cords.x},
+                                                    {"y_pos", request_cast->cords.y} };
+
+            // json.hpp does not allow for bool to be placed into json therefore must convert to other datatype
+            
+            char wall_north, wall_south, wall_east, wall_west = 'n'; // initialize all walls to no as they have not be checked
+
+            if(request_cast->wall_info[0]) // if there is a wall to the north
+                wall_north = 'y'; // set wall_north to y for yes
+            
+            if(request_cast->wall_info[1]) // if there is a wall to the south
+                wall_south = 'y'; // set wall_north to y for yes
+            
+            if(request_cast->wall_info[2]) // if there is a wall to the east
+                wall_east = 'y'; // set wall_north to y for yes
+
+            if(request_cast->wall_info[3]) // if there is a wall to the west
+                wall_west = 'y'; // set wall_north to y for yes
+
+            // adding wall info to buffer json
+            request_buffer_json["Wall_Info"] = { {"North", wall_north},
+                                                 {"South", wall_south},
+                                                 {"East", wall_east},
+                                                 {"West", wall_west} };
+            break;
+        }
+        case move2CellRequest_ID:
+        {
+            // typecast to appropriate child class to gather request data
+            m_move2CellRequest* request_cast = (m_move2CellRequest*) request;
+            
+            // adding request infomation to buffer json
+            request_buffer_json["ID"] = request_cast->robot_id;
+
+            request_buffer_json["Target_Cell"] = { { "x_pos", request_cast->target_cell.x},
+                                                   { "y_pos", request_cast->target_cell.y} };
+            break;
+        }
+        case reserveCellRequest_ID:
+        {
+             // typecast to appropriate child class to gather request data
+            m_reserveCellRequest* request_cast = (m_reserveCellRequest*) request;
+            
+            // adding request infomation to buffer json
+            request_buffer_json["ID"] = request_cast->robot_id;
+
+            request_buffer_json["Target_Cell"] = { { "x_pos", request_cast->target_cell.x},
+                                                   { "y_pos", request_cast->target_cell.y} };            
+
+            request_buffer_json["Neighbouring_Cell"] = { { "x_pos", request_cast->neighbouring_cell.x},
+                                                         { "y_pos", request_cast->neighbouring_cell.y} };   
+            break;
+        }
+        case updateRobotLocationRequest_ID:
+        {
+             // typecast to appropriate child class to gather request data
+            m_updateRobotLocationRequest* request_cast = (m_updateRobotLocationRequest*) request;
+            
+            // adding request infomation to buffer json
+            request_buffer_json["ID"] = request_cast->robot_id;
+
+            request_buffer_json["Current_Cell"] = { { "x_pos", request_cast->new_robot_location.x},
+                                                    { "y_pos", request_cast->new_robot_location.y} };
+            break;
+        }
+    }
+
+    switch(response->request_type){ // switch to determine which type of response is being sent
+                                   // this is required inorder to typecast and export the appropriate information
+        case shutDownRequest_ID:
+        {
+            // no response required thus no print out
+
+            break;
+        }
+        case addRobotRequest_ID:
+        {
+            // typecast to appropriate child class to gather response data
+            m_addRobotResponse* response_cast = (m_addRobotResponse*) response;
+            
+            // adding request infomation to buffer json
+            request_buffer_json["Assigned_ID"] = response_cast->robot_id;
+
+            break;
+        }
+        case updateGlobalMapRequest_ID:
+        {
+            // no response required thus no print out
+
+            break;
+        }
+        case move2CellRequest_ID:
+        {
+            // typecast to appropriate child class to gather response data
+            m_move2CellResponse* response_cast = (m_move2CellResponse*) response;
+            
+            // need to convert bool info into y/n
+            char can_movement_occur = 'n';
+            if (response_cast->can_movement_occur)
+                can_movement_occur = 'y';
+
+            // adding request infomation to buffer json
+            request_buffer_json["Movement_Occured"] = can_movement_occur;
+            
+            break;
+        }
+        case reserveCellRequest_ID:
+        {
+            // typecast to appropriate child class to gather response data
+            m_reserveCellResponse* response_cast = (m_reserveCellResponse*) response;
+            
+            // need to convert bool info into y/n
+            char cell_reserved = 'n';
+            if (response_cast->cell_reserved)
+                cell_reserved = 'y';
+
+            // adding request infomation to buffer json
+            request_buffer_json["Cell_Reserved"] = cell_reserved;
+
+            break;
+        }
+        case updateRobotLocationRequest_ID:
+        {
+            // no response required thus no print out
+
+            break;
+        }
+    }
+
+    // transaction information has been encapsulated into two seperate jsons
+    // they can now be added to a buffer json and then added to RequestInfo
+    json request_json;
+    request_json["Request"] = request_buffer_json;
+    request_json["Response"] = request_buffer_json;
+
+    std::string s = "Transaction_"; // getting name for transaction
+    s += transaction_id; // adding transaction id to name
+    
+    RequestInfo[s] = request_json; // adding generated json to RequestInfo json
+
+    return; 
+}
 
 bool RobotMaster::printGlobalMap(){ // function to print global map of maze including robot location
                                      // maze design based off what can be seen here: https://www.chegg.com/homework-help/questions-and-answers/using-c-1-write-maze-solving-program-following-functionality-note-implementation-details-a-q31826669

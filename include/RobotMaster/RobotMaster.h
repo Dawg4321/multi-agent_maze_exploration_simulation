@@ -13,6 +13,8 @@
 #include "json.hpp" // using json.hpp from https://github.com/nlohmann/json
                     // this library is used to export tracked data into a json format
 
+using json = nlohmann::json; // simplifying namespace so "json" can be used instead of "nlohmann::json" when declaring json objects
+
 struct RobotInfo{ // structure to track information of various robots in the swarm
     unsigned int robot_id; // tracks the id of a robot in order for robot differentiation
 
@@ -81,7 +83,8 @@ class RobotMaster{
                                                            // [2] = east edge
                                                            // [3] = west edge
         // ** Metric Tracking Functions **
-        void exportRequestInfo2CSV(); // exports information regarding a recieved request to a csv file
+        void exportRequestInfo2JSON(m_genericRequest* request, m_genericRequest* response, unsigned int request_id); // exports information regarding a recieved request to a json file
+        void clearJSON();
 
         // ** print functions **
         void printRequestInfo(Message* Request); // prints information on outcome of receieve request
@@ -96,7 +99,7 @@ class RobotMaster{
 
         RequestHandler* Message_Handler; // pointer to request handler shared by all Robots and a RobotMaster objects
 
-        unsigned int id_tracker; // tracks next id to give to a robot
+        unsigned int robot_id_tracker; // tracks next id to give to a robot
 
         int number_of_unexplored; // number of unexplored cells encountered by Robots
 
@@ -106,7 +109,9 @@ class RobotMaster{
         const int max_num_of_robots; // variable which specifies number of robots needed for exploration
                                      // exploration won't begin until enough robots have been added
 
-        unsigned int request_id_tracker; // tracks the number of requests handled
+        unsigned int transaction_id_tracker; // tracks the number of incoming transactions handled
+
+        json RequestInfo; // json containing information regarding each request
 };
 
 #endif

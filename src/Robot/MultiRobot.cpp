@@ -52,7 +52,7 @@ int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wa
 
         switch (r->request_type){ // determining type of request before processing
 
-                case updateRobotStateRequestID: // update robot state
+                case updateRobotStateRequest_ID: // update robot state
                 {   
                     // updating robot state to specified value
                     m_updateRobotStateRequest* data = (m_updateRobotStateRequest*) request->msg_data;
