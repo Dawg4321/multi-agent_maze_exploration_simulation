@@ -255,7 +255,7 @@ bool MultiRobot::requestReserveCell(){
     sem_wait(response_sem); // waiting for response to be ready from controller
 
     m_reserveCellResponse* message_response = (m_reserveCellResponse*) temp_message->return_data;
-    bool reserved_succeed = *message_response->cell_reserved; // gather whether cell has been reserved
+    bool reserved_succeed = message_response->cell_reserved; // gather whether cell has been reserved
     
     std::vector<Coordinates>* map_info = message_response->map_coordinates; // gather node map for map update
     std::vector<std::vector<bool>>* edge_info = message_response->map_connections; // gather wall information for each node in map

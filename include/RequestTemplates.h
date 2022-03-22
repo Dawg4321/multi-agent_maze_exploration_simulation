@@ -31,6 +31,7 @@
 
 struct m_genericRequest{ // template structure used by all requests
     const int request_type; // defines type of request sent
+                            // uses previously defined IDs
 
     m_genericRequest(int x): request_type(x){ // assigning request type to const int 
 
@@ -53,8 +54,12 @@ struct m_shutDownRequest:m_genericRequest{ // request to notify robot master of 
     }    
 };
 
-struct m_shutDownResponse{ // no response needed to shutdown request hence empty
-
+struct m_shutDownResponse:m_genericRequest{ // no response needed to shutdown request hence empty
+    
+    // Constructor
+    m_shutDownResponse():m_genericRequest(shutDownRequest_ID){ // assigning request id to response message    
+    
+    }    
 };
 
 // ** addRobotRequest Messages **
@@ -71,9 +76,14 @@ struct m_addRobotRequest:m_genericRequest{ // request to notify controller of ro
     }  
 
 };
-struct m_addRobotResponse{ // response containing robot's assigned id
+struct m_addRobotResponse:m_genericRequest{ // response containing robot's assigned id
                            // this is critical in allowing the master to differentiate between each robot's incoming requests
     unsigned int robot_id; // id assigned to the robot
+
+    // Constructor
+    m_addRobotResponse():m_genericRequest(addRobotRequest_ID){ // assigning request id to request message
+       
+    } 
 };
 
 // ** updateGlobalMapRequest **
@@ -90,8 +100,12 @@ struct m_updateGlobalMapRequest:m_genericRequest{
 
     }  
 };
-struct m_updateGlobalMapResponse{ // no response needed hence empty
+struct m_updateGlobalMapResponse:m_genericRequest{ // no response needed hence empty
 
+    // Constructor
+    m_updateGlobalMapResponse():m_genericRequest(updateGlobalMapRequest_ID){ // assigning request id to request message
+
+    } 
 };
 
 // ** reserveCellRequest **
@@ -105,8 +119,8 @@ struct m_reserveCellRequest:m_genericRequest{
         
     }  
 };
-struct m_reserveCellResponse{
-    bool* cell_reserved; // bool determining whether cell was successfully reserved
+struct m_reserveCellResponse:m_genericRequest{
+    bool cell_reserved; // bool determining whether cell was successfully reserved
     
     // returned portion of global map
     // this is only used if the cell was not reserved
@@ -114,8 +128,7 @@ struct m_reserveCellResponse{
     std::vector<std::vector<bool>>* map_connections; // wall information corresponding to nodes in map_coordinates
     std::vector<char>* map_status; // node status information of nodes in map_coordinates
 
-    m_reserveCellResponse(){ // allocating various vectors
-        cell_reserved = new bool;
+    m_reserveCellResponse():m_genericRequest(reserveCellRequest_ID){ // allocating various vectors
         map_coordinates = new std::vector<Coordinates>;
         map_connections = new std::vector<std::vector<bool>>;
         map_status = new std::vector<char>;
@@ -138,8 +151,12 @@ struct m_updateRobotLocationRequest:m_genericRequest{
         
     }  
 };
-struct m_updateRobotLocationResponse{ // no response needed hence empty
-
+struct m_updateRobotLocationResponse:m_genericRequest{ // no response needed hence empty
+    
+    // Constructor
+    m_updateRobotLocationResponse():m_genericRequest(updateRobotLocationRequest_ID){ // assigning request id to request message
+        
+    }  
 };
 
 // ** move2CellRequest **
@@ -152,8 +169,13 @@ struct m_move2CellRequest:m_genericRequest{
         
     }  
 };
-struct m_move2CellResponse{
+struct m_move2CellResponse:m_genericRequest{
     bool can_movement_occur;
+
+    // Constructor
+    m_move2CellResponse():m_genericRequest(move2CellRequest_ID){ // assigning request id to request message
+        
+    }  
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~

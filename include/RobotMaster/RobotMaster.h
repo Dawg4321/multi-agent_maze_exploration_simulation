@@ -84,7 +84,8 @@ class RobotMaster{
                                                            // [3] = west edge
         // ** Metric Tracking Functions **
         void exportRequestInfo2JSON(m_genericRequest* request, m_genericRequest* response, unsigned int request_id); // exports information regarding a recieved request to a json file
-        void clearJSON();
+        json getRequestInfo(){ return RequestInfo; } // gets a copy of the json containing information on transactions handled by the RobotMaster classs
+        void clearRequestInfo(){ RequestInfo.clear(); } // clears the contents of the RequestInfo json
 
         // ** print functions **
         void printRequestInfo(Message* Request); // prints information on outcome of receieve request

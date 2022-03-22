@@ -144,23 +144,25 @@ void RobotMaster::addRobotRequest(Message* request){ // adds robot to controller
     RequestHandler* robot_request_handler = request_data->robot_request_handler;
 
     unsigned int robot_id = addRobot(x, y, robot_request_handler); // add robot using coordinates
-                                                // return value is assigned id of robot
-
-    delete request_data; // deleting dynamically allocated message data
-
+                                                                  // return value is assigned id of robot
     // gathering response data
     m_addRobotResponse* response_data = new m_addRobotResponse;
     response_data->robot_id = robot_id;
 
     // assigning response to message
     request->return_data = (void*) response_data;
+
+    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker); // adding request info to tracking JSON
     
     sem_post(request->res_sem); // signalling Robot that response message is ready
     sem_wait(request->ack_sem); //  waiting for Robot to be finished with response so message can be deleted
     
     // sent message was dynamically allocated thus must be deleted
     // this part of the code should be thread safe as the robot and Controller have finished using these variables
-    delete request;
+    
+    delete request_data; // deleting dynamically allocated message data
+    
+    delete request; // deleting message
 
     return;
 }
@@ -186,14 +188,20 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
 
     //request->return_data.push_back((void*)&robot_id); // telling Robot that data was successfully added to GlobalMap and it can continue
 
-    delete request_data; // deleting dynamically allocated message data
+    // gathering response data
+    m_updateGlobalMapResponse* response_data = new m_updateGlobalMapResponse;
+
+    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker); // adding request info to tracking JSON
 
     sem_post(request->res_sem); // signalling Robot that response message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
 
     // sent message was dynamically allocated thus must be deleted
     // this part of the code should be thread safe as the robot and Controller have finished using these variabless
-    delete request;
+    
+    delete request_data; // deleting dynamically allocated message data
+    
+    delete request; // deleting message
 
     return;
 }
@@ -244,12 +252,12 @@ void RobotMaster::reserveCellRequest(Message* request){
         cell_reserved = true; // cell has been reserved
     }
 
-    *response_data->cell_reserved = cell_reserved; // adding information is cell was reserved to response
+    response_data->cell_reserved = cell_reserved; // adding information is cell was reserved to response
 
     // attaching response data
     request->return_data = (void*)response_data;
-    
-    delete request_data; // deleting dynamically allocated message data
+
+    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker); // adding request info to tracking JSON
 
     sem_post(request->res_sem); // signalling Robot that return message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
@@ -257,7 +265,11 @@ void RobotMaster::reserveCellRequest(Message* request){
 
     // sent message was dynamically allocated thus must be deleted
     // this part of the code should be thread safe as the robot and Controller have finished using these variabless
-    delete request;
+    
+    delete request_data; // deleting dynamically allocated message data
+    
+    delete request; // deleting message
+
 
     return;
 }
@@ -281,7 +293,10 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
         }
     }
 
-    delete request_data; // deleting dynamically allocated message data
+    // return data allocation
+    m_updateRobotLocationResponse* response_data = new m_updateRobotLocationResponse; // response message
+
+    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker); // adding request info to tracking JSON
 
     sem_post(request->res_sem); // signalling Robot that message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
@@ -289,7 +304,11 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
 
     // sent message was dynamically allocated thus must be deleted
     // this part of the code should be thread safe as the robot and Controller have finished using these variabless
-    delete request;
+    
+    delete request_data; // deleting dynamically allocated message data
+    
+    delete request; // deleting message
+
 
     return;
 }
@@ -756,7 +775,7 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
     request_json["Response"] = request_buffer_json;
 
     std::string s = "Transaction_"; // getting name for transaction
-    s += transaction_id; // adding transaction id to name
+    s += std::to_string(transaction_id); // adding transaction id to name
     
     RequestInfo[s] = request_json; // adding generated json to RequestInfo json
 

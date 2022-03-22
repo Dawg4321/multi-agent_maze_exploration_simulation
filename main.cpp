@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <pthread.h>
 
 #include "Maze.h"
@@ -55,6 +56,27 @@ RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHand
     if(robot_type == 1 || robot_type == 2){ // if the robots to simulate are of type NC_UI or NC_IE
         return new RobotMaster(request_handler, number_of_robots, xsize, ysize);
     }
+}
+
+bool exportJSON(json json_2_export, string json_name){
+
+
+    json_name += ".json"; // adding .json extension to passed in name
+
+    std::ofstream json_file(json_name); // creating file stream to the json file
+
+    if(json_file.is_open()){ // if file was created successfully
+
+        json_file << std::setw(4) << json_2_export << std::endl; // export json to .json file
+
+        return true;
+    }
+
+    // failed to open file for export
+
+    cout << "Error: Failed to write to " << json_name << ".json\n";
+
+    return false;
 }
 
 int main(){
@@ -156,6 +178,8 @@ int main(){
 
     // ~~~ Awaiting Robot Master Thread Completion ~~~
     pthread_join(master_thread, NULL); // waiting for robot master thread to finish
+    
+    exportJSON(Robot_Controller->getRequestInfo(), "Test");
 
     // ~~~ Deleting Dynamically Allocated Memory ~~
 
