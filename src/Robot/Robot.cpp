@@ -163,34 +163,38 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
     Coordinates buffer; // buffer structor to gather positions of neighbouring nodes before pushing to vector
 
     // check if neighbour to the north is valid and connected via an edge (no wall)
-    if(y != 0){ // protection to ensure invalid part of nodes is not accessed if y = 0
-        if(!LocalMap->y_edges[y][x] && LocalMap->nodes[y-1][x] > 0){
+    if(!LocalMap->y_edges[y][x]){
+        if (LocalMap->nodes[y-1][x] > 0){
             buffer.x = x; 
             buffer.y = y - 1;
             ret_value.push_back(buffer);
         }
     }
     // check if neighbour to the south is valid and connected via an edge (no wall)
-    if(!LocalMap->y_edges[y+1][x] && LocalMap->nodes[y+1][x] > 0){
-        buffer.x = x; 
-        buffer.y = y + 1;
-        ret_value.push_back(buffer);
+    if(!LocalMap->y_edges[y+1][x]){
+        if (LocalMap->nodes[y+1][x] > 0){
+            buffer.x = x; 
+            buffer.y = y + 1;
+            ret_value.push_back(buffer);
+        }
     }
     // check if neighbour to the east is valid and connected via an edge (no wall)
-    if(x != 0){ // protection to ensure invalid part of nodes is not accessed if x = 0
-        if(!LocalMap->x_edges[y][x] && LocalMap->nodes[y][x-1] > 0){
+    if(!LocalMap->x_edges[y][x]){
+        if (LocalMap->nodes[y][x-1] > 0){
             buffer.x = x - 1; 
             buffer.y = y;
             ret_value.push_back(buffer);
         }
     }
     // check if neighbour to the west is valid and connected via an edge (no wall)
-    if(!LocalMap->x_edges[y][x+1] && LocalMap->nodes[y][x+1] > 0){
-        buffer.x = x + 1; 
-        buffer.y = y;
-        ret_value.push_back(buffer);
+    if(!LocalMap->x_edges[y][x+1]){
+        if (LocalMap->nodes[y][x+1] > 0){
+            buffer.x = x + 1; 
+            buffer.y = y;
+            ret_value.push_back(buffer);
+        }
     }
-
+    
     /*// printing all valid neighbouring nodes of selected node
     for(int i = 0; i < ret_value.size(); i ++){ // TODO: after debugging
         printf("%d,%d\n",ret_value[i].x,ret_value[i].y);
@@ -326,8 +330,7 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
             for(auto [key, val]: visited_nodes){ // iterate through visited_nodes
                 if (key == valid_neighbours[i]){ // if current neighbour is in map
                     node_in_map = true;          // set node_in_map
-                    break;
-                    
+                    break;    
                 }
             }
             if(!node_in_map){ // if neighbour not found in map

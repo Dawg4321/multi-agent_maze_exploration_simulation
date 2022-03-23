@@ -395,14 +395,21 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 }
 
 std::vector<bool> RobotMaster::getNodeEdgeInfo(Coordinates* C){
+    
     std::vector<bool> edge_info; // vector to return with information on edges surrounding node C
 
-    edge_info.push_back(GlobalMap->y_edges[C->y][C->x]);    // [0] = north edge
-    edge_info.push_back(GlobalMap->y_edges[C->y + 1][C->x]);// [1] = south edge
-    edge_info.push_back(GlobalMap->y_edges[C->y][C->x]);    // [2] = east edge
-    edge_info.push_back(GlobalMap->y_edges[C->y][C->x + 1]);// [3] = west edge
+    //if(GlobalMap->nodes[C->y][C->x] == 1){ // if node is valid and seen, return connection information
 
-    return edge_info;
+        edge_info.push_back(GlobalMap->y_edges[C->y][C->x]);    // [0] = north edge
+        edge_info.push_back(GlobalMap->y_edges[C->y + 1][C->x]);// [1] = south edge
+        edge_info.push_back(GlobalMap->x_edges[C->y][C->x]);    // [2] = east edge
+        edge_info.push_back(GlobalMap->x_edges[C->y][C->x + 1]);// [3] = west edge
+
+        return edge_info;
+   // }
+    
+    return edge_info; // return empty vector if node has not been explored yet
+
 }
 
 std::vector<Coordinates> RobotMaster::getSeenNeighbours(unsigned int x, unsigned  int y){ // function to gather seen neighbouring cells of a selected cell based on global map
@@ -472,6 +479,7 @@ void RobotMaster::gatherPortionofMap(Coordinates curr_node, Coordinates neighbou
         for(int i = 0; i < valid_neighbours.size(); i++){ // iterate through all of the current node's neighbours to see if they have been explored
             
             bool already_visited = false;
+
             for(int j = 0; j < map_nodes->size(); j++){
                 if(valid_neighbours[i] == (*map_nodes)[j]){
                     already_visited = true;

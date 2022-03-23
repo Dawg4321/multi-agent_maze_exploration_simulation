@@ -24,8 +24,8 @@ struct GridGraph{
 
     GridGraph(int x, int y){ // x = x length of graph, y = y length of graph
         nodes.resize(y,std::vector<char>(x, 0)); // allocating vectors to empty matrix of specified size 
-        x_edges.resize(y+1,std::vector<bool>(x+1, false));
-        y_edges.resize(y+1,std::vector<bool>(x+1, false));
+        x_edges.resize(y,std::vector<bool>(x+1, false));
+        y_edges.resize(y+1,std::vector<bool>(x, false));
     }
 };
 

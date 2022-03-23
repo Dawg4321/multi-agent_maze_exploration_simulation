@@ -57,9 +57,17 @@ void Maze::generate4x4SampleMaze(){
                         {1, 0, 1, 1, 1},
                     };
 
-    for (int i = 0; i < sizeof(x)/sizeof(x[0]); i++) // passing x edges into graph struct
-        for (int j = 0; j < sizeof(x[0])/sizeof(x[0][0]); j++)
-            MazeMap->x_edges[i][j] = x[i][j];
+    // passing x edges into graph struct
+    for (int i = 0; i < sizeof(x)/sizeof(x[0]); i++){ // outer loop (iterate through rows)
+        for (int j = 0; j < sizeof(x[0])/sizeof(x[0][0]); j++){ // inner loop (iterate through columns in row)
+            if(x[i][j] == 1){ // if there is a wall, set mazemap to have a wall
+                MazeMap->x_edges[i][j] = true;
+            }
+            else{ // if there is no wall, set mazemap to have no wall
+                MazeMap->x_edges[i][j] = false;
+            }
+        }
+    }
 
     char y[5][4] = { // marking y edges for maze
                         {1, 1, 1, 1}, 
@@ -69,10 +77,17 @@ void Maze::generate4x4SampleMaze(){
                         {1, 1, 1, 1}
                     };
 
-    for (int i = 0; i < sizeof(y)/sizeof(y[0]); i++) // passing y edges into graph struct
-        for (int j = 0; j < sizeof(y[0])/sizeof(y[0][0]); j++)
-            MazeMap->y_edges[i][j] = y[i][j];
-    
+    // passing y edges into graph struct
+    for (int i = 0; i < sizeof(y)/sizeof(y[0]); i++){ // outer loop (iterate through rows)
+        for (int j = 0; j < sizeof(y[0])/sizeof(y[0][0]); j++){ // inner loop (iterate through columns in row)
+            if(y[i][j] == 1){ // if there is a wall, set mazemap to have a wall
+                MazeMap->y_edges[i][j] = true;
+            }
+            else{ // if there is no wall, set mazemap to have no wall
+                MazeMap->y_edges[i][j] = false;
+            }
+        }
+    }
     return;
 }
 

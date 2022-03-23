@@ -217,10 +217,12 @@ void MultiRobot::updateLocalMap(std::vector<Coordinates>* map_info, std::vector<
 
         LocalMap->nodes[y][x] = (*map_status)[i]; // passing map status of cell into LocalMap
         
-        LocalMap->y_edges[y][x] = (*edge_info)[i][0]; // passing northern edge info into LocalMap
-        LocalMap->y_edges[y + 1][x] = (*edge_info)[i][1]; // passing southern edge info into map
-        LocalMap->x_edges[y][x] = (*edge_info)[i][2]; // passing eastern edge info into map
-        LocalMap->x_edges[y][x + 1] = (*edge_info)[i][2]; // passing western edge info into map
+        if((*map_status)[i] == 1){ // if the node is valid, pass various x and y edge information into LocalMap
+            LocalMap->y_edges[y][x] = (*edge_info)[i][0]; // passing northern edge info into LocalMap
+            LocalMap->y_edges[y + 1][x] = (*edge_info)[i][1]; // passing southern edge info into map
+            LocalMap->x_edges[y][x] = (*edge_info)[i][2]; // passing eastern edge info into map
+            LocalMap->x_edges[y][x + 1] = (*edge_info)[i][3]; // passing western edge info into map
+        }
     }   
     
     return;

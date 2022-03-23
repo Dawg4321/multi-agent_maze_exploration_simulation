@@ -7,8 +7,7 @@ project(Multi-Agent_Maze_Simulation)
 
 # adding executables
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
-add_executable(Multi-Agent_Maze_Simulation ${SRC_FILES} main.cpp)
-#add_executable(Multi-Agent_Maze_Simulation main.cpp)
+add_executable(Multi-Agent_Maze_Simulation ${SRC_FILES})
 
 # linking local libraries
 target_include_directories(Multi-Agent_Maze_Simulation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
