@@ -116,11 +116,20 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
     m_shutDownRequest* request_data = (m_shutDownRequest*)request->msg_data; // first pointer of msg_data points to robot id
     
     removeRobot(request_data->robot_id); // remove robot which is shutting down from system
-    
-    delete request_data; // deleting dynamically allocated message data
+
+    // gathering response data
+    m_shutDownResponse* response_data = new m_shutDownResponse;
+
+    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker);
+
+
 
     sem_post(request->res_sem);  // tell robot that shutdown can occur
 
+    // sent message was dynamically allocated thus must be deleted
+    // this part of the code should be thread safe as the robot and Controller have finished using these variables
+    
+    delete request_data; // deleting dynamically allocated message data
     delete request; // delete dynamically allocated request
 
     return;
@@ -614,7 +623,7 @@ void RobotMaster::printRequestInfo(Message* request){
 
 void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericRequest* response, unsigned int transaction_id){
     // creating jsons
-    json request_buffer_json, response_buffer; // buffer jsons to store request and response information 
+    json request_buffer_json, response_buffer_json; // buffer jsons to store request and response information 
 
     switch(request->request_type){ // switch to determine which type of request has been received
                                    // this is required inorder to typecast and export the appropriate information
@@ -728,7 +737,7 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
             m_addRobotResponse* response_cast = (m_addRobotResponse*) response;
             
             // adding request infomation to buffer json
-            request_buffer_json["Assigned_ID"] = response_cast->robot_id;
+            response_buffer_json["Assigned_ID"] = response_cast->robot_id;
 
             break;
         }
@@ -749,7 +758,7 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
                 can_movement_occur = 'y';
 
             // adding request infomation to buffer json
-            request_buffer_json["Movement_Occured"] = can_movement_occur;
+            response_buffer_json["Movement_Occured"] = can_movement_occur;
             
             break;
         }
@@ -764,7 +773,7 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
                 cell_reserved = 'y';
 
             // adding request infomation to buffer json
-            request_buffer_json["Cell_Reserved"] = cell_reserved;
+            response_buffer_json["Cell_Reserved"] = cell_reserved;
 
             break;
         }
@@ -777,15 +786,15 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
     }
 
     // transaction information has been encapsulated into two seperate jsons
-    // they can now be added to a buffer json and then added to RequestInfo
-    json request_json;
-    request_json["Request"] = request_buffer_json;
-    request_json["Response"] = request_buffer_json;
-
-    std::string s = "Transaction_"; // getting name for transaction
-    s += std::to_string(transaction_id); // adding transaction id to name
+    // they can now be combined in a buffer json and then added to the main "RequestInfo" JSON
     
-    RequestInfo[s] = request_json; // adding generated json to RequestInfo json
+    json request_json;
+    request_json["Type"] = request->request_type;
+    request_json["Request"] = request_buffer_json;
+    request_json["Response"] = response_buffer_json;
+    request_json["Transaction"] = transaction_id;
+    
+    RequestInfo.push_back(request_json); // adding generated json to RequestInfo json
 
     return; 
 }
