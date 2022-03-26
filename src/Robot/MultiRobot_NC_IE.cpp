@@ -61,16 +61,22 @@ void MultiRobot_NC_IE::robotLoop(GridGraph* maze){
             }
             case 3: // move robot to next cell to scan
             {   
-                for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
-                    if(!MultiRobot::move2Cell((planned_path[i]))){ // if movement fails
-                        break; // break from outerloop as no movements can occur now
+                bool move_occured = MultiRobot::move2Cell(planned_path[0]); // attempt to move robot to next location in planned path queue
+
+                if(move_occured){ // if movement succeed 
+                    planned_path.pop_front(); // remove element at start of planned path queue as it has occured 
+                
+                    if(planned_path.empty()){ // if there are no more moves to occur, must be at an unscanned cell
+                        status = 1; // set robot to scan cell on next loop iteration as at desination cell
+                    }
+                    else{ // if more moves left, keep status to 3
+                        status = 3;
                     }
                 }
-
-                planned_path.clear(); // clearing planned_path as movement is complete / failed
-
-                status = 1; // setting status to 1 so scan cell will occur on next loop cycle
-
+                else{ // if movement failed
+                      planned_path.clear(); // clearing current planned path
+                      status = 2; // attempt to plan a new path which will hopefully not cause movement to faile
+                }
                 break;
             }
         }        

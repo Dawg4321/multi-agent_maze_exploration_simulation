@@ -32,7 +32,7 @@ void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
                 // do nothing
                 break;
             }
-            case 1: // scan cell
+            case 1: // scan cell and update master with cell info
             {   
                 std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
 
@@ -42,7 +42,7 @@ void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
 
                 break;
             }
-            case 2: // planned path
+            case 2: // generating path to nearest unknown cell
             {   
                   
                 BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
@@ -51,17 +51,24 @@ void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
 
                 break;
             }
-            case 3: // move robot to next cell to scan
+            case 3: // move robot to next cell in planned bath
             {   
-                for (int i = 0; i < planned_path.size(); i++){ // while there are movements left to be done by robot
-                    if(!MultiRobot::move2Cell((planned_path[i]))){ // if movement fails
-                        break; // break from outerloop as no movements can occur now
+                bool move_occured = MultiRobot::move2Cell(planned_path[0]); // move robot to next location in planned path queue
+
+                if(move_occured){ // if movement succeed 
+                    planned_path.pop_front(); // remove element at start of planned path queue as it has occured 
+                
+                    if(planned_path.empty()){ // if there are no more moves to occur, must be at an unscanned cell
+                        status = 1; // set robot to scan cell on next loop iteration as at desination cell
+                    }
+                    else{ // if more moves left, keep status to 3
+                        status = 3;
                     }
                 }
-
-                planned_path.clear(); // clearing planned_path as movement is complete / failed
-
-                status = 1; // setting status to 1 so scan cell will occur on next loop cycle
+                else{ // if movement failed
+                      planned_path.clear(); // clearing current planned path
+                      status = 2; // attempt to plan a new path which will hopefully not cause movement to faile
+                }
 
                 break;
             }
