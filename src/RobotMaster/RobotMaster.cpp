@@ -1,7 +1,7 @@
 #include "RobotMaster.h"
 
 RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): max_num_of_robots(num_of_robots){
-    robot_id_tracker = 0; // initializing id counter to zero
+    num_of_added_robots = 0; // initializing id counter to zero
     Message_Handler = r; // gathering request handler to use for receiving robot -> master communications
     
     maze_xsize = xsize;
@@ -37,13 +37,13 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
     if(request != NULL){ // if there is a a request to handle, process it
 
         // tracking this request
-        transaction_id_tracker++; // get next request id for request tracking purposes
+        num_of_receieve_transactions++; // get next request id for request tracking purposes
 
         // gathering request type for switch statement
         m_genericRequest* r = (m_genericRequest*) request->msg_data; // use generic message pointer to gather request type
 
         switch (r->request_type){ // determining type of request before processing
-                case shutDownRequest_ID: // shutDown confirmation request ( telling master robot has finished exploring)
+                case shutDownRequest_ID: // shutDown confirmation request ( robot is telling master that it is shutting down)
                 {
                     shutDownRequest(request);
 
@@ -68,7 +68,7 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
                 {   
                     updateGlobalMapRequest(request);
 
-                    if(number_of_unexplored < 1){ // if no more cells to explore
+                    if(number_of_unexplored_cells < 1){ // if no more cells to explore
                         updateAllRobotState(-1); // tell all robots to shut down
                     }
 
@@ -106,6 +106,15 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
     return false; // return false as maze is not completely mapped
 }
 
+RequestHandler* RobotMaster::getTargetRequestHandler(unsigned int target_id){ // gets a request handler for a specific robot
+    for(int i = 0; i < tracked_robots.size(); i++){
+        if(tracked_robots[i].robot_id == target_id){
+            return tracked_robots[i].Robot_Message_Reciever; // return requesthandler for targer robot
+        }
+    }
+    
+    return NULL; // if not found, return NULL
+}
 void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from system
     // shutDown request
     // [0] = type (unsigned int*), content: id of robot shutting down
@@ -115,16 +124,29 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
     // gathering data from request
     m_shutDownRequest* request_data = (m_shutDownRequest*)request->msg_data; // first pointer of msg_data points to robot id
     
-    removeRobot(request_data->robot_id); // remove robot which is shutting down from system
 
     // gathering response data
     m_shutDownResponse* response_data = new m_shutDownResponse;
 
-    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker);
+    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions);
 
+    // sending response message to robot
+    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id      
+    response->msg_data = (void*) response_data; // assigning response to message
 
+    RequestHandler* robot_request_handler = getTargetRequestHandler(request_data->robot_id); // getting request handler to send response
 
-    sem_post(request->res_sem);  // tell robot that shutdown can occur
+    if (robot_request_handler != NULL){ // if request handler gathered send data
+        robot_request_handler->sendMessage(response);
+    }
+    else{ // if no request handler found, must delete response data
+        delete response_data;
+        delete response;
+    }
+
+    // shut down request handled, can remove robot from system
+    removeRobot(request_data->robot_id); 
+
 
     // sent message was dynamically allocated thus must be deleted
     // this part of the code should be thread safe as the robot and Controller have finished using these variables
@@ -154,24 +176,25 @@ void RobotMaster::addRobotRequest(Message* request){ // adds robot to controller
 
     unsigned int robot_id = addRobot(x, y, robot_request_handler); // add robot using coordinates
                                                                   // return value is assigned id of robot
+
     // gathering response data
     m_addRobotResponse* response_data = new m_addRobotResponse;
     response_data->robot_id = robot_id;
 
-    // assigning response to message
-    request->return_data = (void*) response_data;
+    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
+    
+    // sending response message to robot
+    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
+        
+    response->msg_data = (void*) response_data; // assigning response to message
 
-    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker); // adding request info to tracking JSON
-    
-    sem_post(request->res_sem); // signalling Robot that response message is ready
-    sem_wait(request->ack_sem); //  waiting for Robot to be finished with response so message can be deleted
-    
+    robot_request_handler->sendMessage(response);
+
     // sent message was dynamically allocated thus must be deleted
     // this part of the code should be thread safe as the robot and Controller have finished using these variables
     
     delete request_data; // deleting dynamically allocated message data
-    
-    delete request; // deleting message
+    delete request; // deleting received message
 
     return;
 }
@@ -200,16 +223,29 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
     // gathering response data
     m_updateGlobalMapResponse* response_data = new m_updateGlobalMapResponse;
 
-    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker); // adding request info to tracking JSON
+    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
-    sem_post(request->res_sem); // signalling Robot that response message is ready
-    sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
+    // sending response message to robot
+    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
+        
+    response->msg_data = (void*) response_data; // assigning response to message
+
+    RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
+
+    if (robot_request_handler != NULL){ // if request handler gathered send data
+        response->msg_data = (void*) response_data; // assigning response to message
+
+        robot_request_handler->sendMessage(response); // sending message
+    }
+    else{ // if no request handler found, must delete response data
+        delete response_data;
+        delete response;
+    }
 
     // sent message was dynamically allocated thus must be deleted
     // this part of the code should be thread safe as the robot and Controller have finished using these variabless
     
     delete request_data; // deleting dynamically allocated message data
-    
     delete request; // deleting message
 
     return;
@@ -266,7 +302,7 @@ void RobotMaster::reserveCellRequest(Message* request){
     // attaching response data
     request->return_data = (void*)response_data;
 
-    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker); // adding request info to tracking JSON
+    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
     sem_post(request->res_sem); // signalling Robot that return message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
@@ -305,12 +341,22 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
     // return data allocation
     m_updateRobotLocationResponse* response_data = new m_updateRobotLocationResponse; // response message
 
-    exportRequestInfo2JSON(request_data, response_data, transaction_id_tracker); // adding request info to tracking JSON
+    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
-    sem_post(request->res_sem); // signalling Robot that message is ready
-    sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
+    // sending response message to robot
+    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
+   
+    RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
 
+    if (robot_request_handler != NULL){ // if request handler gathered send data
+        response->msg_data = (void*) response_data; // assigning response to message
 
+        robot_request_handler->sendMessage(response); // sending message
+    }
+    else{ // if no request handler found, must delete response data
+        delete response_data;
+        delete response;
+    }
     // sent message was dynamically allocated thus must be deleted
     // this part of the code should be thread safe as the robot and Controller have finished using these variabless
     
@@ -325,13 +371,13 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
 unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandler* r){ // adding robot to control system
                                                                                        // this must be completed by all robots before beginning exploration
     
-    number_of_unexplored++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
+    number_of_unexplored_cells++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
 
-    robot_id_tracker++; // incrementing inorder to determine next id to give a robot
+    num_of_added_robots++; // incrementing inorder to determine next id to give a robot
 
     RobotInfo temp; // buffer to store robot info before pushing it to the tracked_robots vecto
 
-    temp.robot_id = robot_id_tracker; // assigning id to new robot entry 
+    temp.robot_id = num_of_added_robots; // assigning id to new robot entry 
     temp.robot_position.x = x;  // assigning position to new robot entry 
     temp.robot_position.y = y;
     temp.robot_status = 0;      // updating current robot status to 0 to leave it on stand by
@@ -360,7 +406,7 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 
     if (GlobalMap->nodes[C->y][C->x] != 1){ // checking if there is a need to update map (has the current node been explored?)
         
-        number_of_unexplored--; // subtracting number of unexplored cells as new cell has been explored
+        number_of_unexplored_cells--; // subtracting number of unexplored cells as new cell has been explored
 
         // updating vertical edges in GlobalMap using robot reading
         GlobalMap->y_edges[C->y][C->x] = (*connections)[0]; // north
@@ -376,22 +422,22 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 
         if(!GlobalMap->y_edges[C->y][C->x] && GlobalMap->nodes[C->y - 1][C->x] == 0){ // checking if node to north hasn't been explored by a Robot
             GlobalMap->nodes[C->y - 1][C->x] = 2; // if unexplored and no wall between robot and cell, set northern node to unexplored
-            number_of_unexplored++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
+            number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
         // checking south
         if(!GlobalMap->y_edges[C->y + 1][C->x] && GlobalMap->nodes[C->y + 1][C->x] == 0){ // checking if node to north hasn't been explored by a Robot
             GlobalMap->nodes[C->y + 1][C->x] = 2; // if unexplored and no wall between robot and cell, set southern node to unexplored
-            number_of_unexplored++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
+            number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
         // checking east
         if(!GlobalMap->x_edges[C->y][C->x] && GlobalMap->nodes[C->y][C->x - 1] == 0){ // checking if node to north hasn't been explored by a Robot
             GlobalMap->nodes[C->y][C->x - 1] = 2; // if unexplored and no wall between robot and cell, set eastern node to unexplored
-            number_of_unexplored++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
+            number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
         // checking wast
         if(!GlobalMap->x_edges[C->y][C->x + 1] && GlobalMap->nodes[C->y][C->x + 1] == 0){ // checking if node to north hasn't been explored by a Robot
             GlobalMap->nodes[C->y][C->x + 1] = 2; // if unexplored and no wall between robot and cell, set western node to unexplored
-            number_of_unexplored++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
+            number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
     }
     else{ // if there is no need to update map
@@ -540,7 +586,7 @@ void RobotMaster::updateAllRobotState(int status){
 
     for(int i = 0; i < max_num_of_robots; i++){ // creating messages to update state of all robots
 
-        Message* messages = new Message; // creating new messages for each robot
+        Message* messages = new Message(t_Request, -1); // creating new messages for each robot
 
         // assigning data to message
         m_updateRobotStateRequest* message_data = new m_updateRobotStateRequest;

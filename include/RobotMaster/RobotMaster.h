@@ -58,6 +58,8 @@ class RobotMaster{
         // ** General Purpose Functions **
         bool checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable); // checks if a cell is occupied by a robot
 
+        RequestHandler* getTargetRequestHandler(unsigned int target_id); // gets a request handler for a specific robot
+
         // ** Tracked_Robots Functions **
         unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r); // adds robots to tracked_robots t
                                                                                   // this is important to allow for the robot to be synchronized by the control system
@@ -99,20 +101,22 @@ class RobotMaster{
         std::vector<RobotInfo> tracked_robots; // vector to track information on various robots within maze
 
         RequestHandler* Message_Handler; // pointer to request handler shared by all Robots and a RobotMaster objects
-
-        unsigned int robot_id_tracker; // tracks next id to give to a robot
-
-        int number_of_unexplored; // number of unexplored cells encountered by Robots
+        
+        int number_of_unexplored_cells; // number of unexplored cells encountered by Robots
 
         unsigned int maze_xsize; // size of maze
         unsigned int maze_ysize; // this is only used for printing purposes
 
+        unsigned int num_of_added_robots; // tracks number of added robots
+        
         const int max_num_of_robots; // variable which specifies number of robots needed for exploration
                                      // exploration won't begin until enough robots have been added
 
-        unsigned int transaction_id_tracker; // tracks the number of incoming transactions handled
+        unsigned int num_of_receieve_transactions; // tracks the number of incoming transactions handled
 
         json RequestInfo; // json containing information regarding each request
+
+        bool master_status; // variable which controls whether master will respond to receive requests 
 };
 
 #endif

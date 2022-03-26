@@ -8,66 +8,78 @@ void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
     
     assignIdFromMaster(); // getting id from robotmaster before begining robot exploration
     
-    int status = 0; // tracks status of robot
-                    // -1 = shut down
-                    // 0 = stand by
-                    // 1 = explore
-                    // initializing to zero as robot is placed on standby until master updates status 
+    int status = s_stand_by; // tracks status of robot
+                             // -1 = shut down
+                             // 0 = stand by
+                             // 1 = explore
+                             // initializing to zero as robot is placed on standby until master updates status 
+    
+    bool done_exploring = false;
 
-    bool loop_break = false; // bool to break for loop if shutdown has occured
-
-    while(!loop_break){
+    while(!done_exploring){
         
-        status = getRequestsFromMaster(status); // checking if master wants robot to update status
+        status = getMessagesFromMaster(status); // checking if master wants robot to update status
 
         switch(status){
-            case -1: // shutdown mode
+            case s_exit_loop:
+            {
+                
+            }
+            case s_shut_down: // shutdown mode
             {
                 requestShutDown(); // notify master that robot is ready to shutdown
-                loop_break = true; // setting loop break to ensure break while loop
+                
+                status = s_stand_by;
+
                 break;
             }
-            case 0: // standby
+            case s_stand_by: // standby
             {   
                 // do nothing
                 break;
             }
-            case 1: // scan cell and update master with cell info
+            case s_scan_cell: // scan cell and update master with cell info
             {   
                 std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
 
                 requestGlobalMapUpdate(connection_data); // sending message to master with scanned maze information
 
-                status = 2; // setting status to 2 so pathfinding will occur on next loop cycle
+                status = s_pathfind; // setting status to 2 so pathfinding will occur on next loop cycle
 
                 break;
             }
-            case 2: // generating path to nearest unknown cell
+            case s_pathfind: // generating path to nearest unknown cell
             {   
                   
                 BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
- 
-                status = 3; // setting status to 3 so movement will occur on next loop cycle
+
+                if(number_of_unexplored == 0){ // if maze is fully explored
+                    status = s_stand_by; // set robot to stand by and await for master shut down signal
+                }
+                else{ // path has been planned to new target
+                    status = s_move_robot; // setting status to 3 so movement will occur on next loop cycle
+                }
 
                 break;
             }
-            case 3: // move robot to next cell in planned bath
+            case s_move_robot: // move robot to next cell in planned bath
             {   
-                bool move_occured = MultiRobot::move2Cell(planned_path[0]); // move robot to next location in planned path queue
+
+                bool move_occured = MultiRobot::move2Cell(planned_path[0]); // attempt move robot to next location in planned path queue
 
                 if(move_occured){ // if movement succeed 
                     planned_path.pop_front(); // remove element at start of planned path queue as it has occured 
                 
                     if(planned_path.empty()){ // if there are no more moves to occur, must be at an unscanned cell
-                        status = 1; // set robot to scan cell on next loop iteration as at desination cell
+                        status = s_scan_cell; // set robot to scan cell on next loop iteration as at desination cell
                     }
                     else{ // if more moves left, keep status to 3
-                        status = 3;
+                        status = s_move_robot; 
                     }
                 }
                 else{ // if movement failed
                       planned_path.clear(); // clearing current planned path
-                      status = 2; // attempt to plan a new path which will hopefully not cause movement to faile
+                      status = s_pathfind; // attempt to plan a new path which will hopefully not cause movement to fail
                 }
 
                 break;

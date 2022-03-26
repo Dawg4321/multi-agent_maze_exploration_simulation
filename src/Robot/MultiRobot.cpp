@@ -10,6 +10,10 @@ MultiRobot::MultiRobot(unsigned int x, unsigned int y, RequestHandler* outgoing_
                                   
     acknowledgement_sem = new sem_t; // semaphore to signal from robot to controller that the current response message has been analysed  
     sem_init(acknowledgement_sem, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
+
+    transaction_counter = 0; // initializing to 0 as no transactions have occured
+
+    done_exploring = false;
 }
 
 MultiRobot::~MultiRobot(){
@@ -26,6 +30,7 @@ bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of mov
     //if(is_not_occupied){ // attempt to move as cell unoccupied
 
     bool movement_occurred = Robot::move2Cell(destination); // moving robot using Robot classes move function
+    
     requestRobotLocationUpdate(); // notifying master of robot position update
 
     return movement_occurred; // returning whether movement occured successfully
@@ -37,49 +42,167 @@ bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of mov
 }
 
 
-int MultiRobot::getRequestsFromMaster(int status){ // checking if RobotMaster wants robot to change states
-    
+int MultiRobot::getMessagesFromMaster(int current_status){ // checking if RobotMaster wants robot to change states
+                                                           // this should only be called if robot is not waiting for a response
+
     Message* request = Master_2_Robot_Message_Handler->getMessage(); // gathering request from msg_queue
                                                                      // pointer is gathered so response can be gathered by robot threads
                                                                      // returned pointer will be NULL is no messages to get
     
-    int ret_variable; // return variable to update status in RobotLoop
+    int new_robot_status; // return variable to update status in RobotLoop
 
     if(request != NULL){ // if there is a a request to handle, process it
+        
+        do{ // repeatedly process all messages until there are none left
 
-        // gathering request type for switch statement
-        m_genericRequest* r = (m_genericRequest*) request->msg_data; // use generic message pointer to gather request type
+            if(request->message_type){ // if sent message is a response for a previously sent request
 
-        switch (r->request_type){ // determining type of request before processing
-
-                case updateRobotStateRequest_ID: // update robot state
-                {   
-                    // updating robot state to specified value
-                    m_updateRobotStateRequest* data = (m_updateRobotStateRequest*) request->msg_data;
-                    ret_variable = data->target_state;
+                // need to check if response is stale (e.g. another request has been sent overriding the previous one)
+                if(request->response_id == transaction_counter){ // if response is not stale (transaction counter has not been changed since request sent)
                     
-                    delete data; // deleting data receieved in the request as its no longer needed
-                    delete request; // deleting recieved message as no longer needed
-                    
-                    break;
+                    new_robot_status = handleMasterResponse(request, current_status); // call Response handling function
                 }
-                default: // TODO: Implement handling if improper messge type is recieved
-                {
-                    break;
+                else{ // if response is stale (another request has already been sent)
+                    // do nothing
                 }
             }
+            else{ // if message is a request from master
+                new_robot_status = handleMasterRequest(request, current_status);
+            }
+
+            // message has been handled, can delete sent data
+            delete request->msg_data; // deleting data receieved in the request as its no longer needed
+            delete request; // deleting recieved message as no longer needed
+
+            request = Master_2_Robot_Message_Handler->getMessage(); // gather next request to process
+
+        } while(request != NULL); // checking if there is another request to process
     }
-    else{ // if no message to handle, do nothing
-        ret_variable = status; // set status as current status
+    else{ // if no message to handle, do nothing and keep current status
+        new_robot_status = current_status; // set new robot status status as current status
     }
     
-    return ret_variable;
+    return new_robot_status;
 }
+
+int MultiRobot::handleMasterRequest(Message* request, int current_status){
+    // gathering request type for switch statement
+    m_genericRequest* r = (m_genericRequest*) request->msg_data; // use generic message pointer to gather request type
+
+    int new_robot_status;
+
+    switch (r->request_type){ // determining type of request before processing
+
+        case updateRobotStateRequest_ID: // update robot state
+        {   
+            // updating robot state to specified value
+            m_updateRobotStateRequest* data = (m_updateRobotStateRequest*) request->msg_data;
+            new_robot_status = data->target_state;
+
+            transaction_counter++; // incrementing transaction counter to cause any outstanding respones after update to become stale as no longer needed
+
+            break;
+        }
+        default:
+        {
+            new_robot_status = current_status; // keep current status if improper request is received
+
+            break;
+        }
+    }
+    
+    return new_robot_status; // returning changes to robot status
+}
+
+int MultiRobot::handleMasterResponse(Message* response, int current_status){
+    // gathering response type for switch statement
+    m_genericRequest* response_data = (m_genericRequest*) response->msg_data; // use generic message pointer to gather request type
+
+    int new_robot_status;
+
+    switch (response_data->request_type){ // determining type of response to process
+        case shutDownRequest_ID:
+        {
+            // final response from master received, can shut down fully now
+            
+            done_exploring = true; // setting finish flag to true
+            
+            break;
+        }
+        case addRobotRequest_ID: // addRobot response 
+        {   
+            // This response type assigns a new id to the robot
+
+            m_addRobotResponse* message_response = (m_addRobotResponse*)response_data; // typecasting response data to appropriate format
+            
+            id = message_response->robot_id; // assigning id to Robot from RobotMaster's response
+
+            new_robot_status = current_status; // keep current robot status as master has not told robot to begin exploring
+            
+            break;
+        }
+        case updateGlobalMapRequest_ID: // updateGlobalMapRequest response 
+        {
+            // Empty as currently no response needed
+            // responses will still be recieved to allow for future implementation if needed
+
+            new_robot_status = current_status; // status does not change as this response type is not implemented
+            
+            break;
+        }
+        case updateRobotLocationRequest_ID:
+        {
+            // Empty as currently no response needed
+            // responses will still be recieved to allow for future implementation if needed
+
+            new_robot_status = current_status; // status does not change as this response type is not implemented
+
+            break;
+        }
+        case move2CellRequest_ID:{
+            // do nothing right now **
+            // TODO: implement move2 cell response
+
+            break;
+        }
+        case reserveCellRequest_ID: 
+        {
+            m_reserveCellResponse* message_response = (m_reserveCellResponse*)response_data;  // typecasting response data to appropriate format
+            
+            bool reserved_succeed = message_response->cell_reserved; // gather whether cell has been reserved
+    
+            std::vector<Coordinates>* map_info = message_response->map_coordinates; // gather node map for map update
+            std::vector<std::vector<bool>>* edge_info = message_response->map_connections; // gather wall information for each node in map
+            std::vector<char>* map_status = message_response->map_status; // gather status of nodes tracked in returned map
+
+            if(!reserved_succeed){ // if failed to reserve cell found by pathfinding
+                                   // must update map with returned data so next closest cell can be reserved
+                updateLocalMap(map_info, edge_info, map_status);
+
+                new_robot_status = s_pathfind; // change status to pathfind as must try and reserve different with updated map info
+            }
+            else{  // if cell reserved
+                new_robot_status = s_move_robot; // setting status to 3 so movement will occur on next loop cycle
+            }
+
+            break;
+        }
+        default: // TODO: Implement handling if improper messge type is recieved
+        {
+            new_robot_status = current_status; // keep current status if improper response is received
+
+            break;
+        }
+    }
+    return new_robot_status; // returning changes to robot status
+}
+
 
 void MultiRobot::assignIdFromMaster(){
 
-    // sending addRobot request to RobotMaster to get ID
-    Message* temp_message = new Message(); // buffer to load data into before sending message
+    transaction_counter++; // incrementing transaction counter as new request is being sent
+
+    Message* temp_message = new Message(t_Request, transaction_counter); // buffer to load data into before sending message
 
     // defining new addRobotRequest
     m_addRobotRequest* message_data = new m_addRobotRequest;
@@ -98,13 +221,6 @@ void MultiRobot::assignIdFromMaster(){
 
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
-    sem_wait(response_sem); // waiting for response to be ready from controller
-
-    m_addRobotResponse* message_response = (m_addRobotResponse*)temp_message->return_data; // gathering response data
-    id = message_response->robot_id; // assigning id from RobotMaster's response
-    
-    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
-
     return;
 }
 
@@ -113,7 +229,10 @@ bool MultiRobot::requestMove2Cell(Coordinates target_cell){
     // if unoccupied, robot can move to cell
     // if cell is unoccupied (e.g. robot can move to cell), return true
     // if cell is occupied, return false
-    Message* temp_message = new Message;
+
+    transaction_counter++; // incrementing transaction counter as new request is being sent
+
+    Message* temp_message = new Message(t_Request, transaction_counter);
 
     // defining new Move2CellRequest
     m_move2CellRequest* message_data = new m_move2CellRequest;
@@ -141,8 +260,11 @@ bool MultiRobot::requestMove2Cell(Coordinates target_cell){
 }
 
 void MultiRobot::requestShutDown(){
-    // sending message to notidy RobotMaster that robot is ready to shutdown
-    Message* temp_message = new Message(); // buffer to load data into before sending message
+    // sending message to notify RobotMaster that robot is ready to shutdown
+
+    transaction_counter++; // incrementing transaction counter as new request is being sent
+
+    Message* temp_message = new Message(t_Request, transaction_counter); // buffer to load data into before sending message
 
     // defining new shutDownRequest
     m_shutDownRequest* message_data = new m_shutDownRequest;
@@ -155,14 +277,15 @@ void MultiRobot::requestShutDown(){
     
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
 
-    sem_wait(response_sem); // waiting for Master to acknowledge shutdown
-
     return;
 }
 
 void MultiRobot::requestRobotLocationUpdate(){
+
+    transaction_counter++; // incrementing transaction counter as new request is being sent
+
     // sending message with new robot position
-    Message* temp_message = new Message(); // buffer to load data into before sending message
+    Message* temp_message = new Message(t_Request, transaction_counter); // buffer to load data into before sending message
 
     // attaching message data to request
     m_updateRobotLocationRequest* message_data = new m_updateRobotLocationRequest;    
@@ -178,15 +301,15 @@ void MultiRobot::requestRobotLocationUpdate(){
     
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
 
-    sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
-    sem_post(acknowledgement_sem);
-
     return;
 }
 
 void MultiRobot::requestGlobalMapUpdate(std::vector<bool> connection_data){
+    
+    transaction_counter++; // incrementing transaction counter as new request is being sent
+
     // sending message with scanned maze information
-    Message* temp_message = new Message(); // buffer to load data into before sending message
+    Message* temp_message = new Message(t_Request, transaction_counter); // buffer to load data into before sending message
 
     // attaching message data to request
     m_updateGlobalMapRequest* message_data = new m_updateGlobalMapRequest;  
@@ -202,9 +325,6 @@ void MultiRobot::requestGlobalMapUpdate(std::vector<bool> connection_data){
     temp_message->ack_sem = acknowledgement_sem;
     
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
-
-    sem_wait(response_sem); // waiting for data to be inputted into Master before continuing
-    sem_post(acknowledgement_sem);
 
     return;
 }
@@ -228,9 +348,11 @@ void MultiRobot::updateLocalMap(std::vector<Coordinates>* map_info, std::vector<
     return;
 }
 
-bool MultiRobot::requestReserveCell(){
+void MultiRobot::requestReserveCell(){
     
-    Message* temp_message = new Message; // generating message
+    transaction_counter++; // incrementing transaction counter as new request is being sent
+
+    Message* temp_message = new Message(t_Request, transaction_counter); // generating message
 
     // gathering message data
     m_reserveCellRequest* message_data = new m_reserveCellRequest;  
@@ -257,19 +379,6 @@ bool MultiRobot::requestReserveCell(){
     sem_wait(response_sem); // waiting for response to be ready from controller
 
     m_reserveCellResponse* message_response = (m_reserveCellResponse*) temp_message->return_data;
-    bool reserved_succeed = message_response->cell_reserved; // gather whether cell has been reserved
-    
-    std::vector<Coordinates>* map_info = message_response->map_coordinates; // gather node map for map update
-    std::vector<std::vector<bool>>* edge_info = message_response->map_connections; // gather wall information for each node in map
-    std::vector<char>* map_status = message_response->map_status; // gather status of nodes tracked in returned map
 
-    if(!reserved_succeed){ // if failed to reserve cell found by pathfinding
-                           // must update map with returned data so next closest cell can be reserved
-        updateLocalMap(map_info, edge_info, map_status);
-    }
-        
-    sem_post(acknowledgement_sem); // signalling to controller that the response data has been taken
-
-
-    return reserved_succeed; // return whether robot can proceed to target cell
+    return;
 }

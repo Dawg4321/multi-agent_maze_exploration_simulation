@@ -8,6 +8,13 @@
 #include "RequestHandler.h"
 #include "RequestTemplates.h"
 
+#define s_exit_loop -2
+#define s_shut_down -1
+#define s_stand_by 0
+#define s_scan_cell 1
+#define s_pathfind 2
+#define s_move_robot 3
+
 class MultiRobot: public Robot{
     public:
 
@@ -28,7 +35,7 @@ class MultiRobot: public Robot{
 
         void requestShutDown(); // sends shutdown notification to RobotMaster
                                 // TODO: change to generic update status request                 
-        bool requestReserveCell(); // attempts to reserve a cell to explore from the RobotMaster
+        void requestReserveCell(); // attempts to reserve a cell to explore from the RobotMaster
                                     // if cell to reserve fails, LocalMap is updated with GlobalMap information
         bool requestMove2Cell(Coordinates target_cell); // checks if a cell is occupied by another robot
 
@@ -37,10 +44,20 @@ class MultiRobot: public Robot{
         void requestRobotLocationUpdate(); // updates robot position to Robot Master after movement has been complete
 
         // ** Master -> Robot Communication Functions **
-        int getRequestsFromMaster(int status); // checks if master wants to change current status of robot
-
+        int getMessagesFromMaster(int status); // handles any messages master has sent 
+        
+        int  handleMasterRequest(Message* request, int current_status); // function to handle Master Request Message
+        int  handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
+       
     protected:
         unsigned int id; // robot id assigned to robot by robot controller
+
+        int robot_status; // controls robot execution within robot loop
+
+        unsigned int transaction_counter; // counts the number of sent transactions executed
+                                          // also used to assign response id to sent transaction
+        
+        bool done_exploring;
 
         RequestHandler* Robot_2_Master_Message_Handler; // pointer to request handler shared by all Robot objects
         RequestHandler* Master_2_Robot_Message_Handler;

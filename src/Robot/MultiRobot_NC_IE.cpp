@@ -18,31 +18,31 @@ void MultiRobot_NC_IE::robotLoop(GridGraph* maze){
 
     while(!loop_break){
         
-        status = getRequestsFromMaster(status); // checking if master wants robot to update status
+        status = getMessagesFromMaster(status); // checking if master wants robot to update status
 
         switch(status){
-            case -1: // shutdown mode
+            case s_shut_down: // shutdown mode
             {
                 requestShutDown(); // notify master that robot is ready to shutdown
                 loop_break = true; // setting loop break to ensure break while loop
                 break;
             }
-            case 0: // standby
+            case s_stand_by: // standby
             {   
                 // do nothing
                 break;
             }
-            case 1: // scan cell
+            case s_scan_cell: // scan cell
             {   
                 std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
 
                 requestGlobalMapUpdate(connection_data); // sending message to master with scanned maze information
 
-                status = 2; // setting status to 2 so pathfinding will occur on next loop cycle
+                status = s_pathfind; // setting status to 2 so pathfinding will occur on next loop cycle
 
                 break;
             }
-            case 2: // planned path
+            case s_pathfind: // planned path
             {   
                 bool cell_reserved = false;
 
@@ -50,16 +50,13 @@ void MultiRobot_NC_IE::robotLoop(GridGraph* maze){
                 
                 BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
                     
-                cell_reserved = MultiRobot::requestReserveCell();
-                
+                MultiRobot::requestReserveCell();
 
-                if(cell_reserved) // if cell was reserved, update status to 3 so that the robot will move on the next iteration of the loop
-                    status = 3; // setting status to 3 so movement will occur on next loop cycle
-                else // if no cell was reserved, set status to 2 so that another cell will be located
-                    status = 2;
+                status = 0; // must wait for response
+                
                 break;
             }
-            case 3: // move robot to next cell to scan
+            case s_move_robot: // move robot 1 step
             {   
                 bool move_occured = MultiRobot::move2Cell(planned_path[0]); // attempt to move robot to next location in planned path queue
 

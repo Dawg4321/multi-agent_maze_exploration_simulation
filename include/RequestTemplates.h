@@ -21,19 +21,20 @@
 #define updateRobotLocationRequest_ID 4
 
 // IDs used for Robot -> Master Requests
-#define updateRobotStateRequest_ID 0
+#define updateRobotStateRequest_ID 5
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 // Generic Request Template
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // important as it is used to gather the request type before processing the request
+// when sending a message, set request type to a value specified by the various macros above
 
 struct m_genericRequest{ // template structure used by all requests
     const int request_type; // defines type of request sent
                             // uses previously defined IDs
-
-    m_genericRequest(int x): request_type(x){ // assigning request type to const int 
+                            
+    m_genericRequest(int req_type): request_type(req_type){ // assigning request type to const int 
 
     }
 };
