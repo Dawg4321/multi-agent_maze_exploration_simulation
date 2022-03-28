@@ -38,6 +38,8 @@ void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
             case s_stand_by: // standby
             {   
                 // do nothing
+                status = s_stand_by; // stay in standby until updated by incoming request
+                
                 break;
             }
             case s_scan_cell: // scan cell and update master with cell info

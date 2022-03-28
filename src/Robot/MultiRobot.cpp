@@ -59,7 +59,6 @@ int MultiRobot::getMessagesFromMaster(int current_status){ // checking if RobotM
                     
                     new_robot_status = handleMasterResponse(request, current_status); // call Response handling function
 
-                    makeResponseStale(request->response_id); // response can now be made stale as it has been handled
                 }
                 else{ // if response is stale (another request has already been sent)
                     // do nothing
@@ -123,8 +122,7 @@ int MultiRobot::handleMasterResponse(Message* response, int current_status){
     switch (response_data->request_type){ // determining type of response to process
         case shutDownRequest_ID:
         {
-            // final response from master received, can exit loop now
-            
+            // final response from master received, can exit loop now       
             new_robot_status = s_exit_loop; // setting status to exit loop to cause a loop exit
             
             break;
@@ -162,6 +160,7 @@ int MultiRobot::handleMasterResponse(Message* response, int current_status){
         case move2CellRequest_ID:{
             // do nothing right now **
             // TODO: implement move2 cell response
+            new_robot_status = current_status;
 
             break;
         }
@@ -194,6 +193,9 @@ int MultiRobot::handleMasterResponse(Message* response, int current_status){
             break;
         }
     }
+
+    makeResponseStale(response->response_id); // response can now be made stale as it has been handled
+    
     return new_robot_status; // returning changes to robot status
 }
 

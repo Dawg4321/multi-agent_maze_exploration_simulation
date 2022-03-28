@@ -45,6 +45,7 @@ class RobotMaster{
         void runRobotMaster();
         bool receiveRequests();  // recieves and decodes request information from imcoming request
                                  // returns false until all cells have been explored
+        void handleIncomingRequest(Message* m); // processes all requests except shutdown notifications
 
         // ** Request Handling Functions **
         // these are effectively wrapper functions for other functions to facilitate interthread communication
@@ -63,7 +64,6 @@ class RobotMaster{
         // ** Tracked_Robots Functions **
         unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r); // adds robots to tracked_robots t
                                                                                   // this is important to allow for the robot to be synchronized by the control system
-        
         void removeRobot(unsigned int robot_id); // removes robot from tracked_robots
         
         bool robotMoveCheck(); // function to aid in preventing robot collisions
@@ -116,7 +116,8 @@ class RobotMaster{
 
         json RequestInfo; // json containing information regarding each request
 
-        bool master_status; // variable which controls whether master will respond to receive requests 
+        bool accepting_requests; // boolean to track whether robotmaster is receiving requests
+                                 // true = accept requests, false = ignore all requests except shut down request
 };
 
 #endif

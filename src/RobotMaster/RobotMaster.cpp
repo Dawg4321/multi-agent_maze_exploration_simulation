@@ -19,6 +19,7 @@ RobotMaster::~RobotMaster(){
 void RobotMaster::runRobotMaster(){ // function to continously run RobotMaster until the maze has been mapped
     
     bool maze_mapped = false;
+    accepting_requests = true;
 
     // RobotMaster continues to receive requests until the maze is fully mapped
     while(!maze_mapped){
@@ -36,74 +37,91 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
 
     if(request != NULL){ // if there is a a request to handle, process it
 
-        // tracking this request
+        // gathering request type for switch statement
         num_of_receieve_transactions++; // get next request id for request tracking purposes
 
-        // gathering request type for switch statement
-        m_genericRequest* r = (m_genericRequest*) request->msg_data; // use generic message pointer to gather request type
+        if(accepting_requests){
+            // processing incoming request
+            handleIncomingRequest(request);
+            
+        }
+        else if(!accepting_requests && request->msg_data->request_type == shutDownRequest_ID){ // shutDown confirmation request ( robot is telling master that it is shutting down)
 
-        switch (r->request_type){ // determining type of request before processing
-                case shutDownRequest_ID: // shutDown confirmation request ( robot is telling master that it is shutting down)
-                {
-                    shutDownRequest(request);
+            shutDownRequest(request);
 
-                    if(tracked_robots.size() == 0){ // if all robots have successfully shut down
-                        return true; // maze exploration done
-                    }
-                    
-                    break;
-                }
-                case addRobotRequest_ID: // addRobot request
-                {
-                    addRobotRequest(request);
-
-                    // if all robots have been added
-                    // send signal to all robots to begin exploration
-                    if(tracked_robots.size() == max_num_of_robots)
-                        updateAllRobotState(1); // updating all robot states to 1
-                                                // this causes them to all begin exploring by first scanning their cell
-                    break;
-                }
-                case updateGlobalMapRequest_ID: // updateGlobalMap request
-                {   
-                    updateGlobalMapRequest(request);
-
-                    if(number_of_unexplored_cells < 1){ // if no more cells to explore
-                        updateAllRobotState(-1); // tell all robots to shut down
-                    }
-
-                    break;
-                }
-                case move2CellRequest_ID: // move2cell request
-                {
-                    move2CellRequest(request); // unimplemented in parent class as collision management is used in child class 
-
-                    break;
-                }
-                case reserveCellRequest_ID: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
-                {
-                    reserveCellRequest(request);
-
-                    break;
-                }
-                case updateRobotLocationRequest_ID: // update Robot Location  (tells master that robot has completed move operation)
-                {
-                    updateRobotLocationRequest(request);
-
-                    break;
-                }
-                default:
-                {
-                    break;
-                }
+            if(tracked_robots.size() == 0){ // if all robots have successfully shut down
+                return true; // maze exploration done
             }
+        }
+        else{
+            // not accepting requests but not a shut down request
+            // thus do nothing
+        }
 
+        // request processed thus can delete data
+        delete request->msg_data; // deleting dynamically allocated message data
+        delete request; // delete dynamically allocated request
     }
     else{ // if no message to handle, do nothing
 
     }
     
     return false; // return false as maze is not completely mapped
+}
+
+void RobotMaster::handleIncomingRequest(Message* incoming_request){
+
+    m_genericRequest* r = (m_genericRequest*) incoming_request->msg_data; // use generic message pointer to gather request type
+
+    switch (r->request_type){ // determining type of request before processing
+
+        case addRobotRequest_ID: // addRobot request
+        {
+            addRobotRequest(incoming_request);
+
+            // if all robots have been added
+            // send signal to all robots to begin exploration
+            if(tracked_robots.size() == max_num_of_robots)
+                updateAllRobotState(1); // updating all robot states to 1
+                                        // this causes them to all begin exploring by first scanning their cell
+            break;
+        }
+        case updateGlobalMapRequest_ID: // updateGlobalMap request
+        {   
+            updateGlobalMapRequest(incoming_request);
+
+            if(number_of_unexplored_cells < 1){ // if no more cells to explore
+                updateAllRobotState(-1); // tell all robots to shut down
+                accepting_requests = false; // set robot master to ignore all incoming requests which are not a shut down request
+            }
+
+            break;
+        }
+        case move2CellRequest_ID: // move2cell request
+        {
+            move2CellRequest(incoming_request); // unimplemented in parent class as collision management is used in child class 
+
+            break;
+        }
+        case reserveCellRequest_ID: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
+        {
+            reserveCellRequest(incoming_request);
+
+            break;
+        }
+        case updateRobotLocationRequest_ID: // update Robot Location  (tells master that robot has completed move operation)
+        {
+            updateRobotLocationRequest(incoming_request);
+
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+
+    return;
 }
 
 RequestHandler* RobotMaster::getTargetRequestHandler(unsigned int target_id){ // gets a request handler for a specific robot
@@ -128,8 +146,6 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
     // gathering response data
     m_shutDownResponse* response_data = new m_shutDownResponse;
 
-    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions);
-
     // sending response message to robot
     Message* response = new Message(t_Response, request->response_id); // creating new response with given response id      
     response->msg_data = response_data; // assigning response to message
@@ -138,20 +154,16 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
 
     if (robot_request_handler != NULL){ // if request handler gathered send data
         robot_request_handler->sendMessage(response);
+
+        // shut down request has been fully handled, can remove robot from system
+        removeRobot(request_data->robot_id); 
     }
-    else{ // if no request handler found, must delete response data
+    else{ // if no request handler found, must delete response data and not send message
         delete response_data;
         delete response;
     }
 
-    // shut down request has been fully handled, can remove robot from system
-    removeRobot(request_data->robot_id); 
-
-    // sent message was dynamically allocated thus must be deleted
-    // this part of the code should be thread safe as the robot and Controller have finished using these variables
-    
-    delete request_data; // deleting dynamically allocated message data
-    delete request; // delete dynamically allocated request
+    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions);
 
     return;
 }
@@ -188,12 +200,6 @@ void RobotMaster::addRobotRequest(Message* request){ // adds robot to controller
     response->msg_data = response_data; // assigning response to message
 
     robot_request_handler->sendMessage(response);
-
-    // sent message was dynamically allocated thus must be deleted
-    // this part of the code should be thread safe as the robot and Controller have finished using these variables
-    
-    delete request_data; // deleting dynamically allocated message data
-    delete request; // deleting received message
 
     return;
 }
@@ -238,12 +244,6 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
         delete response_data;
         delete response;
     }
-
-    // sent message was dynamically allocated thus must be deleted
-    // this part of the code should be thread safe as the robot and Controller have finished using these variabless
-    
-    delete request_data; // deleting dynamically allocated message data
-    delete request; // deleting message
 
     return;
 }
@@ -304,15 +304,6 @@ void RobotMaster::reserveCellRequest(Message* request){
     sem_post(request->res_sem); // signalling Robot that return message is ready
     sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
 
-
-    // sent message was dynamically allocated thus must be deleted
-    // this part of the code should be thread safe as the robot and Controller have finished using these variabless
-    
-    delete request_data; // deleting dynamically allocated message data
-    
-    delete request; // deleting message
-
-
     return;
 }
 
@@ -354,13 +345,6 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
         delete response_data;
         delete response;
     }
-    // sent message was dynamically allocated thus must be deleted
-    // this part of the code should be thread safe as the robot and Controller have finished using these variabless
-    
-    delete request_data; // deleting dynamically allocated message data
-    
-    delete request; // deleting message
-
 
     return;
 }
@@ -582,7 +566,7 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // upda
     
 void RobotMaster::updateAllRobotState(int status){
 
-    for(int i = 0; i < max_num_of_robots; i++){ // creating messages to update state of all robots
+    for(int i = 0; i < tracked_robots.size(); i++){ // creating messages to update state of all robots
 
         Message* messages = new Message(t_Request, -1); // creating new messages for each robot
 

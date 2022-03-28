@@ -57,8 +57,8 @@ class MultiRobot: public Robot{
 
         int robot_status; // controls robot execution within robot loop
 
-        unsigned int transaction_counter; // counts the number of sent transactions executed
-                                          // also used to assign transation id to sent messages to allow for response identification
+        int transaction_counter; // counts the number of sent transactions executed
+                                 // also used to assign transation id to sent messages to allow for response identification
 
         std::vector<int> valid_responses; // vector to track id of transactions which require a response
                                           // if a response is recieved that is not tracked in here, it must be stale
