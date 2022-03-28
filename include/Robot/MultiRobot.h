@@ -1,12 +1,8 @@
 #ifndef MULTIROBOT_H
 #define MULTIROBOT_H
 
-#include <pthread.h>
-#include <semaphore.h>
-
 #include "Robot.h"
 #include "RequestHandler.h"
-#include "RequestTemplates.h"
 
 #define s_exit_loop -2
 #define s_shut_down -1
@@ -65,9 +61,6 @@ class MultiRobot: public Robot{
 
         RequestHandler* Robot_2_Master_Message_Handler; // pointer to request handler shared by all Robot objects
         RequestHandler* Master_2_Robot_Message_Handler;
-
-        sem_t* response_sem; // semaphores to be used for inter-thread synchornization when passing messages
-        sem_t* acknowledgement_sem;
 }; 
 
 #endif

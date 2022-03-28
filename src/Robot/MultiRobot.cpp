@@ -5,12 +5,6 @@ MultiRobot::MultiRobot(unsigned int x, unsigned int y, RequestHandler* outgoing_
     Robot_2_Master_Message_Handler = outgoing_req; // assigning message handler for robot -> master communications
     Master_2_Robot_Message_Handler = new RequestHandler; // assigning message handler for master -> robot communications
 
-    response_sem = new sem_t; // semaphore to signal from controller to robot that the response message is ready 
-    sem_init(response_sem, 0, 0); // initializing semaphore to value of 0. this will cause robot to wait until response is ready
-                                  
-    acknowledgement_sem = new sem_t; // semaphore to signal from robot to controller that the current response message has been analysed  
-    sem_init(acknowledgement_sem, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
-
     transaction_counter = 0; // initializing to 0 as no transactions have occured
 }
 
@@ -240,15 +234,11 @@ void MultiRobot::assignIdFromMaster(){
     // attaching message data to request
     temp_message->msg_data = message_data;
 
-    // attaching robot communication semaphores to message
-    temp_message->res_sem = response_sem; 
-    temp_message->ack_sem = acknowledgement_sem;
-
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
     return;
 }
-
+/*
 bool MultiRobot::requestMove2Cell(Coordinates target_cell){
     // need to message controller to see if target cell is occupied
     // if unoccupied, robot can move to cell
@@ -267,10 +257,6 @@ bool MultiRobot::requestMove2Cell(Coordinates target_cell){
     message_data->target_cell = target_cell; // adding target destination of robot
     temp_message->msg_data = message_data;
 
-    // attaching robot communication semaphores to message
-    temp_message->res_sem = response_sem; 
-    temp_message->ack_sem = acknowledgement_sem;
-
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
     sem_wait(response_sem); // waiting for response to be ready from controller
@@ -283,7 +269,7 @@ bool MultiRobot::requestMove2Cell(Coordinates target_cell){
     
     return can_movement_occur;
 }
-
+*/
 void MultiRobot::requestShutDown(){
     // sending message to notify RobotMaster that robot is ready to shutdown
 
@@ -299,8 +285,6 @@ void MultiRobot::requestShutDown(){
     // attaching message data to request
     message_data->robot_id = id; // adding id of robot sending request
     temp_message->msg_data = message_data;
-    
-    temp_message->res_sem = response_sem; // attaching communication semaphores to message
     
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
 
@@ -321,10 +305,6 @@ void MultiRobot::requestRobotLocationUpdate(){
     message_data->new_robot_location = robot_cords; // adding robot location
 
     temp_message->msg_data = message_data;
-
-    // attaching communication semaphores to message
-    temp_message->res_sem = response_sem; 
-    temp_message->ack_sem = acknowledgement_sem;
     
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
 
@@ -346,10 +326,6 @@ void MultiRobot::requestGlobalMapUpdate(std::vector<bool> connection_data){
     message_data->cords = robot_cords; // current coordinates of where the read occured
 
     temp_message->msg_data = message_data;
-
-    // attaching communication semaphores to message
-    temp_message->res_sem = response_sem; 
-    temp_message->ack_sem = acknowledgement_sem;
     
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to message queue
 
@@ -399,9 +375,6 @@ void MultiRobot::requestReserveCell(){
 
     // attaching message data
     temp_message->msg_data = message_data;
-
-    temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
-    temp_message->ack_sem = acknowledgement_sem;
 
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
