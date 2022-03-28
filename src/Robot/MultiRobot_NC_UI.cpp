@@ -21,15 +21,17 @@ void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
         status = getMessagesFromMaster(status); // checking if master wants robot to update status
 
         switch(status){
-            case s_exit_loop:
+            case s_exit_loop: // exit status (fully shut off robot)
             {
+                done_exploring = true; // exit loop
                 
+                break;
             }
             case s_shut_down: // shutdown mode
             {
                 requestShutDown(); // notify master that robot is ready to shutdown
                 
-                status = s_stand_by;
+                status = s_stand_by; // enter standy to await master response 
 
                 break;
             }

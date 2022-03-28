@@ -17,7 +17,7 @@ class Robot{ // parent class used as a template for further robot implementation
         Robot(unsigned int x, unsigned int y, unsigned int xsize, unsigned int ysize);
  
         // ** Destructor **
-        ~Robot();
+        virtual ~Robot(); // virtual destructor to ensure child destructor is called during "delete" to base class pointer
 
         // ** Robot Loop Function **
         virtual void robotLoop(GridGraph* maze) = 0; // function used by robots to run exploration behaviour

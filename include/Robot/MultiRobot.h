@@ -19,7 +19,7 @@ class MultiRobot: public Robot{
     public:
 
         MultiRobot(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
-        ~MultiRobot();
+        virtual ~MultiRobot(); // virtual destructor to ensure child destructor is called during "delete" to base class pointer
         
         bool move2Cell(Coordinates destination); // move robot operation used when exploring using controller
 
@@ -48,6 +48,9 @@ class MultiRobot: public Robot{
         
         int  handleMasterRequest(Message* request, int current_status); // function to handle Master Request Message
         int  handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
+
+        bool isResponseStale(int transaction_id); // simple function to check if there is an outstanding response of a given transaction id
+        void makeResponseStale(int transaction_id); // removes entry of transaction from valid_response (e.g. making it stale)
        
     protected:
         unsigned int id; // robot id assigned to robot by robot controller
@@ -55,9 +58,10 @@ class MultiRobot: public Robot{
         int robot_status; // controls robot execution within robot loop
 
         unsigned int transaction_counter; // counts the number of sent transactions executed
-                                          // also used to assign response id to sent transaction
-        
-        bool done_exploring;
+                                          // also used to assign transation id to sent messages to allow for response identification
+
+        std::vector<int> valid_responses; // vector to track id of transactions which require a response
+                                          // if a response is recieved that is not tracked in here, it must be stale
 
         RequestHandler* Robot_2_Master_Message_Handler; // pointer to request handler shared by all Robot objects
         RequestHandler* Master_2_Robot_Message_Handler;

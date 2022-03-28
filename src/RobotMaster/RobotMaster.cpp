@@ -132,7 +132,7 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
 
     // sending response message to robot
     Message* response = new Message(t_Response, request->response_id); // creating new response with given response id      
-    response->msg_data = (void*) response_data; // assigning response to message
+    response->msg_data = response_data; // assigning response to message
 
     RequestHandler* robot_request_handler = getTargetRequestHandler(request_data->robot_id); // getting request handler to send response
 
@@ -144,9 +144,8 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
         delete response;
     }
 
-    // shut down request handled, can remove robot from system
+    // shut down request has been fully handled, can remove robot from system
     removeRobot(request_data->robot_id); 
-
 
     // sent message was dynamically allocated thus must be deleted
     // this part of the code should be thread safe as the robot and Controller have finished using these variables
@@ -186,7 +185,7 @@ void RobotMaster::addRobotRequest(Message* request){ // adds robot to controller
     // sending response message to robot
     Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
         
-    response->msg_data = (void*) response_data; // assigning response to message
+    response->msg_data = response_data; // assigning response to message
 
     robot_request_handler->sendMessage(response);
 
@@ -227,13 +226,11 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
 
     // sending response message to robot
     Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
-        
-    response->msg_data = (void*) response_data; // assigning response to message
 
     RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
 
     if (robot_request_handler != NULL){ // if request handler gathered send data
-        response->msg_data = (void*) response_data; // assigning response to message
+        response->msg_data = response_data; // assigning response to message
 
         robot_request_handler->sendMessage(response); // sending message
     }
@@ -349,7 +346,7 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
     RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
 
     if (robot_request_handler != NULL){ // if request handler gathered send data
-        response->msg_data = (void*) response_data; // assigning response to message
+        response->msg_data = response_data; // assigning response to message
 
         robot_request_handler->sendMessage(response); // sending message
     }
@@ -392,6 +389,7 @@ void RobotMaster::removeRobot(unsigned int id){
     for(int i = 0; i < tracked_robots.size(); i++){ // search for robot in tracked_robots
         if(tracked_robots[i].robot_id == id){ // if robot has been identified
             tracked_robots.erase(tracked_robots.begin()+i); // delete it from tracked_robots
+            break;
         }
     }
     
@@ -592,7 +590,7 @@ void RobotMaster::updateAllRobotState(int status){
         m_updateRobotStateRequest* message_data = new m_updateRobotStateRequest;
         message_data->target_state = status;
 
-        messages->msg_data = (void*) message_data; // specifying state to update all robots to
+        messages->msg_data = message_data; // specifying state to update all robots to
         
         tracked_robots[i].Robot_Message_Reciever->sendMessage(messages); // sending message
         tracked_robots[i].robot_status = status; // updating local robot information to current status

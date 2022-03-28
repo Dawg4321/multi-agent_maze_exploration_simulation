@@ -12,8 +12,6 @@ MultiRobot::MultiRobot(unsigned int x, unsigned int y, RequestHandler* outgoing_
     sem_init(acknowledgement_sem, 0, 0); // initializing semaphore to value of 0. this will cause controller to wait until robot is done with response
 
     transaction_counter = 0; // initializing to 0 as no transactions have occured
-
-    done_exploring = false;
 }
 
 MultiRobot::~MultiRobot(){
@@ -23,7 +21,6 @@ MultiRobot::~MultiRobot(){
 bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of move2Cell using destination
                                                       // converts target destination to a direction then uses original move2Cell function
                                                       // messages master to confirm wh
-
 
     // bool is_not_occupied = requestMove2Cell(destination); // checking if target cell is unoccupied
 
@@ -58,9 +55,11 @@ int MultiRobot::getMessagesFromMaster(int current_status){ // checking if RobotM
             if(request->message_type){ // if sent message is a response for a previously sent request
 
                 // need to check if response is stale (e.g. another request has been sent overriding the previous one)
-                if(request->response_id == transaction_counter){ // if response is not stale (transaction counter has not been changed since request sent)
+                if(!(isResponseStale(request->response_id))){ // if response is not stale (transaction counter has not been changed since request sent)
                     
                     new_robot_status = handleMasterResponse(request, current_status); // call Response handling function
+
+                    makeResponseStale(request->response_id); // response can now be made stale as it has been handled
                 }
                 else{ // if response is stale (another request has already been sent)
                     // do nothing
@@ -99,7 +98,8 @@ int MultiRobot::handleMasterRequest(Message* request, int current_status){
             m_updateRobotStateRequest* data = (m_updateRobotStateRequest*) request->msg_data;
             new_robot_status = data->target_state;
 
-            transaction_counter++; // incrementing transaction counter to cause any outstanding respones after update to become stale as no longer needed
+            valid_responses.clear(); // clearing valid_responses to cause any outstanding responses to become stale
+                                     // this is done as the update state message overrides any responses after it
 
             break;
         }
@@ -123,9 +123,9 @@ int MultiRobot::handleMasterResponse(Message* response, int current_status){
     switch (response_data->request_type){ // determining type of response to process
         case shutDownRequest_ID:
         {
-            // final response from master received, can shut down fully now
+            // final response from master received, can exit loop now
             
-            done_exploring = true; // setting finish flag to true
+            new_robot_status = s_exit_loop; // setting status to exit loop to cause a loop exit
             
             break;
         }
@@ -197,10 +197,33 @@ int MultiRobot::handleMasterResponse(Message* response, int current_status){
     return new_robot_status; // returning changes to robot status
 }
 
+bool MultiRobot::isResponseStale(int transaction_id){ // return false if given id is in the valid responses vector (e.g. it has not been made stale)
+    
+    for(int i = 0; i < valid_responses.size(); i++){ 
+        if(valid_responses[i] == transaction_id){
+            return false; // given id is in vector thus not stale -> return false
+        }
+    }
+    return true; // // given id is not in vector thus stale -> return true
+}
+
+void MultiRobot::makeResponseStale(int transaction_id){ // remove transaction from valid_responses
+    
+    for(int i = 0; i < valid_responses.size(); i++){ // iterate through non-stale responses
+        if(valid_responses[i] == transaction_id){ // if transaction in array, erase it
+            valid_responses.erase(valid_responses.begin() + i);
+            break;
+        }
+    }
+
+    return;
+}
 
 void MultiRobot::assignIdFromMaster(){
 
     transaction_counter++; // incrementing transaction counter as new request is being sent
+
+    valid_responses.push_back(transaction_counter); // adding transaction to valid responses as response is required
 
     Message* temp_message = new Message(t_Request, transaction_counter); // buffer to load data into before sending message
 
@@ -213,7 +236,7 @@ void MultiRobot::assignIdFromMaster(){
     message_data->robot_request_handler =  Master_2_Robot_Message_Handler; // adding request handler for master -> robot message to [2]
 
     // attaching message data to request
-    temp_message->msg_data = (void*) message_data;
+    temp_message->msg_data = message_data;
 
     // attaching robot communication semaphores to message
     temp_message->res_sem = response_sem; 
@@ -240,7 +263,7 @@ bool MultiRobot::requestMove2Cell(Coordinates target_cell){
     // attaching message data to request
     message_data->robot_id = id; // adding id of robot
     message_data->target_cell = target_cell; // adding target destination of robot
-    temp_message->msg_data = (void*) temp_message;
+    temp_message->msg_data = message_data;
 
     // attaching robot communication semaphores to message
     temp_message->res_sem = response_sem; 
@@ -264,6 +287,8 @@ void MultiRobot::requestShutDown(){
 
     transaction_counter++; // incrementing transaction counter as new request is being sent
 
+    valid_responses.push_back(transaction_counter); // adding transaction to valid responses as response is required
+
     Message* temp_message = new Message(t_Request, transaction_counter); // buffer to load data into before sending message
 
     // defining new shutDownRequest
@@ -271,7 +296,7 @@ void MultiRobot::requestShutDown(){
 
     // attaching message data to request
     message_data->robot_id = id; // adding id of robot sending request
-    temp_message->msg_data = (void*) message_data;
+    temp_message->msg_data = message_data;
     
     temp_message->res_sem = response_sem; // attaching communication semaphores to message
     
@@ -293,7 +318,7 @@ void MultiRobot::requestRobotLocationUpdate(){
     Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
     message_data->new_robot_location = robot_cords; // adding robot location
 
-    temp_message->msg_data = (void*) message_data;
+    temp_message->msg_data = message_data;
 
     // attaching communication semaphores to message
     temp_message->res_sem = response_sem; 
@@ -318,7 +343,7 @@ void MultiRobot::requestGlobalMapUpdate(std::vector<bool> connection_data){
     Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
     message_data->cords = robot_cords; // current coordinates of where the read occured
 
-    temp_message->msg_data = (void*) message_data;
+    temp_message->msg_data = message_data;
 
     // attaching communication semaphores to message
     temp_message->res_sem = response_sem; 
@@ -369,7 +394,7 @@ void MultiRobot::requestReserveCell(){
     }
 
     // attaching message data
-    temp_message->msg_data = (void*) message_data;
+    temp_message->msg_data = message_data;
 
     temp_message->res_sem = response_sem; // attaching robot communication semaphores to message
     temp_message->ack_sem = acknowledgement_sem;
