@@ -295,15 +295,23 @@ void RobotMaster::reserveCellRequest(Message* request){
     }
 
     response_data->cell_reserved = cell_reserved; // adding information is cell was reserved to response
-
-    // attaching response data
-    request->return_data = (void*)response_data;
-
+   
     exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
-    sem_post(request->res_sem); // signalling Robot that return message is ready
-    sem_wait(request->ack_sem); // waiting for Robot to be finished with response so message can be deleted
+    // attaching response data to message
+    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
 
+    RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
+
+    if (robot_request_handler != NULL){ // if request handler gathered send data
+        response->msg_data = response_data; // assigning response to message
+
+        robot_request_handler->sendMessage(response); // sending message
+    }
+    else{ // if no request handler found, must delete response data
+        delete response_data;
+        delete response;
+    }
     return;
 }
 

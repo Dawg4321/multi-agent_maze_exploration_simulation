@@ -379,6 +379,8 @@ void MultiRobot::requestReserveCell(){
     
     transaction_counter++; // incrementing transaction counter as new request is being sent
 
+    valid_responses.push_back(transaction_counter); // adding transaction to valid responses as response is required
+
     Message* temp_message = new Message(t_Request, transaction_counter); // generating message
 
     // gathering message data
@@ -402,10 +404,6 @@ void MultiRobot::requestReserveCell(){
     temp_message->ack_sem = acknowledgement_sem;
 
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
-
-    sem_wait(response_sem); // waiting for response to be ready from controller
-
-    m_reserveCellResponse* message_response = (m_reserveCellResponse*) temp_message->return_data;
 
     return;
 }
