@@ -58,6 +58,8 @@ class RequestHandler{
 
         void sendMessage(Message* m); // add a message address to the message queue
         Message* getMessage(); // return address of message from front of message queue
+        int getNumberofMessages(); // returns number of requests in msg_queue
+
     private:
         std::queue<Message*> msg_queue; // FIFO queue of messages sent to RobotMaster Class
         pthread_mutex_t msg_mutex; // mutex for controlling all operations on msg_queue by threads

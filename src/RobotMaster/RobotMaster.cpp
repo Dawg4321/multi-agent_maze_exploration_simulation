@@ -18,13 +18,19 @@ RobotMaster::~RobotMaster(){
 
 void RobotMaster::runRobotMaster(){ // function to continously run RobotMaster until the maze has been mapped
     
+    robotMasterSetUp(); // calling set up function before receiving requests
+
     bool maze_mapped = false;
-    accepting_requests = true;
 
     // RobotMaster continues to receive requests until the maze is fully mapped
     while(!maze_mapped){
         maze_mapped = receiveRequests(); 
     } 
+
+    return;
+}
+void RobotMaster::robotMasterSetUp(){
+    accepting_requests = true;
 
     return;
 }
@@ -424,7 +430,7 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
             GlobalMap->nodes[C->y][C->x - 1] = 2; // if unexplored and no wall between robot and cell, set eastern node to unexplored
             number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
-        // checking wast
+        // checking west
         if(!GlobalMap->x_edges[C->y][C->x + 1] && GlobalMap->nodes[C->y][C->x + 1] == 0){ // checking if node to north hasn't been explored by a Robot
             GlobalMap->nodes[C->y][C->x + 1] = 2; // if unexplored and no wall between robot and cell, set western node to unexplored
             number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
@@ -696,20 +702,23 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
                                                     {"y_pos", request_cast->cords.y} };
 
             // json.hpp does not allow for bool to be placed into json therefore must convert to other datatype
-            
-            char wall_north, wall_south, wall_east, wall_west = 'n'; // initialize all walls to no as they have not be checked
+            // initialize all walls to no as they have not be checked
+            std::string wall_north = "n"; 
+            std::string wall_south = "n"; 
+            std::string wall_east = "n";
+            std::string wall_west = "n";
 
             if(request_cast->wall_info[0]) // if there is a wall to the north
-                wall_north = 'y'; // set wall_north to y for yes
+                wall_north = "y"; // set wall_north to y for yes
             
             if(request_cast->wall_info[1]) // if there is a wall to the south
-                wall_south = 'y'; // set wall_north to y for yes
+                wall_south = "y"; // set wall_north to y for yes
             
             if(request_cast->wall_info[2]) // if there is a wall to the east
-                wall_east = 'y'; // set wall_north to y for yes
+                wall_east = "y"; // set wall_north to y for yes
 
             if(request_cast->wall_info[3]) // if there is a wall to the west
-                wall_west = 'y'; // set wall_north to y for yes
+                wall_west = "y"; // set wall_north to y for yes
 
             // adding wall info to buffer json
             request_buffer_json["Wall_Info"] = { {"North", wall_north},
@@ -804,9 +813,9 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
             m_reserveCellResponse* response_cast = (m_reserveCellResponse*) response;
             
             // need to convert bool info into y/n
-            char cell_reserved = 'n';
+            std::string cell_reserved = "n";
             if (response_cast->cell_reserved)
-                cell_reserved = 'y';
+                cell_reserved = "y";
 
             // adding request infomation to buffer json
             response_buffer_json["Cell_Reserved"] = cell_reserved;

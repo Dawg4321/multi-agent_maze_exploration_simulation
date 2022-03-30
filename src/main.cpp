@@ -10,31 +10,138 @@
 
 using namespace std;
 
+using json = nlohmann::json; // simplifying namespace so "json" can be used instead of "nlohmann::json" when declaring json objects
+
+struct TurnControlData{ // struct containing data used by robot and master threads to control turn flow
+    
+    pthread_barrier_t turn_start_barrier, turn_end_barrier; // barriers to synchronize robot threads into a turn format
+    
+    pthread_mutex_t finished_counter_mutex; // mutexes to protect the counters
+
+    int finished_robots_counter; // tracks number of robots which have completed a turn
+
+    TurnControlData(int num_robots){
+        // initialzing barrier to number of robots + 1 (all robots + robot master must be waiting before next turn can start/finish)
+        pthread_barrier_init(&turn_start_barrier, NULL, num_robots + 1);
+        pthread_barrier_init(&turn_end_barrier, NULL, num_robots + 1);
+
+        // intialzing pthread mutexes
+        pthread_mutex_init(&finished_counter_mutex, NULL);
+
+        finished_robots_counter = 0; // initializing finished_robots to 0 as no robots have finished executing fully
+    }
+    ~TurnControlData(){
+        // detroying pthread barrier and mutexes
+        pthread_barrier_destroy(&turn_start_barrier);
+        pthread_mutex_destroy(&finished_counter_mutex);
+    }
+};
+
+struct RobotMasterArgs{ // structure to hold args for passing RobotMaster information into a new thread
+    RobotMaster* Generated_RobotMaster; // dynamically allocated robotmaster
+
+    TurnControlData* turn_control; // struct containing info to control robot's turn
+
+    json turn_json; // json containing request infomation of robot's action during each turn
+
+    RobotMasterArgs(RobotMaster* R1, TurnControlData* control_info){
+        Generated_RobotMaster = R1;
+        turn_control = control_info;
+
+    }
+};
+
 struct RobotArgs{ // structure to hold args for passing robot information into a new thread
     Robot* Generated_Robot; // dynamically allocated robot
     GridGraph Maze_Map; // Map of maze used by robot to scan cells
 
-    RobotArgs(Robot* R1, GridGraph M){
+    TurnControlData* turn_control; // struct containing info to control robot's turn
+
+    RobotArgs(Robot* R1, GridGraph M, TurnControlData* control_info){
         Generated_Robot = R1;
         Maze_Map.nodes = M.nodes;
         Maze_Map.x_edges = M.x_edges;
         Maze_Map.y_edges = M.y_edges;
+        turn_control = control_info;
     }
 };
 
 void* robotFunc(void* Robot_Info){ // function for robot running threads
-    RobotArgs* Data = (RobotArgs*) Robot_Info;
+    // gathering passed data
+    RobotArgs* Data = (RobotArgs*) Robot_Info; // argument structure containing passed data
+    Robot* R = Data->Generated_Robot; // robot to run in this thread
+    TurnControlData* TurnControl = Data->turn_control; // turn control mechanisms
 
-    Robot* R = Data->Generated_Robot;
+    R->robotSetUp(); // setting up robot before loop intialization
 
-    R->robotLoop(&(Data->Maze_Map)); // run robot loop with specified maze info
+    int robot_execution_status = s_stand_by; // tracks what state the robot executed in last robot loop pass
+    
+    int number_of_turns_to_wait = 0; // tracks the number of turns robot has to sit out before executing a robotloop step
+                                     // initialzing to zero as robot should not wait on its first turn
+    
+    while(robot_execution_status != s_exit_loop){ // continue executing turns until the robot has been put into shut down state
+
+        pthread_barrier_wait(&TurnControl->turn_start_barrier); // waiting for all threads to complete preivous turn initialization before starting next turn
+
+        if(number_of_turns_to_wait == 0){ // if robot does not have to sit out for a turn, execute robot loop step
+
+            robot_execution_status = R->robotLoopStep(&Data->Maze_Map); // executing one step of the robot loop
+ 
+            number_of_turns_to_wait++;
+        }
+
+        pthread_barrier_wait(&TurnControl->turn_end_barrier); // waiting for all threads to complete preivous turn initialization before starting next turn
+        
+        number_of_turns_to_wait--; // subtract number of turns to wait as robot has finished a turn
+    }
+
+    // safely incrementing finished_robots counter as robot is done exploring
+    pthread_mutex_lock(&TurnControl->finished_counter_mutex);
+    TurnControl->finished_robots_counter++;
+    pthread_mutex_unlock(&TurnControl->finished_counter_mutex);
+
+    pthread_exit(NULL); // return from thread
 }
 
-void* controllerFunc(void* Robot_Controller){ // function to run Robot Controller in a seperate thread
-    
-    RobotMaster* RM = (RobotMaster*) Robot_Controller; // gathering passed in Robot_Controller
+void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controller in a seperate thread
+    // gathering passed data
+    RobotMasterArgs* Data = (RobotMasterArgs*) RobotMaster_Info; // argument structure containing passed data
+    RobotMaster* RM = Data->Generated_RobotMaster; // robot master to run
+    TurnControlData* TurnControl = Data->turn_control; // turn control mechanisms
 
-    RM->runRobotMaster(); // run RobotController until maze is mapped and robots have shut down fully
+    unsigned int turn_counter = 0; // counter to track number of turns which have occured
+
+    RM->robotMasterSetUp(); // setting up robot master before receiving requests
+
+    bool maze_mapped = false;
+
+    pthread_barrier_wait(&TurnControl->turn_start_barrier); // start robot
+
+    while(!maze_mapped){ // robot loop
+        
+        pthread_barrier_wait(&TurnControl->turn_end_barrier);
+
+        turn_counter++; // incrementing turn counter as a turn has finished
+
+        while(RM->getNumRequestsinQueue() != 0){
+            maze_mapped = RM->receiveRequests();
+        }
+        
+        json buffer_json;
+        string name = "Turn_";
+        name += to_string(turn_counter);
+        buffer_json[name] = RM->getRequestInfo(); // gathering json containing request info during this turn
+
+        Data->turn_json.push_back(buffer_json);
+
+        RM->clearRequestInfo(); // clearing contents of request info before next turn
+
+        pthread_barrier_wait(&TurnControl->turn_start_barrier);
+    }
+
+    pthread_barrier_wait(&TurnControl->turn_end_barrier);
+
+    pthread_exit(NULL); // return from thread
 }
 
 Robot* getNewRobot(int robot_type, unsigned int x_pos, unsigned int y_pos, RequestHandler* request_handler, unsigned int xsize, unsigned int ysize){
@@ -136,16 +243,19 @@ int main(){
     int type_of_robots = 0;
     cin >> type_of_robots;
 
+    // ~~~ Turn Tracking System Variable Creation ~~~~
+    TurnControlData turn_control_data(number_of_robots);
     
     // ~~~ Robot Master Thread Generation ~~~
     RequestHandler* request_handler = new RequestHandler(); // creating message handler for robot -> master communcation
     
     // gathering new RobotMaster compatible with specified type of robots
     RobotMaster* Robot_Controller = getNewRobotMaster(type_of_robots, number_of_robots, request_handler, Generated_Maze.getMazeXSize(), Generated_Maze.getMazeYSize());
+    RobotMasterArgs RMArgs(Robot_Controller, &turn_control_data);
 
-     // creating thread to run Robot_Controller 
+    // creating thread to run Robot_Controller 
     pthread_t master_thread;
-    pthread_create(&master_thread, NULL, &controllerFunc, (void*)Robot_Controller);
+    pthread_create(&master_thread, NULL, &controllerFunc, (void*)&RMArgs);
 
     // ~~~ Robot Thread Generation ~~~
     Robot* Robots_Array[number_of_robots]; // generating array for robots to be stored in
@@ -167,7 +277,7 @@ int main(){
         Robots_Array[i] = getNewRobot(type_of_robots, robot_x_position, robot_y_position, request_handler, Generated_Maze.getMazeXSize(), Generated_Maze.getMazeYSize());
         
         // passing robot into
-        Robot_Thread_Args[i] = new RobotArgs(Robots_Array[i], Generated_Maze.getMazeMap());
+        Robot_Thread_Args[i] = new RobotArgs(Robots_Array[i], Generated_Maze.getMazeMap(), &turn_control_data);
         // running robot thread
         pthread_create(&thread_id[i], NULL, &robotFunc, (void*)Robot_Thread_Args[i]);
     }
@@ -179,9 +289,10 @@ int main(){
     // ~~~ Awaiting Robot Master Thread Completion ~~~
     pthread_join(master_thread, NULL); // waiting for robot master thread to finish
     
-    exportJSON(Robot_Controller->getRequestInfo(), "Test");
+    exportJSON(RMArgs.turn_json, "Bruh");
 
-    // ~~~ Deleting Dynamically Allocated Memory ~~
+
+    // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
 
     delete Robot_Controller; // deleting RobotMaster
     

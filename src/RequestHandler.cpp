@@ -36,3 +36,13 @@ Message* RequestHandler::getMessage(){
 
     return temp; // returning message from front of queue
 }
+
+int RequestHandler::getNumberofMessages(){
+    pthread_mutex_lock(&msg_mutex); // locking mutex so msg_queue can be modified safely 
+
+    int queue_size = msg_queue.size(); // get queue size
+
+    pthread_mutex_unlock(&msg_mutex);// unlocking mutex so msg_queue can be modified by other threads 
+
+    return queue_size;
+}

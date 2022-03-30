@@ -55,7 +55,8 @@ int MultiRobot::getMessagesFromMaster(int current_status){ // checking if RobotM
 
                 }
                 else{ // if response is stale (another request has already been sent)
-                    // do nothing
+                    // keep previously set status
+                    new_robot_status = current_status;
                 }
             }
             else{ // if message is a request from master
@@ -67,6 +68,7 @@ int MultiRobot::getMessagesFromMaster(int current_status){ // checking if RobotM
             delete request; // deleting recieved message as no longer needed
 
             request = Master_2_Robot_Message_Handler->getMessage(); // gather next request to process
+            current_status = new_robot_status; // setting new robot status as current status for next iteration through for loop
 
         } while(request != NULL); // checking if there is another request to process
     }

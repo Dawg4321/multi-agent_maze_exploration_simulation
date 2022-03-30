@@ -21,6 +21,9 @@ class Robot{ // parent class used as a template for further robot implementation
 
         // ** Robot Loop Function **
         virtual void robotLoop(GridGraph* maze) = 0; // function used by robots to run exploration behaviour
+        virtual void robotSetUp() = 0; // function used by robot once before robot begins its loop function
+        virtual int robotLoopStep(GridGraph* maze) = 0; // function used within each iteration of a robot's loop
+                                                         // returns the value of the robot's status after iteration
 
         // ** Low Level Robot Operations **
         std::vector<bool> scanCell(GridGraph* maze); // scans content of robots current cell using maze information

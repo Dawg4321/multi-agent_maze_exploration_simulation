@@ -19,8 +19,11 @@ class MultiRobot: public Robot{
         
         bool move2Cell(Coordinates destination); // move robot operation used when exploring using controller
 
-        // ** Robot Loop Function **  
+        // ** Robot Loop Functions **  
         virtual void robotLoop(GridGraph* maze) = 0; // loop used by robot to move through maze
+        virtual void robotSetUp() = 0; // function used by robot once before robot begins its loop function
+        virtual int robotLoopStep(GridGraph* maze) = 0; // function used within each iteration of a robot's loop
+                                                         // returns the value of the robot's status after iteration
 
         // ** General Purpose Functions **
         unsigned int getID() { return id;} // returns robot id
@@ -50,8 +53,6 @@ class MultiRobot: public Robot{
        
     protected:
         unsigned int id; // robot id assigned to robot by robot controller
-
-        int robot_status; // controls robot execution within robot loop
 
         int transaction_counter; // counts the number of sent transactions executed
                                  // also used to assign transation id to sent messages to allow for response identification

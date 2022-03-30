@@ -40,6 +40,7 @@ class RobotMaster{
 
         // ** Master Operation Function **
         void runRobotMaster();
+        void robotMasterSetUp(); // function to initialize RobotMaster before receiving requests
         bool receiveRequests();  // recieves and decodes request information from imcoming request
                                  // returns false until all cells have been explored
         void handleIncomingRequest(Message* m); // processes all requests except shutdown notifications
@@ -55,6 +56,8 @@ class RobotMaster{
 
         // ** General Purpose Functions **
         bool checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable); // checks if a cell is occupied by a robot
+
+        int getNumRequestsinQueue(){ return Message_Handler->getNumberofMessages(); } // returns number of requests in RobotMaster's Queue
 
         RequestHandler* getTargetRequestHandler(unsigned int target_id); // gets a request handler for a specific robot
 
@@ -83,7 +86,7 @@ class RobotMaster{
                                                            // [3] = west edge
         // ** Metric Tracking Functions **
         void exportRequestInfo2JSON(m_genericRequest* request, m_genericRequest* response, unsigned int request_id); // exports information regarding a recieved request to a json file
-        json getRequestInfo(){ return RequestInfo; } // gets a copy of the json containing information on transactions handled by the RobotMaster classs
+        json getRequestInfo(){ return RequestInfo; } // gets a copy of the json containing information on transactions handled by the RobotMaster class
         void clearRequestInfo(){ RequestInfo.clear(); } // clears the contents of the RequestInfo json
 
         // ** print functions **
