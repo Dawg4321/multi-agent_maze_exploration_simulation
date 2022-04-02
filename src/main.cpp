@@ -7,6 +7,7 @@
 #include "Robot.h"
 #include "MultiRobot_NC_UI.h"
 #include "MultiRobot_NC_IE.h"
+#include "MultiRobot_C_IE.h"
 
 using namespace std;
 
@@ -20,7 +21,9 @@ struct TurnControlData{ // struct containing data used by robot and master threa
 
     int finished_robots_counter; // tracks number of robots which have completed a turn
 
-    TurnControlData(int num_robots){
+    const int number_of_robots; // constant value of number of robots being simulated
+
+    TurnControlData(int num_robots): number_of_robots(num_robots){
         // initialzing barrier to number of robots + 1 (all robots + robot master must be waiting before next turn can start/finish)
         pthread_barrier_init(&turn_start_barrier, NULL, num_robots + 1);
         pthread_barrier_init(&turn_end_barrier, NULL, num_robots + 1);
@@ -95,9 +98,15 @@ void* robotFunc(void* Robot_Info){ // function for robot running threads
         number_of_turns_to_wait--; // subtract number of turns to wait as robot has finished a turn
     }
 
+    bool all_robots_done = false; // boolean to track whether all robots have completed their turns
+
     // safely incrementing finished_robots counter as robot is done exploring
     pthread_mutex_lock(&TurnControl->finished_counter_mutex);
     TurnControl->finished_robots_counter++;
+    
+    if(TurnControl->finished_robots_counter == TurnControl->number_of_robots){
+        all_robots_done = true;
+    }
     pthread_mutex_unlock(&TurnControl->finished_counter_mutex);
 
     pthread_exit(NULL); // return from thread
@@ -115,31 +124,30 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
 
     bool maze_mapped = false;
 
-    pthread_barrier_wait(&TurnControl->turn_start_barrier); // start robot
+    pthread_barrier_wait(&TurnControl->turn_start_barrier); // start robot's first turn
 
-    while(!maze_mapped){ // robot loop
+    while(!maze_mapped){ // RobotMaster loop
         
-        pthread_barrier_wait(&TurnControl->turn_end_barrier);
+        pthread_barrier_wait(&TurnControl->turn_end_barrier); // waiting for robots to finish turn
 
         turn_counter++; // incrementing turn counter as a turn has finished
 
-        while(RM->getNumRequestsinQueue() != 0){
+        while(RM->getNumRequestsinQueue() != 0){ // while there are requests to receive on this turn, handle them
             maze_mapped = RM->receiveRequests();
         }
         
-        json buffer_json;
+        json buffer_json; // load requests handled during turn into a json
         string name = "Turn_";
         name += to_string(turn_counter);
         buffer_json[name] = RM->getRequestInfo(); // gathering json containing request info during this turn
-
         Data->turn_json.push_back(buffer_json);
 
         RM->clearRequestInfo(); // clearing contents of request info before next turn
 
-        pthread_barrier_wait(&TurnControl->turn_start_barrier);
+        pthread_barrier_wait(&TurnControl->turn_start_barrier); // signalling robots to begin next turn
     }
 
-    pthread_barrier_wait(&TurnControl->turn_end_barrier);
+    pthread_barrier_wait(&TurnControl->turn_end_barrier); // Signalling robot they can finally exit their loop after completion
 
     pthread_exit(NULL); // return from thread
 }
@@ -154,6 +162,10 @@ Robot* getNewRobot(int robot_type, unsigned int x_pos, unsigned int y_pos, Reque
         case 2: // Selecting No Collision, Intelligent Exploration
         {
             return new MultiRobot_NC_IE(x_pos, y_pos, request_handler, xsize, ysize);
+        }
+        case 3:
+        {
+            return new MultiRobot_C_IE(x_pos, y_pos, request_handler, xsize, ysize);
         }
     }
 }
@@ -239,7 +251,8 @@ int main(){
     cout << "What type of robots do you want to simulate?\n";
     cout << "1 - No Collision, Unintelligent Exploration\n";
     cout << "2 - No Collision, Intelligent Exploration\n";
-    
+    cout << "3 - Collision, Intelligent Exploration\n";
+
     int type_of_robots = 0;
     cin >> type_of_robots;
 
@@ -289,8 +302,7 @@ int main(){
     // ~~~ Awaiting Robot Master Thread Completion ~~~
     pthread_join(master_thread, NULL); // waiting for robot master thread to finish
     
-    exportJSON(RMArgs.turn_json, "Bruh");
-
+    exportJSON(RMArgs.turn_json, "Simulation");
 
     // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
 

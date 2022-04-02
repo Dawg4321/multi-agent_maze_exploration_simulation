@@ -256,8 +256,42 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
 
 void RobotMaster::move2CellRequest(Message* request){
 
-    // does nothing in parent class as this type of request is only handled in child class
+    // gathering incoming request
+    m_move2CellRequest* request_data = (m_move2CellRequest*)request->msg_data; 
     
+    unsigned int robot_id = request_data->robot_id;
+    Coordinates target_cell = request_data->target_cell;
+
+    m_move2CellResponse* response_data = new m_move2CellResponse;
+
+    if(GlobalMapInfo[target_cell.y][target_cell.x].occupying_robot == 0){ // if target cell is unoccupied
+        response_data->can_movement_occur = true; // movement can occur
+    }
+    else if(GlobalMapInfo[target_cell.y][target_cell.x].occupying_robot == robot_id){ // if the occupying robot is the current robot
+        printf("Critical Error: Target Cell\n");
+        response_data->can_movement_occur = false; // movement can't occur
+    }
+    else{ // target cell is occupied by another robot
+        response_data->can_movement_occur = false; // movement can't occur
+    }
+
+    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
+
+    // attaching response data to message
+    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
+
+    RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
+
+    if (robot_request_handler != NULL){ // if request handler gathered send data
+        response->msg_data = response_data; // assigning response to message
+
+        robot_request_handler->sendMessage(response); // sending message
+    }
+    else{ // if no request handler found, must delete response data
+        delete response_data;
+        delete response;
+    }
+
     return;
 }
 
@@ -278,7 +312,7 @@ void RobotMaster::reserveCellRequest(Message* request){
 
     unsigned int robot_id = request_data->robot_id;
     Coordinates target_cell = request_data->target_cell;                    
-    Coordinates neighbouring_cell = request_data->neighbouring_cell; 
+    Coordinates neighbouring_cell = request_data->neighbouring_cell;
 
     // return data allocation
     m_reserveCellResponse* response_data = new m_reserveCellResponse; // response message
@@ -832,7 +866,6 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
 
     // transaction information has been encapsulated into two seperate jsons
     // they can now be combined in a buffer json and then added to the main "RequestInfo" JSON
-    
     json request_json;
     request_json["Type"] = request->request_type;
     request_json["Request"] = request_buffer_json;

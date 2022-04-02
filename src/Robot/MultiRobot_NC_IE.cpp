@@ -20,6 +20,8 @@ void MultiRobot_NC_IE::robotSetUp(){
     assignIdFromMaster(); // getting id from robotmaster before begining robot exploration
 
     robot_status = s_stand_by; // initializing status to zero as robot is placed on standby until master returns ID within robot loop
+
+    return;
 }
 
 

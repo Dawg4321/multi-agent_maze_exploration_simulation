@@ -10,6 +10,7 @@
 #define s_scan_cell 1
 #define s_pathfind 2
 #define s_move_robot 3
+#define s_request_move 4
 
 class MultiRobot: public Robot{
     public:
@@ -35,8 +36,9 @@ class MultiRobot: public Robot{
         void requestShutDown(); // sends shutdown notification to RobotMaster
                                 // TODO: change to generic update status request                 
         void requestReserveCell(); // attempts to reserve a cell to explore from the RobotMaster
-                                    // if cell to reserve fails, LocalMap is updated with GlobalMap information
-        bool requestMove2Cell(Coordinates target_cell); // checks if a cell is occupied by another robot
+                                   // if cell to reserve fails, LocalMap is updated with GlobalMap information
+                                   
+        void requestMove2Cell(Coordinates target_cell); // checks if a cell is occupied by another robot
 
         void requestGlobalMapUpdate(std::vector<bool> connection_data); // updating Global Map information of master with connection data
 

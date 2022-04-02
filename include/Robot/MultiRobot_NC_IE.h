@@ -5,7 +5,6 @@
 
 class MultiRobot_NC_IE: public MultiRobot{
     public:
-
         MultiRobot_NC_IE(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
 
         // ** Robot loop function **

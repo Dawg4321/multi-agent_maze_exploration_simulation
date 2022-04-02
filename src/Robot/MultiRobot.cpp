@@ -154,10 +154,11 @@ int MultiRobot::handleMasterResponse(Message* response, int current_status){
             break;
         }
         case move2CellRequest_ID:{
-            // do nothing right now **
-            // TODO: implement move2 cell response
-            new_robot_status = current_status;
+            
+            m_move2CellResponse* message_response = (m_move2CellResponse*)response_data;
 
+            bool can_movement_occur = message_response->can_movement_occur; // gather whether movement can occur
+            
             break;
         }
         case reserveCellRequest_ID: 
@@ -240,8 +241,8 @@ void MultiRobot::assignIdFromMaster(){
 
     return;
 }
-/*
-bool MultiRobot::requestMove2Cell(Coordinates target_cell){
+
+void MultiRobot::requestMove2Cell(Coordinates target_cell){
     // need to message controller to see if target cell is occupied
     // if unoccupied, robot can move to cell
     // if cell is unoccupied (e.g. robot can move to cell), return true
@@ -260,18 +261,10 @@ bool MultiRobot::requestMove2Cell(Coordinates target_cell){
     temp_message->msg_data = message_data;
 
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
-
-    sem_wait(response_sem); // waiting for response to be ready from controller
-
-    m_move2CellResponse* message_response = (m_move2CellResponse*)temp_message->return_data;
-
-    bool can_movement_occur = message_response->can_movement_occur; // gather whether movement can occur
     
-    sem_post(acknowledgement_sem); // signalling to controller that the response has been utilised 
-    
-    return can_movement_occur;
+    return;
 }
-*/
+
 void MultiRobot::requestShutDown(){
     // sending message to notify RobotMaster that robot is ready to shutdown
 
