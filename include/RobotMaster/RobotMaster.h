@@ -36,22 +36,22 @@ struct CellInfo{ // structure to track information of each cell within the maze
 class RobotMaster{
     public:
         RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize);
-        ~RobotMaster();
+        virtual ~RobotMaster();
 
         // ** Master Operation Function **
         void runRobotMaster();
         void robotMasterSetUp(); // function to initialize RobotMaster before receiving requests
         bool receiveRequests();  // recieves and decodes request information from imcoming request
                                  // returns false until all cells have been explored
-        void handleIncomingRequest(Message* m); // processes all requests except shutdown notifications
+        virtual void handleIncomingRequest(Message* m) = 0; // processes all requests except shutdown notifications
 
         // ** Request Handling Functions **
         // these are effectively wrapper functions for other functions to facilitate interthread communication
         void shutDownRequest(Message* request);
         void addRobotRequest(Message* request);
         void updateGlobalMapRequest(Message* request);
-        virtual void move2CellRequest(Message* request);
-        void reserveCellRequest(Message* request);
+        //virtual
+        //void reserveCellRequest(Message* request);
         void updateRobotLocationRequest(Message* request);
 
         // ** General Purpose Functions **
@@ -73,7 +73,7 @@ class RobotMaster{
         void updateAllRobotState(int status); // updates the state of all robots to the specified value
 
         // ** GlobalMap Functions **
-        void updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C); // updates global map with information from robot scan
+        virtual void updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C); // updates global map with information from robot scan
         
         void gatherPortionofMap(Coordinates curr_node, Coordinates neighbour_node, std::vector<Coordinates>* map_nodes, std::vector<std::vector<bool>>* map_connections, std::vector<char>* node_status); // generates portion of map to be transfered to robot using two final vectors as return values
         
@@ -96,7 +96,7 @@ class RobotMaster{
     protected:
         GridGraph* GlobalMap; // Global Map of maze
 
-        std::vector<std::vector<CellInfo>> GlobalMapInfo; // vector used to track status of various cells
+        //std::vector<std::vector<CellInfo>> GlobalMapInfo; // vector used to track status of various cells
 
         std::vector<RobotInfo> tracked_robots; // vector to track information on various robots within maze
 
@@ -109,7 +109,7 @@ class RobotMaster{
 
         unsigned int num_of_added_robots; // tracks number of added robots
         
-        const int max_num_of_robots; // variable which specifies number of robots needed for exploration
+        int max_num_of_robots; // variable which specifies number of robots needed for exploration
                                      // exploration won't begin until enough robots have been added
 
         unsigned int num_of_receieve_transactions; // tracks the number of incoming transactions handled

@@ -3,8 +3,9 @@
 #include <pthread.h>
 
 #include "Maze.h"
-#include "RobotMaster.h"
-#include "Robot.h"
+#include "RobotMaster_NC_UI.h"
+#include "RobotMaster_NC_IE.h"
+#include "RobotMaster_C_IE.h"
 #include "MultiRobot_NC_UI.h"
 #include "MultiRobot_NC_IE.h"
 #include "MultiRobot_C_IE.h"
@@ -172,8 +173,14 @@ Robot* getNewRobot(int robot_type, unsigned int x_pos, unsigned int y_pos, Reque
 
 RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHandler* request_handler, unsigned int xsize, unsigned int ysize){
     
-    if(robot_type == 1 || robot_type == 2){ // if the robots to simulate are of type NC_UI or NC_IE
-        return new RobotMaster(request_handler, number_of_robots, xsize, ysize);
+    if(robot_type == 1){ // if the robots to simulate are of type NC_UI
+        return new RobotMaster_NC_UI(request_handler, number_of_robots, xsize, ysize);
+    }
+    else if(robot_type == 2){ // if the robots to simulate are of type NC_IE
+        return new RobotMaster_NC_IE(request_handler, number_of_robots, xsize, ysize);
+    }
+    else if(robot_type == 3){ // if the robots to simulate are of type C_IE
+        return new RobotMaster_C_IE(request_handler, number_of_robots, xsize, ysize);
     }
 }
 

@@ -8,8 +8,6 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
     maze_ysize = ysize;
 
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
-
-    GlobalMapInfo.resize(maze_ysize,std::vector<CellInfo>(maze_xsize)); // resizing GlobalMap info to maze size
 }
 
 RobotMaster::~RobotMaster(){
@@ -75,61 +73,6 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
     return false; // return false as maze is not completely mapped
 }
 
-void RobotMaster::handleIncomingRequest(Message* incoming_request){
-
-    m_genericRequest* r = (m_genericRequest*) incoming_request->msg_data; // use generic message pointer to gather request type
-
-    switch (r->request_type){ // determining type of request before processing
-
-        case addRobotRequest_ID: // addRobot request
-        {
-            addRobotRequest(incoming_request);
-
-            // if all robots have been added
-            // send signal to all robots to begin exploration
-            if(tracked_robots.size() == max_num_of_robots)
-                updateAllRobotState(1); // updating all robot states to 1
-                                        // this causes them to all begin exploring by first scanning their cell
-            break;
-        }
-        case updateGlobalMapRequest_ID: // updateGlobalMap request
-        {   
-            updateGlobalMapRequest(incoming_request);
-
-            if(number_of_unexplored_cells < 1){ // if no more cells to explore
-                updateAllRobotState(-1); // tell all robots to shut down
-                accepting_requests = false; // set robot master to ignore all incoming requests which are not a shut down request
-            }
-
-            break;
-        }
-        case move2CellRequest_ID: // move2cell request
-        {
-            move2CellRequest(incoming_request); // unimplemented in parent class as collision management is used in child class 
-
-            break;
-        }
-        case reserveCellRequest_ID: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
-        {
-            reserveCellRequest(incoming_request);
-
-            break;
-        }
-        case updateRobotLocationRequest_ID: // update Robot Location  (tells master that robot has completed move operation)
-        {
-            updateRobotLocationRequest(incoming_request);
-
-            break;
-        }
-        default:
-        {
-            break;
-        }
-    }
-
-    return;
-}
-
 RequestHandler* RobotMaster::getTargetRequestHandler(unsigned int target_id){ // gets a request handler for a specific robot
     for(int i = 0; i < tracked_robots.size(); i++){
         if(tracked_robots[i].robot_id == target_id){
@@ -139,6 +82,7 @@ RequestHandler* RobotMaster::getTargetRequestHandler(unsigned int target_id){ //
     
     return NULL; // if not found, return NULL
 }
+
 void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from system
     // shutDown request
     // [0] = type (unsigned int*), content: id of robot shutting down
@@ -254,48 +198,7 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
     return;
 }
 
-void RobotMaster::move2CellRequest(Message* request){
-
-    // gathering incoming request
-    m_move2CellRequest* request_data = (m_move2CellRequest*)request->msg_data; 
-    
-    unsigned int robot_id = request_data->robot_id;
-    Coordinates target_cell = request_data->target_cell;
-
-    m_move2CellResponse* response_data = new m_move2CellResponse;
-
-    if(GlobalMapInfo[target_cell.y][target_cell.x].occupying_robot == 0){ // if target cell is unoccupied
-        response_data->can_movement_occur = true; // movement can occur
-    }
-    else if(GlobalMapInfo[target_cell.y][target_cell.x].occupying_robot == robot_id){ // if the occupying robot is the current robot
-        printf("Critical Error: Target Cell\n");
-        response_data->can_movement_occur = false; // movement can't occur
-    }
-    else{ // target cell is occupied by another robot
-        response_data->can_movement_occur = false; // movement can't occur
-    }
-
-    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
-
-    // attaching response data to message
-    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
-
-    RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
-
-    if (robot_request_handler != NULL){ // if request handler gathered send data
-        response->msg_data = response_data; // assigning response to message
-
-        robot_request_handler->sendMessage(response); // sending message
-    }
-    else{ // if no request handler found, must delete response data
-        delete response_data;
-        delete response;
-    }
-
-    return;
-}
-
-void RobotMaster::reserveCellRequest(Message* request){
+/*void RobotMaster::reserveCellRequest(Message* request){
     // reserveCell request msg_data layout:
     // [0] = type: (unsigned int*), content: id of robot sending request
     // [1] = type: (Coordinates*), content: target unexplored cell to reseve
@@ -353,7 +256,7 @@ void RobotMaster::reserveCellRequest(Message* request){
         delete response;
     }
     return;
-}
+}*/
 
 void RobotMaster::updateRobotLocationRequest(Message* request){
     // updateRobotLocation request msg_data layout:
@@ -432,7 +335,7 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 
     updateRobotLocation(id, C);
 
-    GlobalMapInfo[C->y][C->x].reserved = 0; // unreserving cell as it has been scanned
+    //GlobalMapInfo[C->y][C->x].reserved = 0; // unreserving cell as it has been scanned
 
     if (GlobalMap->nodes[C->y][C->x] != 1){ // checking if there is a need to update map (has the current node been explored?)
         
