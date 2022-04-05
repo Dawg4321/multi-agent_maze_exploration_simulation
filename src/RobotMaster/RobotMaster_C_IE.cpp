@@ -38,7 +38,7 @@ void RobotMaster_C_IE::handleIncomingRequest(Message* incoming_request){
         }
         case move2CellRequest_ID: // move2cell request
         {
-            move2CellRequest(incoming_request); // unimplemented in parent class as collision management is used in child class 
+            move2CellRequest(incoming_request);
 
             break;
         }

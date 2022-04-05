@@ -51,11 +51,11 @@ class RobotMaster{
         RequestHandler* getTargetRequestHandler(unsigned int target_id); // gets a request handler for a specific robot
 
         // ** Tracked_Robots Functions **
-        unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r); // adds robots to tracked_robots t
+        virtual unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r); // adds robots to tracked_robots t
                                                                                   // this is important to allow for the robot to be synchronized by the control system
         void removeRobot(unsigned int robot_id); // removes robot from tracked_robots
 
-        void updateRobotLocation(unsigned int* id, Coordinates* C); // updates the location of a robot to the location specified
+        virtual void updateRobotLocation(unsigned int* id, Coordinates* C); // updates the location of a robot to the location specified
 
         void updateAllRobotState(int status); // updates the state of all robots to the specified value
 

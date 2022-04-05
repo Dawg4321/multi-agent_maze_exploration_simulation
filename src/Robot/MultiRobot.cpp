@@ -157,7 +157,14 @@ int MultiRobot::handleMasterResponse(Message* response, int current_status){
             
             m_move2CellResponse* message_response = (m_move2CellResponse*)response_data;
 
-            bool can_movement_occur = message_response->can_movement_occur; // gather whether movement can occur
+            bool movement_can_occur = message_response->can_movement_occur; // gather whether movement can occur
+
+            if(movement_can_occur){
+                new_robot_status = s_move_robot;
+            }
+            else{
+                new_robot_status = s_pathfind;
+            }
             
             break;
         }

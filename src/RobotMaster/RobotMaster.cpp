@@ -212,12 +212,7 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
     unsigned int robot_id = request_data->robot_id;
     Coordinates new_robot_location = request_data->new_robot_location;                    
 
-    for(int i = 0; i < tracked_robots.size(); i++){
-        if(tracked_robots[i].robot_id == robot_id){
-            tracked_robots[i].robot_position = new_robot_location;
-            break;
-        }
-    }
+    updateRobotLocation(&robot_id, &new_robot_location); // updating robot location
 
     // return data allocation
     m_updateRobotLocationResponse* response_data = new m_updateRobotLocationResponse; // response message
@@ -450,15 +445,13 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // upda
     for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update
         if (tracked_robots[i].robot_id == *id){ // if robot found using id
             tracked_robots[i].robot_position = *C; // update position in RobotInfo
-            
-            // TODO: update occupying robot information in CellInfo matrix
-            
             break; 
         }
     }
+
     return;
 }
-    
+
 void RobotMaster::updateAllRobotState(int status){
 
     for(int i = 0; i < tracked_robots.size(); i++){ // creating messages to update state of all robots
