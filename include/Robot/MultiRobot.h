@@ -28,17 +28,12 @@ class MultiRobot: public Robot{
 
         // ** General Purpose Functions **
         unsigned int getID() { return id;} // returns robot id
-        void updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status); // updates robot's map with information from vectors
 
         // ** Robot -> Master Communication Functions **
         void assignIdFromMaster(); // gets an ID from a RobotMaster using a message
 
         void requestShutDown(); // sends shutdown notification to RobotMaster
                                 // TODO: change to generic update status request                 
-        void requestReserveCell(); // attempts to reserve a cell to explore from the RobotMaster
-                                   // if cell to reserve fails, LocalMap is updated with GlobalMap information
-                                   
-        void requestMove2Cell(Coordinates target_cell); // checks if a cell is occupied by another robot
 
         void requestGlobalMapUpdate(std::vector<bool> connection_data); // updating Global Map information of master with connection data
 
@@ -48,7 +43,7 @@ class MultiRobot: public Robot{
         int getMessagesFromMaster(int status); // handles any messages master has sent 
         
         int  handleMasterRequest(Message* request, int current_status); // function to handle Master Request Message
-        int  handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
+        virtual int  handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
 
         bool isResponseStale(int transaction_id); // simple function to check if there is an outstanding response of a given transaction id
         void makeResponseStale(int transaction_id); // removes entry of transaction from valid_response (e.g. making it stale)

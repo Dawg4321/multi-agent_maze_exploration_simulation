@@ -71,7 +71,7 @@ int MultiRobot_NC_IE::robotLoopStep(GridGraph* maze){
             
             BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
                 
-            MultiRobot::requestReserveCell();
+            requestReserveCell();
 
             robot_status = s_stand_by; // must wait for response
             
@@ -100,4 +100,13 @@ int MultiRobot_NC_IE::robotLoopStep(GridGraph* maze){
     }
 
     return status_of_execution;
+}
+
+int MultiRobot_NC_IE::handleMasterResponse(Message* response, int current_status){
+
+    current_status = handleCellReserveResponse(response, current_status); // attempt to handle reserve response
+
+    int new_robot_status = MultiRobot::handleMasterResponse(response, current_status); // attempt to handle generic base responses
+
+    return new_robot_status; // return changes to status
 }
