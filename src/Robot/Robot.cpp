@@ -289,6 +289,14 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
     return ret_value; 
 }
 
+bool Robot::BFS_exitCondition(Coordinates* node_to_test){
+    if(LocalMap->nodes[node_to_test->y][node_to_test->x] == 2){
+        return true;
+    }
+
+    return false;
+}
+
 bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
 
     ret_stack->clear(); // clearing planned_path as new path is to be planned using breadth first search
@@ -311,7 +319,7 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
 
         //printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
 
-        if (LocalMap->nodes[curr_node.y][curr_node.x] == 2){ // if an unexplored node has been found
+        if (BFS_exitCondition(&curr_node)){ // if exit conditon has been met
             ret_value = true; // return true as path to unexplored node found
             break; // break from while loop
         }
@@ -461,4 +469,10 @@ void Robot::printRobotXMap(){ // function to print Robot's X edge map
 }
 void Robot::printRobotYMap(){ // function to print Robot's Y edge map 
     printYEdges(LocalMap);
+}
+
+void Robot::setLocalMap(GridGraph* new_map){
+    *LocalMap = *new_map; // setting gridgraph value
+
+    return;
 }
