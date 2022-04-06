@@ -75,12 +75,20 @@ int MultiRobot_IE::handleCellReserveResponse(Message* response, int current_stat
         std::vector<char>* map_status = message_response->map_status; // gather status of nodes tracked in returned map
 
         if(!reserved_succeed){ // if failed to reserve cell found by pathfinding
-                                // must update map with returned data so next closest cell can be reserved
-            updateLocalMap(map_info, edge_info, map_status);
+                                
+            if(map_info->size() == 0){ // if a map update is not required (no nodes added to map_info), the target cell if already reserved by another robot
+
+                already_reserved_cells.push_back(message_response->target_cell); // must add location to already reserved cells to ensure it is not reserved again
+            }
+            else{
+                // must update map with returned data so next closest cell can be reserved
+                updateLocalMap(map_info, edge_info, map_status);
+            }
 
             new_robot_status = s_pathfind; // change status to pathfind as must try and reserve different with updated map info
         }
         else{  // if cell reserved
+            already_reserved_cells.clear(); // can clear already reserved cells 
             new_robot_status = s_move_robot; // setting status to 3 so movement will occur on next loop cycle
         }
     }
@@ -89,4 +97,26 @@ int MultiRobot_IE::handleCellReserveResponse(Message* response, int current_stat
     }
 
     return new_robot_status;
+}
+
+bool MultiRobot_IE::isCellAlreadyReserved(Coordinates *C){ // checks if a cell is already reserved by another robot
+
+    for(int i = 0; i < already_reserved_cells.size(); i++){
+        if(already_reserved_cells[i] == *C){ // if cell is already reserved
+            return true;
+        }
+    }
+
+    return false; // if cell is not already reserved
+}
+
+bool MultiRobot_IE::BFS_exitCondition(Coordinates* node_to_test){ // overriden pathfinding exit condition
+    return (Robot::BFS_exitCondition(node_to_test) && !isCellAlreadyReserved(node_to_test)); // return true if cell is not reserved and is unexplored
+}
+
+void MultiRobot_IE::BFS_noPathFound(){
+    already_reserved_cells.clear(); // clearing already reserved cells as no unreserved cell found
+                                    // these cells should be queried again by robot
+
+    return;
 }

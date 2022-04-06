@@ -51,7 +51,6 @@ struct RobotMasterArgs{ // structure to hold args for passing RobotMaster inform
     RobotMasterArgs(RobotMaster* R1, TurnControlData* control_info){
         Generated_RobotMaster = R1;
         turn_control = control_info;
-
     }
 };
 
@@ -205,12 +204,7 @@ bool exportJSON(json json_2_export, string json_name){
     return false;
 }
 
-int main(){
-    // ~~~ Title printouts ~~~
-    cout << "~~~ Multi-agent Robot Simulator ~~~\n";
-    cout << "Created by Ryan Wiebe\n";
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
-
+void simulateOneTime(){
     // ~~~ Maze Selection ~~~
     cout << "Which Maze would you like to simulate?\n";
     cout << "1 - 4x4 Sample Maze\n";
@@ -242,6 +236,12 @@ int main(){
 
             Generated_Maze.generateInterconnectedMaze(x_size, y_size); // generating NxN empty grid  
         
+            break;
+        }
+        case 3:
+        {
+            Generated_Maze.generate8x8SampleMaze(); // generating sample maze
+            Generated_Maze.printMaze();
             break;
         }
     }
@@ -320,5 +320,102 @@ int main(){
 
     delete request_handler; // deleting request handler used by robots
 
+    return;
+}
+void testCases(){
+    
+    int num_robots = 3; // two robots
+
+    RequestHandler* req = new RequestHandler;
+
+    TurnControlData turn_control_data(num_robots);
+
+    GridGraph g1; // gridgraph for maze data
+
+    g1.nodes = {{1, 1, 1, 1, 1, 1, 1, 1, 1},
+                {0, 0, 0, 0, 0, 0, 0, 1, 0},
+                {0, 0, 0, 0, 0, 0, 0, 1, 0}};
+
+    g1.x_edges = {{true, 0, 0, 0, 0, 0, 0, 0, 0, true},
+                  {0, 0, 0, 0, 0, 0, 0, true, true, 0},
+                  {0, 0, 0, 0, 0, 0, 0, true, true, 0}};
+
+    g1.y_edges = {{true, true, true, true, true, true, true, true, true},
+                  {true, true, true, true, true, true, true, 0, true},
+                  {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                  {0, 0, 0, 0, 0, 0, 0, true, 0}};
+    
+    GridGraph g2; // gridgraph for Local/Global Maps
+    
+    g2.nodes = {{2, 1, 1, 1, 1, 1, 1, 2, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0}};
+
+    g2.x_edges = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+
+    g2.y_edges = {{0, true, true, true, true, true, true, 0, 0},
+                  {0, true, true, true, true, true, true, 0, 0},
+                  {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                  {0, 0, 0, 0, 0, 0, 0, 0, 0}};
+                
+    // initialzing robot positions
+    RobotMaster* RM1 = new RobotMaster_NC_IE(req, num_robots, 9, 3);
+    RobotMasterArgs RM1args(RM1, &turn_control_data);
+    RM1->setGlobalMap(&g2);
+    
+    Robot* R1 = new MultiRobot_NC_IE(4, 0, req, 9, 3);
+    RobotArgs R1args(R1, g1, &turn_control_data);
+    R1->setLocalMap(&g2);
+    Robot* R2 = new MultiRobot_NC_IE(5, 0, req, 9, 3);
+    RobotArgs R2args(R2, g1, &turn_control_data);
+    R2->setLocalMap(&g2);
+    Robot* R3 = new MultiRobot_NC_IE(6, 0, req, 9, 3);
+    RobotArgs R3args(R3, g1, &turn_control_data);
+    R3->setLocalMap(&g2);
+
+    // creating threads
+    pthread_t T1, T2, T3, T4;
+
+    pthread_create(&T1, NULL, &controllerFunc, (void*)&RM1args);
+    pthread_create(&T2, NULL, &robotFunc, (void*)&R1args);
+    pthread_create(&T3, NULL, &robotFunc, (void*)&R2args);
+    pthread_create(&T4, NULL, &robotFunc, (void*)&R3args);
+
+    // awaiting threads 
+    pthread_join(T1, NULL); 
+    pthread_join(T2, NULL); 
+    pthread_join(T3, NULL); 
+    pthread_join(T4, NULL); 
+    return;
+}
+
+int main(){
+    // ~~~ Title printouts ~~~
+    cout << "~~~ Multi-agent Robot Simulator ~~~\n";
+    cout << "Created by Ryan Wiebe\n";
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+    cout << "Which of the following would you like to simulate?\n";
+    cout << "1 - One time Simulation\n";
+    cout << "2 - Test Cases\n";
+    int input;
+
+    cin >> input;
+
+    switch(input){
+        case 1:
+        {
+            simulateOneTime();
+            break;
+        }
+        case 2:
+        {
+            testCases();
+            break;
+        }
+    }
+
+    
     return 0;
 }

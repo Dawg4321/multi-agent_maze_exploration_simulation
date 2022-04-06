@@ -156,10 +156,13 @@ bool Robot::move2Cell(Coordinates destination){ // overloaded version of move2Ce
 }
 
 std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int y){ // function to gather valid neighbouring cells of a selected cell based on robot's local map
-
     std::vector<Coordinates> ret_value; // vector of Coordinates to return
                                         // this will contain the coordinates of valid neighbouring nodes
-    
+
+    if(LocalMap->nodes[y][x] == 2){ // if the current node is unexplored, don't get nearest neighbours
+        return ret_value;
+    }
+
     Coordinates buffer; // buffer structor to gather positions of neighbouring nodes before pushing to vector
 
     // check if neighbour to the north is valid and connected via an edge (no wall)
@@ -201,7 +204,6 @@ std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int
     }*/
 
     return ret_value; // returning vector
-    // TODO: return by pointer may be desirable
 }
 
 bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot to follow from current position to a specified destination
@@ -251,7 +253,6 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
                 if (key == valid_neighbours[i]){ // if current neighbour is in map
                     node_in_map = true;          // set node_in_map
                     break;
-                    
                 }
             }
             if(!node_in_map){ // if neighbour not found in map
@@ -290,11 +291,7 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
 }
 
 bool Robot::BFS_exitCondition(Coordinates* node_to_test){
-    if(LocalMap->nodes[node_to_test->y][node_to_test->x] == 2){
-        return true;
-    }
-
-    return false;
+    return (LocalMap->nodes[node_to_test->y][node_to_test->x] == 2);
 }
 
 bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
@@ -323,10 +320,6 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
             ret_value = true; // return true as path to unexplored node found
             break; // break from while loop
         }
-        else if(number_of_unexplored == 0 || node_queue.size() == 0){ // no unexplored nodes  
-                                                                      // true can be returned as no errors occured in pathfinding
-            return true;                                              // ret_stack will be empty as no unexplored nodes found therefore no need to move
-        }
 
         node_queue.pop(); // removing node from front of the queue as new nodes must be added to queue
 
@@ -347,11 +340,12 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
             }
         }
     }
-    
-    // TODO: implement handling if path unexplored cell not found 
 
     if (ret_value == false){ // if ret_value == fsle, 
+        BFS_noPathFound(); // function which handles if a path is not found
+                           // does nothing in robot class as meant to be handled by child classes
 
+        return ret_value; // can return false as no point reconstructing path
     }
 
     // as a valid path has been found from current position to target using robot's local map
@@ -471,8 +465,20 @@ void Robot::printRobotYMap(){ // function to print Robot's Y edge map
     printYEdges(LocalMap);
 }
 
-void Robot::setLocalMap(GridGraph* new_map){
+void Robot::setLocalMap(GridGraph* new_map){ // sets LocalMap
+                                             // do not call this function if robot has already explored
     *LocalMap = *new_map; // setting gridgraph value
 
+    for(int i = 0; i < LocalMap->nodes.size(); i++){ // need to account for all unexplored cells in new map
+        for(int j = 0; j < LocalMap->nodes[i].size(); j++){
+            if(LocalMap->nodes[i][j] == 2)
+                number_of_unexplored++;
+        }
+    }
+
+    return;
+}
+
+void Robot::BFS_noPathFound(){ // function which handles if a path is not found
     return;
 }

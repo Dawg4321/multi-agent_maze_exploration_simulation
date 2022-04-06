@@ -40,6 +40,7 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
         cell_reserved = false; // cell has not been successfully reserved for requesting robot
     }
     else if (ReservationMatrix[target_cell.y][target_cell.x].reserved > 0){ // if the target cell has already been reserved
+        response_data->target_cell = target_cell; // adding target cell to response so robot knows that cell is already reserved by another robot
         cell_reserved = false; // return false as cell has not been reserved
     }
     else{ // if unreserved and unexplored

@@ -159,7 +159,8 @@ struct m_reserveCellRequest:m_genericRequest{
     unsigned int robot_id; // id of robot sending request
     Coordinates target_cell; // coordinates correspoonding to full map down a node path if path has been explored already
     Coordinates neighbouring_cell; // neighbouring cell used to enter target cell 
-                                   // used to determine what aspect of tree must be sent back in event node has already been explored 
+                                   // used to determine what part of maze must be sent back in event node has already been explored
+
     // Constructor
     m_reserveCellRequest():m_genericRequest(reserveCellRequest_ID){ // assigning request id to request message
         
@@ -167,6 +168,7 @@ struct m_reserveCellRequest:m_genericRequest{
 };
 struct m_reserveCellResponse:m_genericRequest{
     bool cell_reserved; // bool determining whether cell was successfully reserved
+    Coordinates target_cell; // cell which reserve attempt occured on
     
     // returned portion of global map
     // this is only used if the cell was not reserved

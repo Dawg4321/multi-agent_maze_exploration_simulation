@@ -385,7 +385,6 @@ void RobotMaster::gatherPortionofMap(Coordinates curr_node, Coordinates neighbou
 
     std::queue<Coordinates> node_queue; // creating node queue to store nodes to be "explored" by algorithm
 
-    // initializing value of queue and 
     node_queue.push(curr_node); // adding first node to explore to node queue
     
     // gathering starting cell info for return
@@ -397,8 +396,6 @@ void RobotMaster::gatherPortionofMap(Coordinates curr_node, Coordinates neighbou
         
         curr_node = node_queue.front(); // gathering node from front of queue
 
-        //printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
-
         node_queue.pop(); // removing node from front of the queue as new nodes must be added to queue
 
         std::vector<Coordinates> valid_neighbours = getSeenNeighbours(curr_node.x, curr_node.y); // gathering neighbours of current node
@@ -407,14 +404,16 @@ void RobotMaster::gatherPortionofMap(Coordinates curr_node, Coordinates neighbou
             
             bool already_visited = false;
 
-            for(int j = 0; j < map_nodes->size(); j++){
+            for(int j = 0; j < map_nodes->size(); j++){ // checking to see if the current node has already been visited
                 if(valid_neighbours[i] == (*map_nodes)[j]){
                     already_visited = true;
                     break;
                 }
             }
 
-            if(!already_visited){
+            if(!already_visited && valid_neighbours[i] != neighbour_node){ // if it hasnt been visited and is not down the path the robot came from, add it to map connections to send back to robot
+                node_queue.push(valid_neighbours[i]); // add node to explore down during next iteration of the loop
+
                 map_nodes->push_back(valid_neighbours[i]); // node coordinates
                 map_connections->push_back(getNodeEdgeInfo(&valid_neighbours[i])); // node connections
                 node_status->push_back(GlobalMap->nodes[valid_neighbours[i].y][valid_neighbours[i].x]); // node status
@@ -422,7 +421,7 @@ void RobotMaster::gatherPortionofMap(Coordinates curr_node, Coordinates neighbou
         }
     }
 
-    return; // can return with map information
+    return; // can return as map information loaded into various vectors
 }
 
 bool RobotMaster::checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable){ // checks if a robot is within the cell passed into the function
@@ -803,4 +802,15 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
     }
 
     return true; // return true as printing succeeded
+}
+
+void RobotMaster::setGlobalMap(GridGraph* g){ 
+    *GlobalMap = *g;
+    
+    for(int i = 0; i < GlobalMap->nodes.size(); i++){ // need to account for all unexplored cells in new map
+        for(int j = 0; j < GlobalMap->nodes[i].size(); j++){
+            if(GlobalMap->nodes[i][j] == 2)
+                number_of_unexplored_cells++;
+        }
+    }
 }

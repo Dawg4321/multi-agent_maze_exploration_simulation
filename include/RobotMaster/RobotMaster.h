@@ -80,6 +80,8 @@ class RobotMaster{
         void printRequestInfo(Message* Request); // prints information on outcome of receieve request
         bool printGlobalMap(); // prints global map with robot locations
 
+        void setGlobalMap(GridGraph* g); // sets global map with new map value 
+
     protected:
         GridGraph* GlobalMap; // Global Map of maze
 

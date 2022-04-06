@@ -24,7 +24,11 @@ struct Coordinates{ // structure to track x and y coordinates of a position
     }
 
     bool operator==(const Coordinates& a) const{ // == operator overloaded
-        return (x == a.x && y == a.y);
+        return (x
+         == a.x && y == a.y);
+    }
+    bool operator!=(const Coordinates& a) const{ // != operator overloaded
+        return (!(x == a.x && y == a.y));
     }
 };
 

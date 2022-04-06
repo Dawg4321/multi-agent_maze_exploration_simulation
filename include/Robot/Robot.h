@@ -33,7 +33,7 @@ class Robot{ // parent class used as a template for further robot implementation
         // ** Path-Finding Functions **
         bool pf_BFS(int x, int y); // modifies planned path with the fastest path to a specified location
         bool BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_vector); // modifies planned path with fastest path to the closest unknown cell on robot's local map
-        
+        virtual void BFS_noPathFound(); // function which handles if a path is not found
         virtual bool BFS_exitCondition(Coordinates* node_to_test); // function used to determine exit condition from BFS_pf2NearestUnknownCell
 
         std::vector<Coordinates> getValidNeighbours(unsigned int x, unsigned  int y); // gathers valid neighbours of a cell

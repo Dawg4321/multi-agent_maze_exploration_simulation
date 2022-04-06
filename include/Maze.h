@@ -14,8 +14,9 @@ class Maze
 
         void generateInterconnectedMaze(unsigned int x_size, unsigned int y_size); // function to generate a x * y sized maze with no walls
         void generate4x4SampleMaze();
+        void generate8x8SampleMaze();
         void generateCollisionTest();
-
+        
         GridGraph getMazeMap(); // MazeMap getter
         GridGraph* getMazeMapPointer(); // returns pointer to MazeMap
                                         // be careful when using it as modifying this will modify private data member which is undesireable
