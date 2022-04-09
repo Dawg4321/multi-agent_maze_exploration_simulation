@@ -11,6 +11,7 @@
 #define s_pathfind 2
 #define s_move_robot 3
 #define s_request_move 4
+#define s_pathfind2target 5
 
 class MultiRobot: public Robot{
     public:
@@ -25,6 +26,8 @@ class MultiRobot: public Robot{
         virtual void robotSetUp() = 0; // function used by robot once before robot begins its loop function
         virtual int robotLoopStep(GridGraph* maze) = 0; // function used within each iteration of a robot's loop
                                                          // returns the value of the robot's status after iteration
+
+        void updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status); // updates robot's map with information from vectors
 
         // ** General Purpose Functions **
         unsigned int getID() { return id;} // returns robot id
@@ -42,7 +45,7 @@ class MultiRobot: public Robot{
         // ** Master -> Robot Communication Functions **
         int getMessagesFromMaster(int status); // handles any messages master has sent 
         
-        int  handleMasterRequest(Message* request, int current_status); // function to handle Master Request Message
+        virtual int  handleMasterRequest(Message* request, int current_status); // function to handle Master Request Message
         virtual int  handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
 
         bool isResponseStale(int transaction_id); // simple function to check if there is an outstanding response of a given transaction id

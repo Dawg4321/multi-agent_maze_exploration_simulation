@@ -14,9 +14,6 @@ class MultiRobot_IE: virtual public MultiRobot{
 
         int handleCellReserveResponse(Message* response, int current_status); // handles response for collision messages
                                                                               // must be used with RobotMaster::handleMasterRequest
-
-        void updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status); // updates robot's map with information from vectors
-
         void BFS_noPathFound(); // overriden function which handles if a path is not found
         bool BFS_exitCondition(Coordinates* node_to_test); // overriden Exit condition for finding nearest unexplored cell
                                                            // must be overriden as already reserved cells must be ignored when selecting a new cell to reserve

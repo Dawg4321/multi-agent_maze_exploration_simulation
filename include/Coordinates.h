@@ -12,9 +12,9 @@ struct Coordinates{ // structure to track x and y coordinates of a position
         y = 0;
     }
 
-    Coordinates(unsigned int a, unsigned int b){
-        x = a;
-        y = b;
+    Coordinates(unsigned int x_pos, unsigned int y_pos){
+        x = x_pos;
+        y = y_pos;
     }
 
     // Coordinates overloaded operators

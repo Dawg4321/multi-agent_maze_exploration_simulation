@@ -13,7 +13,8 @@ class MultiRobot_C_IE: public MultiRobot_IE, public MultiRobot_C{
         int robotLoopStep(GridGraph* maze); // function used within each iteration of a robot's loop
                                             // returns the value of the robot's status after iteration
 
-        int  handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
+        int handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
+        int handleMasterRequest(Message* response, int current_status); // function to handle Master Request Messages
 
         // ** Robot -> Master Communication Functions **
         // bool requestReserveCell(); // attempts to reserve a cell to explore from the RobotMaster

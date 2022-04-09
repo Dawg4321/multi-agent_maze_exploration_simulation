@@ -69,11 +69,17 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
 
             // repeat loop until cell which is being planned to has been reserved
             
-            BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
+            bool path_found = BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
                 
-            requestReserveCell();
+            if(path_found){
+                requestReserveCell();
+            
+                robot_status = s_stand_by; // must wait for response
+            }
+            else{
 
-            robot_status = s_stand_by; // must wait for response
+                robot_status = s_pathfind; // must pathfind again as no unreserved cell found
+            }
             
             break;
         }
@@ -105,6 +111,22 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
             }
             break;
         }
+        case s_pathfind2target:
+        {
+            Coordinates target_cell = getTarget2Pathfind();
+            bool path_found = pf_BFS(target_cell.x,target_cell.y);
+
+            if(path_found){
+                requestReserveCell(); // must reserve cell as path found
+            }
+            else{
+                requestGetMap(); // must get map so robot can plan a path to the target cell
+            }
+
+            robot_status = s_stand_by; // must wait for response
+
+            break;
+        }
     }
 
     return status_of_execution;
@@ -116,6 +138,15 @@ int MultiRobot_C_IE::handleMasterResponse(Message* response, int current_status)
     current_status = handleCellReserveResponse(response, current_status); // attempt to handle reserve response
 
     int new_robot_status = MultiRobot::handleMasterResponse(response, current_status); // attempt to handle generic base responses
+
+    return new_robot_status; // return changes to status
+}
+
+int MultiRobot_C_IE::handleMasterRequest(Message* response, int current_status){
+
+    current_status = handleCollisionRequest(response, current_status); // attempt to handle collision request
+
+    int new_robot_status = MultiRobot::handleMasterRequest(response, current_status); // attempt to handle generic base requests
 
     return new_robot_status; // return changes to status
 }
