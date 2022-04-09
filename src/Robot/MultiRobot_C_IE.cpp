@@ -83,7 +83,7 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
             
             break;
         }
-        case s_request_move: // request to move into a cell (checking if robot is occupying it)
+        case s_move_robot: // request to move into a cell (checking if robot is occupying it)
         {
             requestMove2Cell(planned_path[0]);
 
@@ -91,7 +91,7 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
 
             break;
         }
-        case s_move_robot: // move robot 1 step
+        case s_compute_move: // move robot 1 step
         {   
             bool move_occured = MultiRobot::move2Cell(planned_path[0]); // attempt to move robot to next location in planned path queue
 
@@ -102,7 +102,7 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
                     robot_status = s_scan_cell; // set robot to scan cell on next loop iteration as at desination cell
                 }
                 else{ // if more moves left, try another movement
-                    robot_status = s_request_move;
+                    robot_status = s_move_robot;
                 }
             }
             else{ // if movement failed

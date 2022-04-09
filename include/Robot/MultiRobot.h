@@ -10,7 +10,7 @@
 #define s_scan_cell 1
 #define s_pathfind 2
 #define s_move_robot 3
-#define s_request_move 4
+#define s_compute_move 4
 #define s_pathfind2target 5
 
 class MultiRobot: public Robot{

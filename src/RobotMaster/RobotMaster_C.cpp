@@ -137,6 +137,10 @@ void RobotMaster_C::gatherMap2Target(Coordinates current_node, Coordinates targe
 
         node_queue.pop(); // removing node from front of the queue as new nodes must be added to queue
 
+        if(curr_node == target_node){
+            break;
+        }
+
         std::vector<Coordinates> valid_neighbours = RobotMaster::getSeenNeighbours(curr_node.x, curr_node.y); // gathering neighbours of current node
 
         for(int i = 0; i < valid_neighbours.size(); i++){ // iterate through all of the current node's neighbours to see if they have been explored

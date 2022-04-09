@@ -17,6 +17,8 @@ void MultiRobot_C::requestMove2Cell(Coordinates target_cell){
 
     transaction_counter++; // incrementing transaction counter as new request is being sent
 
+    valid_responses.push_back(transaction_counter); // adding transaction to valid responses as response is required
+
     Message* temp_message = new Message(t_Request, transaction_counter);
 
     // defining new Move2CellRequest
@@ -35,6 +37,8 @@ void MultiRobot_C::requestMove2Cell(Coordinates target_cell){
 void MultiRobot_C::requestGetMap(){
     
     transaction_counter++;
+
+    valid_responses.push_back(transaction_counter); // adding transaction to valid responses as response is required
 
     Message* temp_message = new Message(t_Request, transaction_counter);
 
@@ -65,7 +69,7 @@ int MultiRobot_C::handleCollisionResponse(Message* response, int current_status)
             bool movement_can_occur = message_response->can_movement_occur; // gather whether movement can occur
 
             if(movement_can_occur){ // if movement can occur, move to next cell in planned_path
-                new_robot_status = s_move_robot;
+                new_robot_status = s_compute_move;
             }
             else{ // if movement cannot occur, create new planned_path
                 new_robot_status = s_pathfind;
