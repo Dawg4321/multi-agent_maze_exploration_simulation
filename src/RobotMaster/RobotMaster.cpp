@@ -210,9 +210,10 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
     // gathering incoming request data
     m_updateRobotLocationRequest* request_data = (m_updateRobotLocationRequest*)request->msg_data; 
     unsigned int robot_id = request_data->robot_id;
-    Coordinates new_robot_location = request_data->new_robot_location;                    
+    Coordinates new_robot_location = request_data->new_robot_location;    
+    bool more_movements = request_data->more_movements;                
 
-    updateRobotLocation(&robot_id, &new_robot_location); // updating robot location
+    updateRobotLocation(&robot_id, &new_robot_location, &more_movements); // updating robot location
 
     // return data allocation
     m_updateRobotLocationResponse* response_data = new m_updateRobotLocationResponse; // response message
@@ -249,7 +250,6 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     temp.robot_id = num_of_added_robots; // assigning id to new robot entry 
     temp.robot_position.x = x;  // assigning position to new robot entry 
     temp.robot_position.y = y;
-    temp.robot_status = 0;      // updating current robot status to 0 to leave it on stand by
     temp.Robot_Message_Reciever = r; // assigning Request handler for Master -> robot communications
 
     GlobalMap->nodes[y][x] = 2; // setting current position of robot to 2 as it has been seen but not explored until robot sends first scan update
@@ -272,7 +272,7 @@ void RobotMaster::removeRobot(unsigned int id){
 
 void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C){
 
-    updateRobotLocation(id, C);
+    //updateRobotLocation(id, C); TODO: remove
 
     //GlobalMapInfo[C->y][C->x].reserved = 0; // unreserving cell as it has been scanned
 
@@ -439,11 +439,12 @@ bool RobotMaster::checkIfOccupied(unsigned int x, unsigned int y, unsigned int* 
     return false; // returning false as robot is not found within the occupied cell
 }
 
-void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // updates the location of a robot to the location specified
+void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C, bool more_movements){ // updates the location of a robot to the location specified
 
     for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update
         if (tracked_robots[i].robot_id == *id){ // if robot found using id
             tracked_robots[i].robot_position = *C; // update position in RobotInfo
+            tracked_robots[i].awaiting_next_cell = more_movements; // tells if robot has more movements to complete
             break; 
         }
     }
@@ -464,7 +465,6 @@ void RobotMaster::updateAllRobotState(int status){
         messages->msg_data = message_data; // specifying state to update all robots to
         
         tracked_robots[i].Robot_Message_Reciever->sendMessage(messages); // sending message
-        tracked_robots[i].robot_status = status; // updating local robot information to current status
     }
 
     return;    
@@ -813,4 +813,18 @@ void RobotMaster::setGlobalMap(GridGraph* g){
                 number_of_unexplored_cells++;
         }
     }
+}
+
+bool RobotMaster::setRobotTargetCell(unsigned int robot_id, Coordinates* target_cell){
+    
+    for(int i = 0; i < tracked_robots.size(); i++){ // attempt to set target_cell of robot 
+        if(tracked_robots[i].robot_id == robot_id){
+            tracked_robots[i].robot_target_value = *target_cell; // placing target cell into robot_target's memory location
+            tracked_robots[i].robot_target = &tracked_robots[i].robot_target_value; // ensuring pointer is pointer to memory location to notify that current robot target is valid (e.g. ptr != NULL)
+            
+            return true;
+        }
+    }
+
+    return false; // if robot of specified id is not found
 }

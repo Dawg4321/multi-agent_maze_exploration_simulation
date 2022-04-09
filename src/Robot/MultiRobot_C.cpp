@@ -47,14 +47,14 @@ int MultiRobot_C::handleCollisionResponse(Message* response, int current_status)
 
         bool movement_can_occur = message_response->can_movement_occur; // gather whether movement can occur
 
-        if(movement_can_occur){
+        if(movement_can_occur){ // if movement can occur, move to next cell in planned_path
             new_robot_status = s_move_robot;
         }
-        else{
+        else{ // if movement cannot occur, create new planned_path
             new_robot_status = s_pathfind;
         }
     }
-    else{ // if the request type is not a collision response, stay is currently selected status
+    else{ // if the request type is not a collision response, do nothin (stay is currently selected status)
         new_robot_status = current_status;
     }
     return new_robot_status;

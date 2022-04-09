@@ -3,10 +3,6 @@
 
 #include "RobotMaster.h"
 
-struct CollisionInfo{
-    unsigned int occupying_robot; // stores the id of a robot which is currently occupying a cell
-};
-
 class RobotMaster_C: virtual public RobotMaster{
     protected:
         RobotMaster_C(unsigned int xsize, unsigned int ysize);
@@ -14,13 +10,19 @@ class RobotMaster_C: virtual public RobotMaster{
 
         void move2CellRequest(Message* request); // attempts to reserve a cell for movement
                                                  // this prevents two robots from moving to the same cell at the same time
+        
+        void getMapRequest(Message* request); // returns a map to a specified cell from robot's position
+                                              // gives the robot the opportunity to create a path to a new target cell
 
-        void updateRobotLocation(unsigned int* id, Coordinates* C); // updates the location of a robot to the location specified
+        void gatherMap2Target(Coordinates current_node, Coordinates target_node, std::vector<Coordinates>* map_nodes, std::vector<std::vector<bool>>* map_connections, std::vector<char>* node_status);
+
+        void updateRobotMovement(unsigned int* id, Coordinates* C); // updates the next_move value for given robot (e.g. "reserve" the cell so no other robot will move into it until the movement has been completed)
+
+        RobotInfo* checkForCollision(Coordinates* movement_cell);
 
         unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r);
 
-    private:
-        std::vector<std::vector<CollisionInfo>> CollisionMatrix; // vector used to track which robot is reserving each cell for movement purposes
+        void setTargetCellRequest(Coordinates targetcell, unsigned int target_robot);
 };
 
 #endif

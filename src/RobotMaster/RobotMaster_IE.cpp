@@ -1,7 +1,7 @@
 #include "RobotMaster_IE.h"
 
 RobotMaster_IE::RobotMaster_IE(unsigned int xsize, unsigned int ysize){
-    ReservationMatrix.resize(ysize,std::vector<ReservationInfo>(xsize)); // resizing ReservationMatrix info to maze size
+
 }
 
 RobotMaster_IE::~RobotMaster_IE(){
@@ -39,12 +39,12 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
         gatherPortionofMap(target_cell, neighbouring_cell, response_data->map_coordinates, response_data->map_connections, response_data->map_status);
         cell_reserved = false; // cell has not been successfully reserved for requesting robot
     }
-    else if (ReservationMatrix[target_cell.y][target_cell.x].reserved > 0){ // if the target cell has already been reserved
-        response_data->target_cell = target_cell; // adding target cell to response so robot knows that cell is already reserved by another robot
+    else if (isCellReserved(&target_cell)){ // if the target cell has already been reserved
+        response_data->target_cell = target_cell; // adding target cell to response so robot knows which cell is already reserved by another robot
         cell_reserved = false; // return false as cell has not been reserved
     }
     else{ // if unreserved and unexplored
-        ReservationMatrix[target_cell.y][target_cell.x].reserved = robot_id; // reserving cell for exploration
+        setRobotTargetCell(robot_id, &target_cell); // reserving cell for exploration
         cell_reserved = true; // cell has been reserved
     }
 
@@ -69,15 +69,29 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
     return;
 }
 
-void RobotMaster_IE::unreserveCell(Coordinates* C){ // unreserved cell at selected location
-    ReservationMatrix[C->y][C->x].reserved = 0; // setting to 0 as no robot has id of 0
+bool RobotMaster_IE::isCellReserved(Coordinates* target_cell){ // determines if another robot has already reserved the cell
+    for(int i = 0; i < tracked_robots.size(); i++){
+        if(tracked_robots[i].robot_target != NULL && *tracked_robots[i].robot_target == *target_cell){ // if the cell is currently a robot's target and the robot is currently traveling their
+            return true;
+        }
+    }
 
-    return;
+    return false;
+}
+
+void RobotMaster_IE::unreserveCell(unsigned int robot_id){ // unreserved cell at selected location
+    
+    for(int i = 0; i < tracked_robots.size(); i++){ // finds robot and clears the target_valid flag to mark that the current robot's target cell is invalid 
+        if(tracked_robots[i].robot_id == robot_id){
+            tracked_robots[i].robot_target = NULL; // dereferencing target pointer as current target is no longer reserved
+            return;
+        }
+    }
 }
 
 void RobotMaster_IE::updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C){
     
-    RobotMaster_IE::unreserveCell(C); // unreserving cell before updating GlobalMap as it has been scanned
+    unreserveCell(*id); // unreserving cell before updating GlobalMap as it has been scanned
 
     RobotMaster::updateGlobalMap(id, connections, C); // updating GlobalMap
 }

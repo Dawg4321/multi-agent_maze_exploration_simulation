@@ -66,13 +66,8 @@ int MultiRobot_NC_UI::robotLoopStep(GridGraph* maze){
         {   
                 
             BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
-
-            if(number_of_unexplored == 0){ // if maze is fully explored
-                robot_status = s_stand_by; // set robot to stand by and await for master shut down signal
-            }
-            else{ // path has been planned to new target
-                robot_status = s_move_robot; // setting status to 3 so movement will occur on next loop cycle
-            }
+            
+            robot_status = s_move_robot; // setting status to 3 so movement will occur on next loop cycle
 
             break;
         }

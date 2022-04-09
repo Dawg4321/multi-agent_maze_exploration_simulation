@@ -42,6 +42,12 @@ void RobotMaster_C_IE::handleIncomingRequest(Message* incoming_request){
 
             break;
         }
+        case getMapRequest_ID: // getMap request
+        {
+            getMapRequest(incoming_request);
+
+            break;
+        }
         case reserveCellRequest_ID: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
         {
             reserveCellRequest(incoming_request);

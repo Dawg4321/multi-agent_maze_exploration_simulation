@@ -80,9 +80,11 @@ class RequestHandler{
 #define move2CellRequest_ID 2
 #define reserveCellRequest_ID 3
 #define updateRobotLocationRequest_ID 4
+#define getMapRequest_ID 6
 
 // IDs used for Robot -> Master Requests
 #define updateRobotStateRequest_ID 5
+#define setTargetCell_ID 7
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 // Robot -> Master Messages 
@@ -159,7 +161,7 @@ struct m_reserveCellRequest:m_genericRequest{
     unsigned int robot_id; // id of robot sending request
     Coordinates target_cell; // coordinates correspoonding to full map down a node path if path has been explored already
     Coordinates neighbouring_cell; // neighbouring cell used to enter target cell 
-                                   // used to determine what part of maze must be sent back in event node has already been explored
+                                   // used to determine which part of maze must be sent back in event node has already been explored
 
     // Constructor
     m_reserveCellRequest():m_genericRequest(reserveCellRequest_ID){ // assigning request id to request message
@@ -193,6 +195,7 @@ struct m_reserveCellResponse:m_genericRequest{
 struct m_updateRobotLocationRequest:m_genericRequest{
     unsigned int robot_id; // id of robot sending request
     Coordinates new_robot_location; // cell which robot now occupies
+    bool more_movements; // boolean to track whether robot will attempt to travel to another location after this request
 
     // Constructor
     m_updateRobotLocationRequest():m_genericRequest(updateRobotLocationRequest_ID){ // assigning request id to request message
@@ -226,16 +229,50 @@ struct m_move2CellResponse:m_genericRequest{
     }  
 };
 
+// ** getMapRequest **
+struct m_getMapRequest:m_genericRequest{
+    unsigned int robot_id; // id of robot sending request
+    Coordinates target_cell; // target cell which robot wants map information to
+    Coordinates current_cell; // current cell of robot 
+    
+    // Constructor
+    m_getMapRequest():m_genericRequest(getMapRequest_ID){ // assigning request id to request message
+        
+    }  
+};
+struct m_getMapResponse:m_genericRequest{
+
+    // GlobalMap information from robot's position to target cell
+    std::vector<Coordinates> map_coordinates; // coordinates correspoonding to full map down the requested node path
+    std::vector<std::vector<bool>> map_connections; // wall information corresponding to nodes in map_coordinates
+    std::vector<char> map_status; // node status information of nodes in map_coordinates
+
+    // Constructor
+    m_getMapResponse():m_genericRequest(getMapRequest_ID){ // assigning request id to request message
+        
+    }  
+};
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 // Master -> Robot Messages 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+// ** updateRobotStateRequest **
 struct m_updateRobotStateRequest:m_genericRequest{
     int target_state; // target state to set robot to
 
     m_updateRobotStateRequest():m_genericRequest(updateRobotStateRequest_ID){ // assigning request id to request message
         
     }
+};
+
+// ** setTargetCellRequest **
+struct m_setTargetCellRequest:m_genericRequest{
+    Coordinates new_target_cell;
+
+    m_setTargetCellRequest():m_genericRequest(setTargetCell_ID){ // assigning request id to request message
+        
+    }  
 };
 
 #endif

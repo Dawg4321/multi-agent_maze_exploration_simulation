@@ -2,6 +2,7 @@
 #define ROBOTMASTER_H
 
 #include <vector>
+#include <map>
 
 #include "GridGraph.h"
 #include "Coordinates.h"
@@ -13,15 +14,20 @@
 using json = nlohmann::json; // simplifying namespace so "json" can be used instead of "nlohmann::json" when declaring json objects
 
 struct RobotInfo{ // structure to track information of various robots in the swarm
+
     unsigned int robot_id; // tracks the id of a robot in order for robot differentiation
-
-    int robot_status; // tracks the status of a robot
-                       // 0 = stand by
-                       // 1 = exploring
-
     RequestHandler* Robot_Message_Reciever; // pointer to request handler for messages from RobotMaster to Robot
 
     Coordinates robot_position; // tracks the current position of a robot in the graph maze in cartesian form
+
+    Coordinates* robot_target; // target cell which robot is travelling to for scanning
+                               // pointer will be NULL if no target cell
+    Coordinates robot_target_value; // data member to store value for robot_target pointer
+
+    Coordinates* next_cell; // cell robot is currently moving to
+                            // pointer will be NULL if no target cell
+    Coordinates next_cell_value; // data member to store value for next_cell
+    bool awaiting_next_cell; // tracks whether next_cell is going to be updated using another move2Cell Request 
 };
 
 class RobotMaster{
@@ -55,7 +61,7 @@ class RobotMaster{
                                                                                   // this is important to allow for the robot to be synchronized by the control system
         void removeRobot(unsigned int robot_id); // removes robot from tracked_robots
 
-        virtual void updateRobotLocation(unsigned int* id, Coordinates* C); // updates the location of a robot to the location specified
+        virtual void updateRobotLocation(unsigned int* id, Coordinates* C, bool more_movements); // updates the location of a robot to the location specified
 
         void updateAllRobotState(int status); // updates the state of all robots to the specified value
 
@@ -81,6 +87,8 @@ class RobotMaster{
         bool printGlobalMap(); // prints global map with robot locations
 
         void setGlobalMap(GridGraph* g); // sets global map with new map value 
+
+        bool setRobotTargetCell(unsigned int robot_id, Coordinates* target_cell); // sets targetcell of a robot
 
     protected:
         GridGraph* GlobalMap; // Global Map of maze

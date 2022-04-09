@@ -322,8 +322,9 @@ void simulateOneTime(){
 
     return;
 }
+
 void testCases(){
-    
+
     int num_robots = 3; // two robots
 
     RequestHandler* req = new RequestHandler;
@@ -336,14 +337,14 @@ void testCases(){
                 {0, 0, 0, 0, 0, 0, 0, 1, 0},
                 {0, 0, 0, 0, 0, 0, 0, 1, 0}};
 
-    g1.x_edges = {{true, 0, 0, 0, 0, 0, 0, 0, 0, true},
-                  {0, 0, 0, 0, 0, 0, 0, true, true, 0},
-                  {0, 0, 0, 0, 0, 0, 0, true, true, 0}};
+    g1.x_edges = {{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                  {0, 0, 0, 0, 0, 0, 0, 1, 1, 0},
+                  {0, 0, 0, 0, 0, 0, 0, 1, 1, 0}};
 
-    g1.y_edges = {{true, true, true, true, true, true, true, true, true},
-                  {true, true, true, true, true, true, true, 0, true},
+    g1.y_edges = {{1, 1, 1, 1, 1, 1, 1, 1, 1},
+                  {1, 1, 1, 1, 1, 1, 1, 0, 1},
                   {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                  {0, 0, 0, 0, 0, 0, 0, true, 0}};
+                  {0, 0, 0, 0, 0, 0, 0, 1, 0}};
     
     GridGraph g2; // gridgraph for Local/Global Maps
     
@@ -355,8 +356,8 @@ void testCases(){
                   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
-    g2.y_edges = {{0, true, true, true, true, true, true, 0, 0},
-                  {0, true, true, true, true, true, true, 0, 0},
+    g2.y_edges = {{0, 1, 1, 1, 1, 1, 1, 0, 0},
+                  {0, 1, 1, 1, 1, 1, 1, 0, 0},
                   {0, 0, 0, 0, 0, 0, 0, 0, 0},
                   {0, 0, 0, 0, 0, 0, 0, 0, 0}};
                 
@@ -388,6 +389,17 @@ void testCases(){
     pthread_join(T2, NULL); 
     pthread_join(T3, NULL); 
     pthread_join(T4, NULL); 
+
+    // exporting JSON
+    exportJSON(RM1args.turn_json, "Test_Case");
+
+    // deleting dynamically allocated data
+    delete RM1;
+    delete R1;
+    delete R2;
+    delete R3;
+    delete req;
+
     return;
 }
 
@@ -415,7 +427,6 @@ int main(){
             break;
         }
     }
-
     
     return 0;
 }
