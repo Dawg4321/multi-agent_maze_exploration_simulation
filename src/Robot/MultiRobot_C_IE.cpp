@@ -116,7 +116,7 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
             Coordinates target_cell = getTarget2Pathfind();
             bool path_found = pf_BFS(target_cell.x,target_cell.y);
 
-            if(path_found){
+            if(path_found){  
                 requestReserveCell(); // must reserve cell as path found
             }
             else{

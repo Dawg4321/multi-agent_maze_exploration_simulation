@@ -218,7 +218,7 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
     else if(x_position == x_dest && y_position == y_dest) // if robot is at the destination already
         return true;                                      // no need to move thus return true
 
-    bool ret_value = false; // return value
+    bool path_found = false; // variable to track whether a path has been found
 
     std::queue<Coordinates> node_queue; // creating node queue to store nodes to be "explored" by algorithm
 
@@ -239,7 +239,7 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
         node_queue.pop(); // removing node from front of the queue
 
         if (curr_node.x == x_dest && curr_node.y == y_dest){ // if the target node has been located
-            ret_value = true; // return true as path found
+            path_found = true; // return true as path found
             break; // break from while loop
         }
         
@@ -262,7 +262,9 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
         }
     }
     
-    // TODO: implement handling if path to target location is not found 
+    if(!path_found){ // if no path found, return false
+        return path_found;
+    }
 
     // as a valid path has been found from current position to target using robot's local map
     // must travel from destination back through parent nodes to reconstruct path
@@ -275,7 +277,7 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
         planned_path.push_front(curr_node); // add current node to top of planned path "stack"
 
         for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
-            if (key != curr_node){
+            if (key == curr_node){
                 curr_node = val;
                 break;
             }
@@ -287,7 +289,7 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
         printf("%d,%d\n",planned_path[i].x,planned_path[i].y);
     }*/
 
-    return ret_value; 
+    return path_found; 
 }
 
 bool Robot::BFS_exitCondition(Coordinates* node_to_test){

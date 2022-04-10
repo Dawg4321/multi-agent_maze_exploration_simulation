@@ -48,6 +48,7 @@ void MultiRobot_C::requestGetMap(){
     message_data->current_cell = Coordinates(x_position, y_position); // adding current position
     message_data->target_cell = target_2_pathfind; // adding target cell 
 
+    temp_message->msg_data = message_data;
     Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
 
     return;
@@ -111,6 +112,8 @@ int MultiRobot_C::handleCollisionRequest(Message* request, int current_status){
             // updating robot state to specified value
             m_setTargetCellRequest* data = (m_setTargetCellRequest*) request->msg_data;
             target_2_pathfind = data->new_target_cell; // passing new target onto robot
+
+            planned_path.clear(); // clearing planned path as robot needs to create a new path to the new target
 
             valid_responses.clear(); // clearing valid_responses to cause any outstanding responses to become stale
                                      // this is done as setTargetCell message overrides any responses after it

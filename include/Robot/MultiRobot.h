@@ -45,8 +45,8 @@ class MultiRobot: public Robot{
         // ** Master -> Robot Communication Functions **
         int getMessagesFromMaster(int status); // handles any messages master has sent 
         
-        virtual int  handleMasterRequest(Message* request, int current_status); // function to handle Master Request Message
-        virtual int  handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
+        virtual int handleMasterRequest(Message* request, int current_status); // function to handle Master Request Message
+        virtual int handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
 
         bool isResponseStale(int transaction_id); // simple function to check if there is an outstanding response of a given transaction id
         void makeResponseStale(int transaction_id); // removes entry of transaction from valid_response (e.g. making it stale)

@@ -218,6 +218,8 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
     // return data allocation
     m_updateRobotLocationResponse* response_data = new m_updateRobotLocationResponse; // response message
 
+    printGlobalMap();
+
     exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
     // sending response message to robot
@@ -251,6 +253,8 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     temp.robot_position.x = x;  // assigning position to new robot entry 
     temp.robot_position.y = y;
     temp.Robot_Message_Reciever = r; // assigning Request handler for Master -> robot communications
+    temp.robot_target = NULL;
+    temp.next_cell = NULL;
 
     GlobalMap->nodes[y][x] = 2; // setting current position of robot to 2 as it has been seen but not explored until robot sends first scan update
 
@@ -270,11 +274,21 @@ void RobotMaster::removeRobot(unsigned int id){
     return;
 }
 
+void RobotMaster::clearTargetCell(unsigned int* robot_id){ // removes target cell from robot
+    
+    for(int i = 0; i < tracked_robots.size(); i++){ // finds robot and clears the target_valid flag to mark that the current robot's target cell is invalid 
+        if(tracked_robots[i].robot_id == *robot_id){
+            tracked_robots[i].robot_target = NULL; // dereferencing target pointer as current target is no longer reserved
+            return;
+        }
+    }
+}
+
 void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C){
 
     //updateRobotLocation(id, C); TODO: remove
 
-    //GlobalMapInfo[C->y][C->x].reserved = 0; // unreserving cell as it has been scanned
+    clearTargetCell(id); // need to remove target from robot as robot has reached destination
 
     if (GlobalMap->nodes[C->y][C->x] != 1){ // checking if there is a need to update map (has the current node been explored?)
         
@@ -444,6 +458,7 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C, bool mor
     for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update
         if (tracked_robots[i].robot_id == *id){ // if robot found using id
             tracked_robots[i].robot_position = *C; // update position in RobotInfo
+            tracked_robots[i].next_cell = NULL; // removing target cell from pointer as target movement has occurred
             tracked_robots[i].awaiting_next_cell = more_movements; // tells if robot has more movements to complete
             break; 
         }
@@ -455,19 +470,26 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C, bool mor
 void RobotMaster::updateAllRobotState(int status){
 
     for(int i = 0; i < tracked_robots.size(); i++){ // creating messages to update state of all robots
-
-        Message* messages = new Message(t_Request, -1); // creating new messages for each robot
-
-        // assigning data to message
-        m_updateRobotStateRequest* message_data = new m_updateRobotStateRequest;
-        message_data->target_state = status;
-
-        messages->msg_data = message_data; // specifying state to update all robots to
         
-        tracked_robots[i].Robot_Message_Reciever->sendMessage(messages); // sending message
+        updateRobotState(status, tracked_robots[i].Robot_Message_Reciever);
     }
 
     return;    
+}
+
+void RobotMaster::updateRobotState(int status, RequestHandler* Target_Robot_Receiver){
+
+    Message* messages = new Message(t_Request, -1); // creating new messages for each robot
+
+    // assigning data to message
+    m_updateRobotStateRequest* message_data = new m_updateRobotStateRequest;
+    message_data->target_state = status;
+
+    messages->msg_data = message_data; // specifying state to update all robots to
+    
+    Target_Robot_Receiver->sendMessage(messages); // sending message
+
+    return;
 }
 
 /*

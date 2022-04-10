@@ -64,6 +64,7 @@ class RobotMaster{
         virtual void updateRobotLocation(unsigned int* id, Coordinates* C, bool more_movements); // updates the location of a robot to the location specified
 
         void updateAllRobotState(int status); // updates the state of all robots to the specified value
+        void updateRobotState(int status, RequestHandler* Target_Robot_Receiver); // send message to robot to update state
 
         // ** GlobalMap Functions **
         virtual void updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C); // updates global map with information from robot scan
@@ -89,6 +90,7 @@ class RobotMaster{
         void setGlobalMap(GridGraph* g); // sets global map with new map value 
 
         bool setRobotTargetCell(unsigned int robot_id, Coordinates* target_cell); // sets targetcell of a robot
+        void clearTargetCell(unsigned int* robot_id); // removes target cell from robot
 
     protected:
         GridGraph* GlobalMap; // Global Map of maze
