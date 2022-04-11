@@ -3,8 +3,10 @@
 
 #include <iostream>
 #include <string>
+#include <random>
 
 #include "GridGraph.h"
+#include "Coordinates.h"
 
 class Maze
 {
@@ -16,6 +18,7 @@ class Maze
         void generate4x4SampleMaze();
         void generate8x8SampleMaze();
         void generateCollisionTest();
+        void generateRandomNxNMaze(unsigned int x_size, unsigned int y_size); // generates a random NxN maze using Aldous-Broder Maze generation Algorithm
         
         GridGraph getMazeMap(); // MazeMap getter
         GridGraph* getMazeMapPointer(); // returns pointer to MazeMap

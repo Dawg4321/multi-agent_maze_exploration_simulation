@@ -14,9 +14,13 @@ struct GridGraph{
                                           // 1 = explored valid node
                                           // 2 =  unexplored valid node
                                                      
-    std::vector<std::vector<bool>> x_edges; // bit matrix corresponding to y (east-west) edges of nodes in maze 
-    
+    std::vector<std::vector<bool>> x_edges; // bit matrix corresponding to y (east-west) edges of nodes in maze
+                                            // false = no wall
+                                            // true = wall 
+
     std::vector<std::vector<bool>> y_edges; // bit matrix corresponding to y (north-south) edges of nodes in maze
+                                            // false = no wall
+                                            // true = wall 
 
     GridGraph(){ //  creating empty GridGraph
                  // need to allocate various vectors manually

@@ -131,5 +131,4 @@ int MultiRobot_C::handleCollisionRequest(Message* request, int current_status){
     }
     
     return new_robot_status; // returning changes to robot status
-
 }

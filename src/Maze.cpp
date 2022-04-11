@@ -170,7 +170,7 @@ void Maze::generateCollisionTest(){
 
     char n[1][5] = { // marking nodes for maze
                         {1, 1, 1, 1, 1},
-                    };
+                        };
 
     for (int i = 0; i < sizeof(n)/sizeof(n[0]); i++) // passing nodes into graph struct
         for (int j = 0; j < sizeof(n[0])/sizeof(n[0][0]); j++)
@@ -194,6 +194,125 @@ void Maze::generateCollisionTest(){
         for (int j = 0; j < sizeof(y[0])/sizeof(y[0][0]); j++)
             MazeMap->y_edges[i][j] = y[i][j];
     
+    return;
+}
+
+void Maze::generateRandomNxNMaze(unsigned int x_size, unsigned int y_size){
+    maze_xsize = x_size;
+    maze_ysize = y_size;
+    
+    MazeMap = new GridGraph(x_size,y_size); // allocating GridGraph of specified size
+
+    // need to fill x_edges and y_edges with "true" as a graph with no edges is required
+    for(int i = 0; i < MazeMap->x_edges.size(); i++){
+        for(int j = 0; j < MazeMap->x_edges[i].size(); j++){
+            MazeMap->x_edges[i][j] = true;
+        }
+    }
+
+    for(int i = 0; i < MazeMap->y_edges.size(); i++){
+        for(int j = 0; j < MazeMap->y_edges[i].size(); j++){
+            MazeMap->y_edges[i][j] = true;
+        }
+    }
+
+    const unsigned int num_cells_2_draw = x_size*y_size; // total number of cells which must be visited by cursor before maze is fully mapped
+
+    unsigned int cells_drawn; // count number of cells drawn into maze
+
+    Coordinates cursor(0,0); // selecting node 0,0 as cursor starting location
+
+    MazeMap->nodes[cursor.y][cursor.x] = 1; // marking starting node as visted
+    cells_drawn++; // incremented starting cell as it has been drawn
+
+    std::random_device rd; // non-deterministic number generator
+    std::mt19937 rand_direction(rd()); // seeding mersenne twister
+    std::uniform_int_distribution<> dist(1,4); // distribute random value between 1 and 4 inclusive
+
+    while(cells_drawn < num_cells_2_draw){
+        
+        Coordinates previous_cell = cursor; // gather previous cell from movement
+
+        // first get cell in valid random direction (e.g. choose a cell that is within the allocated grid)
+        int direction = dist(rand_direction); // getting direction to head in x axis (east (0) or west (1))
+        int x_movement;
+        int y_movement;
+        
+        switch(direction){
+            case 1: // north
+            {
+                if((int)previous_cell.y - 1 < 0){ // if north is outside the grid
+                    direction = 2; // set direction to south
+                    y_movement = 1;
+                    cursor.y = previous_cell.y + 1;
+                }
+                else{
+                    y_movement = 0;
+                    cursor.y = previous_cell.y - 1;
+                }
+
+                break;
+            }
+            case 2: // south
+            {
+                if((int)previous_cell.y + 1 >= maze_ysize){ // if south is outside the grid
+                    direction = 1; // set direction to north
+                    y_movement = 0;
+                    cursor.y = previous_cell.y - 1;
+                }
+                else{
+                    y_movement = 1;
+                    cursor.y = previous_cell.y + 1;
+                }
+
+                break;
+            }
+            case 3: // east
+            {
+                if((int)previous_cell.x - 1 < 0){ // if east is outside the grid
+                    direction = 4; // set direction to west
+                    x_movement = 1;
+                    cursor.x = previous_cell.x + 1;
+                }
+                else{
+                    x_movement = 0;
+                    cursor.x = previous_cell.x - 1;
+                }
+
+                break;
+            }
+            case 4: // west
+            {
+                if((int)previous_cell.x + 1 >= maze_xsize){ // if west is outside the grid
+                    direction = 4; // set direction to west
+                    x_movement = 0;
+                    cursor.x = previous_cell.x - 1;
+                }
+                else{
+                    x_movement = 1;
+                    cursor.x = previous_cell.x + 1;
+                }
+
+                break;
+            }
+        }
+
+        if(MazeMap->nodes[cursor.y][cursor.x] == 0){ // if new neighbour node has not been visited
+                                                     // "draw" cell
+
+            MazeMap->nodes[cursor.y][cursor.x] = 1; // mark new node as visited and valid
+
+            if(direction == 1 || direction == 2){ // if moving north or south
+                MazeMap->y_edges[previous_cell.y + y_movement][previous_cell.x] = false; // removing wall
+            }
+            else{ // if moving east or west
+                MazeMap->x_edges[previous_cell.y][previous_cell.x + x_movement] = false; // removing wall
+            }
+
+            cells_drawn++; // increment number of cells drawn
+        }
+    }
+
     return;
 }
 

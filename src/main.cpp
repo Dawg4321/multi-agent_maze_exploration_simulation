@@ -220,6 +220,7 @@ void simulateOneTime(){
         {
             Generated_Maze.generate4x4SampleMaze(); // generating sample maze
             Generated_Maze.printMaze();
+
             break;
         }
         case 2: // NxN empty grid
@@ -242,6 +243,14 @@ void simulateOneTime(){
         {
             Generated_Maze.generate8x8SampleMaze(); // generating sample maze
             Generated_Maze.printMaze();
+
+            break;
+        }
+        case 4:
+        {
+            Generated_Maze.generateRandomNxNMaze(5,5);
+            Generated_Maze.printMaze();
+            
             break;
         }
     }

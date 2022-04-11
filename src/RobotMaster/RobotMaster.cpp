@@ -661,6 +661,21 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
                                                     { "y_pos", request_cast->new_robot_location.y} };
             break;
         }
+        case getMapRequest_ID:
+        {
+            // typecast to appropriate child class to gather response data
+            m_getMapRequest* request_cast = (m_getMapRequest*) request;
+
+            // adding request infomation to buffer json
+            request_buffer_json["ID"] = request_cast->robot_id;
+
+            request_buffer_json["Current_Cell"] = { { "x_pos", request_cast->current_cell.x},
+                                                    { "y_pos", request_cast->current_cell.y} }; 
+            
+            request_buffer_json["Target_Cell"] = { { "x_pos", request_cast->target_cell.x},
+                                                   { "y_pos", request_cast->target_cell.y} };
+            break;
+        }
     }
 
     switch(response->request_type){ // switch to determine which type of response is being sent
@@ -721,6 +736,11 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
         {
             // no response required thus no print out
 
+            break;
+        }
+        case getMapRequest_ID:
+        {
+            // no data loaded into response as only map information is in response
             break;
         }
     }

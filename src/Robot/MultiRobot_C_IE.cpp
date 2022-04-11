@@ -70,7 +70,7 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
             // repeat loop until cell which is being planned to has been reserved
             
             bool path_found = BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell
-                
+            
             if(path_found){
                 requestReserveCell();
             
