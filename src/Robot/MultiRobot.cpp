@@ -244,13 +244,6 @@ void MultiRobot::requestRobotLocationUpdate(){
     message_data->robot_id = id; // adding id of robot sending request
     Coordinates robot_cords(x_position,y_position);// gathering robots current coordinates
     message_data->new_robot_location = robot_cords; // adding robot location
-    
-    if(planned_path.size() > 1){ // if more movements are required (more than 1 movement in planned_path)
-        message_data->more_movements = true;
-    }
-    else{ // if no more movements are required
-        message_data->more_movements = false;
-    }
 
     temp_message->msg_data = message_data;
     

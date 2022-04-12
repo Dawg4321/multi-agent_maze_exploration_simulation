@@ -20,8 +20,9 @@ void MultiRobot_IE::requestReserveCell(){
     m_reserveCellRequest* message_data = new m_reserveCellRequest;  
 
     message_data->robot_id = id; // adding id of robot
-    message_data->target_cell = planned_path[planned_path.size() - 1]; // adding target destination (end of planned path) of robot
-     
+    message_data->planned_path = planned_path; // adding planned path
+
+
     if(planned_path.size() > 1){ // if more than one element in planned_path, must pass second last element in deque as neigbouring cell
         message_data->neighbouring_cell = planned_path[planned_path.size() - 2]; // passing second last element in planned_path as neighbouring cell
     }
@@ -29,6 +30,7 @@ void MultiRobot_IE::requestReserveCell(){
         Coordinates c(x_position,y_position); // gathering current robot coordinates
         message_data->neighbouring_cell = c; // passing current robot position as neighbouring cell
     }
+
 
     // attaching message data
     temp_message->msg_data = message_data;

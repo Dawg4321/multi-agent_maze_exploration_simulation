@@ -116,9 +116,12 @@ struct m_updateGlobalMapResponse:m_genericRequest{ // no response needed hence e
 // ** reserveCellRequest **
 struct m_reserveCellRequest:m_genericRequest{
     unsigned int robot_id; // id of robot sending request
-    Coordinates target_cell; // coordinates correspoonding to full map down a node path if path has been explored already
+    
+    //Coordinates target_cell; // coordinates correspoonding to full map down a node path if path has been explored already
     Coordinates neighbouring_cell; // neighbouring cell used to enter target cell 
                                    // used to determine which part of maze must be sent back in event node has already been explored
+    
+   std::deque<Coordinates> planned_path;
 
     // Constructor
     m_reserveCellRequest():m_genericRequest(reserveCellRequest_ID){ // assigning request id to request message
@@ -152,7 +155,6 @@ struct m_reserveCellResponse:m_genericRequest{
 struct m_updateRobotLocationRequest:m_genericRequest{
     unsigned int robot_id; // id of robot sending request
     Coordinates new_robot_location; // cell which robot now occupies
-    bool more_movements; // boolean to track whether robot will attempt to travel to another location after this request
 
     // Constructor
     m_updateRobotLocationRequest():m_genericRequest(updateRobotLocationRequest_ID){ // assigning request id to request message

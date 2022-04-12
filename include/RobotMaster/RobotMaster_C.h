@@ -18,7 +18,7 @@ class RobotMaster_C: virtual public RobotMaster{
 
         void updateRobotMovement(unsigned int* id, Coordinates* C); // updates the next_move value for given robot (e.g. "reserve" the cell so no other robot will move into it until the movement has been completed)
 
-        RobotInfo* checkForCollision(Coordinates* movement_cell);
+        RobotInfo* checkForCollision(Coordinates* movement_cell, unsigned int robot_id); // checks if there a collision between passed robot and any other robot. Returns pointer robotinfo of collision causing robot
 
         unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r);
 

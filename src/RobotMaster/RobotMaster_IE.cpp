@@ -24,13 +24,8 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
     m_reserveCellRequest* request_data = (m_reserveCellRequest*)request->msg_data;
 
     unsigned int robot_id = request_data->robot_id;
-    Coordinates target_cell = request_data->target_cell;                    
+    Coordinates target_cell = request_data->planned_path.back();                    
     Coordinates neighbouring_cell = request_data->neighbouring_cell;
-
-    for(int i = 0; i < tracked_robots.size(); i++){
-        if(robot_id == tracked_robots[i].robot_id)
-            tracked_robots[i].awaiting_next_cell = false;
-    }
 
     // return data allocation
     m_reserveCellResponse* response_data = new m_reserveCellResponse; // response message
@@ -49,7 +44,9 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
         cell_reserved = false; // return false as cell has not been reserved
     }
     else{ // if unreserved and unexplored
-        setRobotTargetCell(robot_id, &target_cell); // reserving cell for exploration
+        RobotInfo* robot_info = getRobotInfo(robot_id);// gathering planned_path for exploration
+        robot_info->planned_path = request_data->planned_path; // setting planned path to robot's target
+        robot_info->robot_target = target_cell; // gathering robot's target cell 
         cell_reserved = true; // cell has been reserved
     }
 
@@ -74,9 +71,10 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
     return;
 }
 
+
 bool RobotMaster_IE::isCellReserved(Coordinates* target_cell, unsigned int robot_id){ // determines if another robot has already reserved the cell
     for(int i = 0; i < tracked_robots.size(); i++){
-        if(tracked_robots[i].robot_target != NULL && *tracked_robots[i].robot_target == *target_cell && tracked_robots[i].robot_id != robot_id){ // if the cell is currently a different robot's target
+        if(tracked_robots[i].robot_target == *target_cell && tracked_robots[i].robot_id != robot_id){ // if the cell is currently a different robot's target
             return true;
         }
     }

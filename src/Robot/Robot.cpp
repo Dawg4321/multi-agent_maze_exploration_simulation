@@ -212,12 +212,13 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
 
     // initial checks to ensure path needs to be planned
     // no point using computation if robot is at destination or destination does not exist on robot's local map
-    if(LocalMap->nodes[y_dest][x_dest] == 0) // if the destination node has not been explored
+    
+    /*if(LocalMap->nodes[y_dest][x_dest] == 0) // if the destination node has not been explored
         return false;                       // can't create a path thus return false;
 
     else if(x_position == x_dest && y_position == y_dest) // if robot is at the destination already
-        return true;                                      // no need to move thus return true
-
+        return false;                                      // no need to move thus return false
+    */
     bool path_found = false; // variable to track whether a path has been found
 
     std::queue<Coordinates> node_queue; // creating node queue to store nodes to be "explored" by algorithm

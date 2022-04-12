@@ -248,7 +248,7 @@ void simulateOneTime(){
         }
         case 4:
         {
-            Generated_Maze.generateRandomNxNMaze(5,5);
+            Generated_Maze.generateRandomNxNMaze(50,50);
             Generated_Maze.printMaze();
             
             break;

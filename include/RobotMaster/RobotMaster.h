@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <string.h>
 
 #include "GridGraph.h"
 #include "Coordinates.h"
@@ -20,14 +21,20 @@ struct RobotInfo{ // structure to track information of various robots in the swa
 
     Coordinates robot_position; // tracks the current position of a robot in the graph maze in cartesian form
 
-    Coordinates* robot_target; // target cell which robot is travelling to for scanning
+    /*Coordinates* robot_target; 
                                // pointer will be NULL if no target cell
-    Coordinates robot_target_value; // data member to store value for robot_target pointer
+    
 
     Coordinates* next_cell; // cell robot is currently moving to
                             // pointer will be NULL if no target cell
     Coordinates next_cell_value; // data member to store value for next_cell
-    bool awaiting_next_cell; // tracks whether next_cell is going to be updated using another move2Cell Request 
+    bool awaiting_next_cell; // tracks whether next_cell is going to be updated using another move2Cell Request */
+
+    std::deque<Coordinates> planned_path; // path which robot plans to take to destination
+
+    //bool cell_scanned; // boolean to determine whether a robot has scanned the last cell it plans to travel to
+
+    Coordinates robot_target; // target cell which robot is travelling to for scanning
 };
 
 class RobotMaster{
@@ -61,7 +68,7 @@ class RobotMaster{
                                                                                   // this is important to allow for the robot to be synchronized by the control system
         void removeRobot(unsigned int robot_id); // removes robot from tracked_robots
 
-        virtual void updateRobotLocation(unsigned int* id, Coordinates* C, bool more_movements); // updates the location of a robot to the location specified
+        virtual void updateRobotLocation(unsigned int* id, Coordinates* C); // updates the location of a robot to the location specified
 
         void updateAllRobotState(int status); // updates the state of all robots to the specified value
         void updateRobotState(int status, RequestHandler* Target_Robot_Receiver); // send message to robot to update state
@@ -89,8 +96,10 @@ class RobotMaster{
 
         void setGlobalMap(GridGraph* g); // sets global map with new map value 
 
-        bool setRobotTargetCell(unsigned int robot_id, Coordinates* target_cell); // sets targetcell of a robot
+        //bool setRobotTargetCell(unsigned int robot_id, Coordinates* target_cell); // sets targetcell of a robot
         void clearTargetCell(unsigned int* robot_id); // removes target cell from robot
+
+        RobotInfo* getRobotInfo(unsigned int id); // gets pointer to robot info of a robot based on its id
 
     protected:
         GridGraph* GlobalMap; // Global Map of maze
@@ -112,6 +121,7 @@ class RobotMaster{
         unsigned int num_of_receieve_transactions; // tracks the number of incoming transactions handled
 
         json RequestInfo; // json containing information regarding each request
+        std::vector<std::string> RequestInfoString; // vector containing string version of requestinfo JSONs for debugging purposes
 
         bool accepting_requests; // boolean to track whether robotmaster is receiving requests
                                  // true = accept requests, false = ignore all requests except shut down request
