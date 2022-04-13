@@ -66,22 +66,9 @@ void RobotMaster_C::move2CellRequest(Message* request){
             // sending request for robots to swap jobs
             setTargetCellRequest(current_robot_info->robot_target, robot_causing_collision->robot_id); // telling collision robot to plan a path to current robot's target
             setTargetCellRequest(robot_causing_collision->robot_target, current_robot_info->robot_id); // telling current robot to plan a path to collision robot's target
-            
-            /*
-            // need to swap planned paths temporarily in RobotInfo
-            current_robot_info->planned_path.pop_front();
-            robot_causing_collision->planned_path.pop_front();
 
-            std::deque<Coordinates> planned_path_buffer = current_robot_info->planned_path;
-            current_robot_info->planned_path = robot_causing_collision->planned_path;
-            robot_causing_collision->planned_path = planned_path_buffer;
-            */
-            if(current_robot_info->planned_path.size() > 0){
-                current_robot_info->planned_path.clear(); // clearing current robot's planned path as it must find a path to its new target
-            }
-            if(robot_causing_collision->planned_path.size() > 0){
-                robot_causing_collision->planned_path.clear(); // clearing collision robot's planned path as it must find a path to its new target
-            }
+            current_robot_info->planned_path.clear(); // clearing current robot's planned path as it must find a path to its new target
+            robot_causing_collision->planned_path.clear(); // clearing collision robot's planned path as it must find a path to its new target
 
             Coordinates target_buffer = current_robot_info->robot_target;
             current_robot_info->robot_target = robot_causing_collision->robot_target;
@@ -217,9 +204,9 @@ void RobotMaster_C::gatherMap2Target(Coordinates current_node, Coordinates targe
 }
 
 RobotInfo* RobotMaster_C::checkForCollision(Coordinates* movement_cell, unsigned int robot_id){ // find and return robot who is either causing a collision (either through occupying or is in the process of moving to target cell)
-    for(int i = 0; i < tracked_robots.size(); i++){ 
-        if(tracked_robots[i].robot_id != robot_id && *movement_cell == tracked_robots[i].robot_position){ // if a collision will occur if robot moves to movement_cell
-            return &tracked_robots[i]; // returning pointer to robot information
+    for(int i = 0; i < tracked_robots->size(); i++){ 
+        if((*tracked_robots)[i].robot_id != robot_id && *movement_cell == (*tracked_robots)[i].robot_position){ // if a collision will occur if robot moves to movement_cell
+            return &(*tracked_robots)[i]; // returning pointer to robot information
         }
     }
     return NULL; // if not found, return NULL pointer to notify that no collision has occured
@@ -228,10 +215,10 @@ RobotInfo* RobotMaster_C::checkForCollision(Coordinates* movement_cell, unsigned
 /*
 void RobotMaster_C::updateRobotMovement(unsigned int* id, Coordinates* next_move_cell){ // updates robot's next_move to passed in coordinate value
 
-    for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update next movement value
-        if (tracked_robots[i].robot_id == *id){ // if robot found using id
-            tracked_robots[i].next_cell_value = *next_move_cell; // update value of next_cell to passed in value
-            tracked_robots[i].next_cell = &tracked_robots[i].next_cell_value; // endsure pointer is pointer to next_move to notify that robot is attempting to move to another cell
+    for(int i = 0; i < tracked_robots->size(); i++){ // finding robot to update next movement value
+        if ((*tracked_robots)[i].robot_id == *id){ // if robot found using id
+            (*tracked_robots)[i].next_cell_value = *next_move_cell; // update value of next_cell to passed in value
+            (*tracked_robots)[i].next_cell = &(*tracked_robots)[i].next_cell_value; // endsure pointer is pointer to next_move to notify that robot is attempting to move to another cell
             break; 
         }
     }

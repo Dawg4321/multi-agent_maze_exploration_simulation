@@ -8,12 +8,16 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
     maze_ysize = ysize;
 
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
+    RequestInfoString = new std::vector<std::string>; // allocating string 
+    tracked_robots = new std::vector<RobotInfo>; // allocating tracked robots array
 
     number_of_unexplored_cells = 0;
 }
 
 RobotMaster::~RobotMaster(){
     delete GlobalMap; // deallocating GlobalMap
+    delete RequestInfoString;
+    delete tracked_robots;
 }
 
 void RobotMaster::runRobotMaster(){ // function to continously run RobotMaster until the maze has been mapped
@@ -55,7 +59,7 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
 
             shutDownRequest(request);
 
-            if(tracked_robots.size() == 0){ // if all robots have successfully shut down
+            if(tracked_robots->size() == 0){ // if all robots have successfully shut down
                 return true; // maze exploration done
             }
         }
@@ -76,9 +80,9 @@ bool RobotMaster::receiveRequests(){ // function to handle incoming requests fro
 }
 
 RequestHandler* RobotMaster::getTargetRequestHandler(unsigned int target_id){ // gets a request handler for a specific robot
-    for(int i = 0; i < tracked_robots.size(); i++){
-        if(tracked_robots[i].robot_id == target_id){
-            return tracked_robots[i].Robot_Message_Reciever; // return requesthandler for targer robot
+    for(int i = 0; i < tracked_robots->size(); i++){
+        if((*tracked_robots)[i].robot_id == target_id){
+            return (*tracked_robots)[i].Robot_Message_Reciever; // return requesthandler for targer robot
         }
     }
     
@@ -255,15 +259,15 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
 
     GlobalMap->nodes[y][x] = 2; // setting current position of robot to 2 as it has been seen but not explored until robot sends first scan update
 
-    tracked_robots.push_back(temp); // adding robot info to tracked_robots
+    tracked_robots->push_back(temp); // adding robot info to tracked_robots
 
     return temp.robot_id; // returning id to be assigned to the robot which triggered this function
 }
 
 void RobotMaster::removeRobot(unsigned int id){
-    for(int i = 0; i < tracked_robots.size(); i++){ // search for robot in tracked_robots
-        if(tracked_robots[i].robot_id == id){ // if robot has been identified
-            tracked_robots.erase(tracked_robots.begin()+i); // delete it from tracked_robots
+    for(int i = 0; i < tracked_robots->size(); i++){ // search for robot in tracked_robots
+        if((*tracked_robots)[i].robot_id == id){ // if robot has been identified
+            tracked_robots->erase(tracked_robots->begin()+i); // delete it from tracked_robots
             break;
         }
     }
@@ -420,9 +424,9 @@ bool RobotMaster::checkIfOccupied(unsigned int x, unsigned int y, unsigned int* 
                                                                                                // returns true is a robot is detected
                                                                                                // if a robot is found, ret_variable is modified to contain the id of the found robot
     unsigned int temp = 0;
-    for(int i = 0; i < tracked_robots.size(); i++){ // looping through robots position
-        if(tracked_robots[i].robot_position.x == x && tracked_robots[i].robot_position.y == y){ // if robot is occupying the location passed in
-            temp = tracked_robots[i].robot_id; // returning found robot id
+    for(int i = 0; i < tracked_robots->size(); i++){ // looping through robots position
+        if((*tracked_robots)[i].robot_position.x == x && (*tracked_robots)[i].robot_position.y == y){ // if robot is occupying the location passed in
+            temp = (*tracked_robots)[i].robot_id; // returning found robot id
             *ret_variable = temp;
 
             return true; // return true as robot is occupying the cell
@@ -433,10 +437,10 @@ bool RobotMaster::checkIfOccupied(unsigned int x, unsigned int y, unsigned int* 
 
 void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // updates the location of a robot to the location specified
 
-    for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update
-        if (tracked_robots[i].robot_id == *id){ // if robot found using id
-            tracked_robots[i].robot_position = *C; // update position in RobotInfo
-            tracked_robots[i].planned_path.pop_front(); // remove front of planned_path as movement has occured
+    for(int i = 0; i < tracked_robots->size(); i++){ // finding robot to update
+        if ((*tracked_robots)[i].robot_id == *id){ // if robot found using id
+            (*tracked_robots)[i].robot_position = *C; // update position in RobotInfo
+            (*tracked_robots)[i].planned_path.pop_front(); // remove front of planned_path as movement has occured
             
             break; 
         }
@@ -447,9 +451,9 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // upda
 
 void RobotMaster::updateAllRobotState(int status){
 
-    for(int i = 0; i < tracked_robots.size(); i++){ // creating messages to update state of all robots
+    for(int i = 0; i < tracked_robots->size(); i++){ // creating messages to update state of all robots
         
-        updateRobotState(status, tracked_robots[i].Robot_Message_Reciever);
+        updateRobotState(status, (*tracked_robots)[i].Robot_Message_Reciever);
     }
 
     return;    
@@ -731,7 +735,7 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
     request_json["Transaction"] = transaction_id;
     
     RequestInfo.push_back(request_json); // adding generated json to RequestInfo json
-    RequestInfoString.push_back(request_json.dump(4)); // adding json to string vector for debugging purposes
+    RequestInfoString->push_back(request_json.dump(4)); // adding json to string vector for debugging purposes
 
     return; 
 }
@@ -838,10 +842,10 @@ void RobotMaster::setGlobalMap(GridGraph* g){
 /*
 bool RobotMaster::setRobotTargetCell(unsigned int robot_id, Coordinates* target_cell){
     
-    for(int i = 0; i < tracked_robots.size(); i++){ // attempt to set target_cell of robot 
-        if(tracked_robots[i].robot_id == robot_id){
-            tracked_robots[i].robot_target_value = *target_cell; // placing target cell into robot_target's memory location
-            tracked_robots[i].robot_target = &tracked_robots[i].robot_target_value; // ensuring pointer is pointer to memory location to notify that current robot target is valid (e.g. ptr != NULL)
+    for(int i = 0; i < tracked_robots->size(); i++){ // attempt to set target_cell of robot 
+        if((*tracked_robots)[i].robot_id == robot_id){
+            (*tracked_robots)[i].robot_target_value = *target_cell; // placing target cell into robot_target's memory location
+            (*tracked_robots)[i].robot_target = &(*tracked_robots)[i].robot_target_value; // ensuring pointer is pointer to memory location to notify that current robot target is valid (e.g. ptr != NULL)
             
             return true;
         }
@@ -852,9 +856,9 @@ bool RobotMaster::setRobotTargetCell(unsigned int robot_id, Coordinates* target_
 
 RobotInfo* RobotMaster::getRobotInfo(unsigned int id){
 
-    for(int i = 0; i < tracked_robots.size(); i++){
-        if(tracked_robots[i].robot_id == id){ // if robot found
-            return &tracked_robots[i]; // return pointer to RobotInfo
+    for(int i = 0; i < tracked_robots->size(); i++){
+        if((*tracked_robots)[i].robot_id == id){ // if robot found
+            return &(*tracked_robots)[i]; // return pointer to RobotInfo
         }
     }
 

@@ -104,7 +104,7 @@ class RobotMaster{
     protected:
         GridGraph* GlobalMap; // Global Map of maze
 
-        std::vector<RobotInfo> tracked_robots; // vector to track information on various robots within maze
+        std::vector<RobotInfo>* tracked_robots; // vector to track information on various robots within maze
 
         RequestHandler* Message_Handler; // pointer to request handler shared by all Robots and a RobotMaster objects
         
@@ -121,7 +121,7 @@ class RobotMaster{
         unsigned int num_of_receieve_transactions; // tracks the number of incoming transactions handled
 
         json RequestInfo; // json containing information regarding each request
-        std::vector<std::string> RequestInfoString; // vector containing string version of requestinfo JSONs for debugging purposes
+        std::vector<std::string>* RequestInfoString; // vector containing string version of requestinfo JSONs for debugging purposes
 
         bool accepting_requests; // boolean to track whether robotmaster is receiving requests
                                  // true = accept requests, false = ignore all requests except shut down request

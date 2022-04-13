@@ -20,7 +20,7 @@ void RobotMaster_NC_UI::handleIncomingRequest(Message* incoming_request){
 
             // if all robots have been added
             // send signal to all robots to begin exploration
-            if(tracked_robots.size() == max_num_of_robots)
+            if(tracked_robots->size() == max_num_of_robots)
                 updateAllRobotState(1); // updating all robot states to 1
                                         // this causes them to all begin exploring by first scanning their cell
             break;

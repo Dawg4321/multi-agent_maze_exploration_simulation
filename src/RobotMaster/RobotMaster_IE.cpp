@@ -73,8 +73,8 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
 
 
 bool RobotMaster_IE::isCellReserved(Coordinates* target_cell, unsigned int robot_id){ // determines if another robot has already reserved the cell
-    for(int i = 0; i < tracked_robots.size(); i++){
-        if(tracked_robots[i].robot_target == *target_cell && tracked_robots[i].robot_id != robot_id){ // if the cell is currently a different robot's target
+    for(int i = 0; i < tracked_robots->size(); i++){
+        if((*tracked_robots)[i].robot_target == *target_cell && (*tracked_robots)[i].robot_id != robot_id){ // if the cell is currently a different robot's target
             return true;
         }
     }

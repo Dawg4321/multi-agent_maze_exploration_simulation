@@ -183,7 +183,7 @@ RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHand
     }
 }
 
-bool exportJSON(json json_2_export, string json_name){
+bool exportJSON(json* json_2_export, string json_name){
 
 
     json_name += ".json"; // adding .json extension to passed in name
@@ -192,7 +192,7 @@ bool exportJSON(json json_2_export, string json_name){
 
     if(json_file.is_open()){ // if file was created successfully
 
-        json_file << std::setw(4) << json_2_export << std::endl; // export json to .json file
+        json_file << std::setw(4) << *json_2_export << std::endl; // export json to .json file
 
         return true;
     }
@@ -248,7 +248,7 @@ void simulateOneTime(){
         }
         case 4:
         {
-            Generated_Maze.generateRandomNxNMaze(50,50);
+            Generated_Maze.generateRandomNxNMaze(100, 100);
             Generated_Maze.printMaze();
             
             break;
@@ -280,11 +280,11 @@ void simulateOneTime(){
     
     // gathering new RobotMaster compatible with specified type of robots
     RobotMaster* Robot_Controller = getNewRobotMaster(type_of_robots, number_of_robots, request_handler, Generated_Maze.getMazeXSize(), Generated_Maze.getMazeYSize());
-    RobotMasterArgs RMArgs(Robot_Controller, &turn_control_data);
+    RobotMasterArgs* RMArgs = new RobotMasterArgs(Robot_Controller, &turn_control_data);
 
     // creating thread to run Robot_Controller 
     pthread_t master_thread;
-    pthread_create(&master_thread, NULL, &controllerFunc, (void*)&RMArgs);
+    pthread_create(&master_thread, NULL, &controllerFunc, (void*)RMArgs);
 
     // ~~~ Robot Thread Generation ~~~
     Robot* Robots_Array[number_of_robots]; // generating array for robots to be stored in
@@ -318,7 +318,7 @@ void simulateOneTime(){
     // ~~~ Awaiting Robot Master Thread Completion ~~~
     pthread_join(master_thread, NULL); // waiting for robot master thread to finish
     
-    exportJSON(RMArgs.turn_json, "Simulation");
+    exportJSON(&RMArgs->turn_json, "Simulation");
 
     // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
 
@@ -400,7 +400,7 @@ void testCases(){
     pthread_join(T4, NULL); 
 
     // exporting JSON
-    exportJSON(RM1args.turn_json, "Test_Case");
+    exportJSON(&RM1args.turn_json, "Test_Case");
 
     // deleting dynamically allocated data
     delete RM1;
