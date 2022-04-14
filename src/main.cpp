@@ -140,7 +140,7 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
         string name = "Turn_";
         name += to_string(turn_counter);
         buffer_json[name] = RM->getRequestInfo(); // gathering json containing request info during this turn
-        Data->turn_json.push_back(buffer_json);
+        Data->turn_json["Simulation"].push_back(buffer_json);
 
         RM->clearRequestInfo(); // clearing contents of request info before next turn
 
@@ -148,6 +148,10 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
     }
 
     pthread_barrier_wait(&TurnControl->turn_end_barrier); // Signalling robot they can finally exit their loop after completion
+    
+    Data->turn_json["Info"]["Total_Turns_Taken"] = turn_counter;
+
+    Data->turn_json["Maze_Characteristics"] = { {"X_Size", }, {"Y_Size", }, {"Node_Map", }, {"X_Edges", }, {"Y_Edges"}};
 
     pthread_exit(NULL); // return from thread
 }
@@ -248,7 +252,7 @@ void simulateOneTime(){
         }
         case 4:
         {
-            Generated_Maze.generateRandomNxNMaze(50,50);
+            Generated_Maze.generateRandomNxNMaze(100,100);
             Generated_Maze.printMaze();
             
             break;
@@ -412,6 +416,94 @@ void testCases(){
     return;
 }
 
+
+void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robots){
+    // ~~~ Turn Tracking System Variable Creation ~~~~
+    TurnControlData turn_control_data(number_of_robots);
+    
+    // ~~~ Robot Master Thread Generation ~~~
+    RequestHandler* request_handler = new RequestHandler(); // creating message handler for robot -> master communcation
+    
+    // gathering new RobotMaster compatible with specified type of robots
+    RobotMaster* Robot_Controller = getNewRobotMaster(type_of_robots, number_of_robots, request_handler, Generated_Maze->getMazeXSize(), Generated_Maze->getMazeYSize());
+    RobotMasterArgs RMArgs(Robot_Controller, &turn_control_data);
+
+    // creating thread to run Robot_Controller 
+    pthread_t master_thread;
+    pthread_create(&master_thread, NULL, &controllerFunc, (void*)&RMArgs);
+
+    // ~~~ Robot Thread Generation ~~~
+    Robot* Robots_Array[number_of_robots]; // generating array for robots to be stored in
+    RobotArgs* Robot_Thread_Args[number_of_robots]; // generating array for arguments to be passed into robot threads
+
+    pthread_t thread_id[number_of_robots]; // creating threads for each robot              
+    
+    for (int i = 0; i < number_of_robots; i++){
+        // determining robot position within maze
+        int robot_x_position, robot_y_position;
+        /*
+        // x position
+        cout << "Robot " << i <<". set x position:"; 
+        cin >> robot_x_position;
+        // y position
+        cout <<"Robot " << i <<". set y position:";
+        cin >> robot_y_position;*/
+
+        Robots_Array[i] = getNewRobot(type_of_robots, i, i, request_handler, Generated_Maze->getMazeXSize(), Generated_Maze->getMazeYSize());
+        
+        // passing robot into
+        Robot_Thread_Args[i] = new RobotArgs(Robots_Array[i], Generated_Maze->getMazeMap(), &turn_control_data);
+        // running robot thread
+        pthread_create(&thread_id[i], NULL, &robotFunc, (void*)Robot_Thread_Args[i]);
+    }
+
+    // ~~~ Awaiting Robot Thread Completion  ~~~
+    for(int i = 0; i < number_of_robots; i++) // waiting for robot threads to finish
+        pthread_join(thread_id[i], NULL); 
+
+    // ~~~ Awaiting Robot Master Thread Completion ~~~
+    pthread_join(master_thread, NULL); // waiting for robot master thread to finish
+    
+    exportJSON(RMArgs.turn_json, "Simulation");
+
+    // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
+
+    delete Robot_Controller; // deleting RobotMaster
+    
+    for(int i = 0; i < number_of_robots; i++) // deleting all generated robots
+        delete Robots_Array[i];
+
+    delete request_handler; // deleting request handler used by robots
+
+    return;
+}
+
+void testSwarmSize(){
+    
+    int maze_size;
+    cout << "What Size Maze to Perform Tests on?\n";
+    cin >> maze_size;
+
+    int number_of_mazes;
+    cout << "How many Mazes to generate for tests?\n";
+    cin >> number_of_mazes;
+
+    int number_of_robots;
+    cout << "What is maximum number of robots to simulate?\n";
+    cin >> number_of_robots;  
+
+    for(int i = 0; i < number_of_mazes; i++){
+        Maze m;
+        
+        m.generateRandomNxNMaze(maze_size, maze_size);
+
+        for(int i = 1; i < number_of_robots + 1; i++)
+            runSimulation(&m, i, 3);
+    }
+
+    return;
+}
+
 int main(){
     // ~~~ Title printouts ~~~
     cout << "~~~ Multi-agent Robot Simulator ~~~\n";
@@ -433,6 +525,11 @@ int main(){
         case 2:
         {
             testCases();
+            break;
+        }
+        case 3:
+        {
+            testSwarmSize();
             break;
         }
     }

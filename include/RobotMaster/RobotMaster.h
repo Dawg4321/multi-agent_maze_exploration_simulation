@@ -21,18 +21,9 @@ struct RobotInfo{ // structure to track information of various robots in the swa
 
     Coordinates robot_position; // tracks the current position of a robot in the graph maze in cartesian form
 
-    /*Coordinates* robot_target; 
-                               // pointer will be NULL if no target cell
-    
-
-    Coordinates* next_cell; // cell robot is currently moving to
-                            // pointer will be NULL if no target cell
-    Coordinates next_cell_value; // data member to store value for next_cell
-    bool awaiting_next_cell; // tracks whether next_cell is going to be updated using another move2Cell Request */
-
     std::deque<Coordinates> planned_path; // path which robot plans to take to destination
 
-    //bool cell_scanned; // boolean to determine whether a robot has scanned the last cell it plans to travel to
+    bool robot_moving; // boolean to determine whether a robot has scanned the last cell it plans to travel to
 
     Coordinates robot_target; // target cell which robot is travelling to for scanning
 };

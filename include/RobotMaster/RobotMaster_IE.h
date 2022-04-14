@@ -18,10 +18,7 @@ class RobotMaster_IE: virtual public RobotMaster{
                                                            
         //void updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C); // overloading update global map as cell must be unreserved after scan has been completed
 
-        bool isCellReserved(Coordinates* target_cell, unsigned int robot_id); // checks if cell is already a target of another robot using parent's "tracked_robots" vector
-    
-    /* private:
-        std::vector<std::vector<ReservationInfo>> ReservationMatrix; // vector used to track which robot is reserving each cell*/
+        RobotInfo* isCellReserved(Coordinates* target_cell, unsigned int robot_id); // checks if cell is already a target of another robot using parent's "tracked_robots" vector
 };
 
 #endif

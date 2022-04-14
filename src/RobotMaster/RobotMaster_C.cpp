@@ -20,13 +20,22 @@ void RobotMaster_C::move2CellRequest(Message* request){
 
     RobotInfo* current_robot_info = getRobotInfo(robot_id);
 
+    for(int i = 0; i < tracked_robots.size(); i++){ // simple test to ensure to robots are occupying the same location (this is a critical error)
+        if(tracked_robots[i].robot_position == current_robot_info->robot_position && current_robot_info->robot_id != tracked_robots[i].robot_id)
+            break;
+    }
+
     RobotInfo* robot_causing_collision = checkForCollision(&target_cell, robot_id); // check and find robot information from robot who is causing a collision  
 
-    if(robot_causing_collision == NULL){ // if no robot was found to be causing a collision
+    if(isRobotMoving(target_cell, current_robot_info->robot_id)){ // checking to see if another robot is currently in the process of moving into the target cell
+        response_data->can_movement_occur = false;
+    }
+    else if(robot_causing_collision == NULL){ // if no robot was found to be causing a collision
+        current_robot_info->robot_moving = true; // setting robot_moving flag to true as robot is now moving
         response_data->can_movement_occur = true; // update message to notify robot that movement can occur
     }
     else if(robot_causing_collision->robot_id == current_robot_info->robot_id){ // if the robot causing the collision is the current robot
-        printf("Critical Error: Robot attempting to move to a cell it already occupies\n"); // critical erro message
+        printf("Critical Error: Robot attempting to move to a cell it already occupies\n"); // critical error message
         response_data->can_movement_occur = false; //  update message to notify robot that movement can't occur
     }
     else{ // target cell is occupied by another robot, try to "job swap"
@@ -38,19 +47,11 @@ void RobotMaster_C::move2CellRequest(Message* request){
 
             setTargetCellRequest(current_robot_info->robot_target, robot_causing_collision->robot_id); // telling collision robot to plan a path to current robot's target
             
-            /*
-            current_robot_info->planned_path.pop_front(); // removing next movement as collision robot is already at next location
-            robot_causing_collision->planned_path = current_robot_info->planned_path; // swapping collision robot and current robot's planned path temporarily until its updated by a reserve cell request
-            */
-            if(current_robot_info->planned_path.size() > 0){
-                current_robot_info->planned_path.clear(); // clearing current robot's planned path as it must find a path to its new target
-            }
-            if(robot_causing_collision->planned_path.size() > 0){
-                robot_causing_collision->planned_path.clear(); // clearing collision robot's planned path as it must find a path to its new target
-            }
+            current_robot_info->planned_path.clear(); // clearing current robot's planned path as it must find a path to its new target
+            robot_causing_collision->planned_path.clear(); // clearing collision robot's planned path as it must find a path to its new target
 
-            robot_causing_collision->robot_target = current_robot_info->robot_target;
-            current_robot_info->robot_target = current_robot_info->robot_position;
+            robot_causing_collision->robot_target = current_robot_info->robot_target; // giving robot_causing_collision current robot's target
+            current_robot_info->robot_target = current_robot_info->robot_position; // as robot causing collision has no target to swap, set robot's target as its current cell
 
             // telling current robot to find a new target as collision robot has not target cell
             updateRobotState(2, current_robot_info->Robot_Message_Reciever); // tell robot to attempt to reserve another cell
@@ -66,24 +67,11 @@ void RobotMaster_C::move2CellRequest(Message* request){
             // sending request for robots to swap jobs
             setTargetCellRequest(current_robot_info->robot_target, robot_causing_collision->robot_id); // telling collision robot to plan a path to current robot's target
             setTargetCellRequest(robot_causing_collision->robot_target, current_robot_info->robot_id); // telling current robot to plan a path to collision robot's target
-            
-            /*
-            // need to swap planned paths temporarily in RobotInfo
-            current_robot_info->planned_path.pop_front();
-            robot_causing_collision->planned_path.pop_front();
 
-            std::deque<Coordinates> planned_path_buffer = current_robot_info->planned_path;
-            current_robot_info->planned_path = robot_causing_collision->planned_path;
-            robot_causing_collision->planned_path = planned_path_buffer;
-            */
-            if(current_robot_info->planned_path.size() > 0){
-                current_robot_info->planned_path.clear(); // clearing current robot's planned path as it must find a path to its new target
-            }
-            if(robot_causing_collision->planned_path.size() > 0){
-                robot_causing_collision->planned_path.clear(); // clearing collision robot's planned path as it must find a path to its new target
-            }
+            current_robot_info->planned_path.clear(); // clearing current robot's planned path as it must find a path to its new target
+            robot_causing_collision->planned_path.clear(); // clearing collision robot's planned path as it must find a path to its new target
 
-            Coordinates target_buffer = current_robot_info->robot_target;
+            Coordinates target_buffer = current_robot_info->robot_target; // swapping targets in tracked_robots
             current_robot_info->robot_target = robot_causing_collision->robot_target;
             robot_causing_collision->robot_target = target_buffer;
             
@@ -225,27 +213,6 @@ RobotInfo* RobotMaster_C::checkForCollision(Coordinates* movement_cell, unsigned
     return NULL; // if not found, return NULL pointer to notify that no collision has occured
 }
 
-/*
-void RobotMaster_C::updateRobotMovement(unsigned int* id, Coordinates* next_move_cell){ // updates robot's next_move to passed in coordinate value
-
-    for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update next movement value
-        if (tracked_robots[i].robot_id == *id){ // if robot found using id
-            tracked_robots[i].next_cell_value = *next_move_cell; // update value of next_cell to passed in value
-            tracked_robots[i].next_cell = &tracked_robots[i].next_cell_value; // endsure pointer is pointer to next_move to notify that robot is attempting to move to another cell
-            break; 
-        }
-    }
-
-    return;
-}*/
-
-unsigned int RobotMaster_C::addRobot(unsigned int x, unsigned int y, RequestHandler* r){ // adding robot to control system
-                                                                                       // this must be completed by all robots before beginning exploration
-    unsigned int id = RobotMaster::addRobot(x, y, r); // calling parent add robot function to get new id
-
-    return id;
-}
-
 void RobotMaster_C::setTargetCellRequest(Coordinates target_cell, unsigned int target_robot){
     Message* messages = new Message(t_Request, -1); // creating new messages for each robot
 
@@ -266,4 +233,15 @@ void RobotMaster_C::setTargetCellRequest(Coordinates target_cell, unsigned int t
     }
 
     return;    
+}
+
+bool RobotMaster_C::isRobotMoving(Coordinates C, unsigned int robot_id){
+
+    for(int i = 0; i < tracked_robots.size(); i++){
+        if(tracked_robots[i].planned_path.size() > 0 && tracked_robots[i].planned_path[0] == C && tracked_robots[i].robot_moving && tracked_robots[i].robot_id != robot_id){
+            return true; // returning true as another robot is in the process of moving to the target cell
+        }
+    }
+
+    return false;
 }

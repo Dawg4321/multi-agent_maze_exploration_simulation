@@ -17,6 +17,9 @@ struct Coordinates{ // structure to track x and y coordinates of a position
         y = y_pos;
     }
 
+    ~Coordinates(){ // Coordinates destructor
+    }
+
     // Coordinates overloaded operators
     bool operator<(const Coordinates& a) const{ // < operator overloaded for usage by map data structure
         return (x < a.x || (!(x < a.x) && y < a.y)); // if left hand side x is bigger than right hand side
@@ -30,6 +33,12 @@ struct Coordinates{ // structure to track x and y coordinates of a position
     bool operator!=(const Coordinates& a) const{ // != operator overloaded
         return (!(x == a.x && y == a.y));
     }
+    Coordinates& operator=(const Coordinates& a){ // copy assignment operator overloaded
+        x = a.x;
+        y = a.y;
+        return *this;
+    }
+ 
 };
 
 #endif

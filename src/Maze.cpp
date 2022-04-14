@@ -218,7 +218,7 @@ void Maze::generateRandomNxNMaze(unsigned int x_size, unsigned int y_size){
 
     const unsigned int num_cells_2_draw = x_size*y_size; // total number of cells which must be visited by cursor before maze is fully mapped
 
-    unsigned int cells_drawn; // count number of cells drawn into maze
+    unsigned int cells_drawn = 0; // count number of cells drawn into maze
 
     Coordinates cursor(0,0); // selecting node 0,0 as cursor starting location
 

@@ -20,7 +20,7 @@ class RobotMaster_C: virtual public RobotMaster{
 
         RobotInfo* checkForCollision(Coordinates* movement_cell, unsigned int robot_id); // checks if there a collision between passed robot and any other robot. Returns pointer robotinfo of collision causing robot
 
-        unsigned int addRobot(unsigned int x, unsigned int y, RequestHandler* r);
+        bool isRobotMoving(Coordinates C, unsigned int robot_id); // checks to see if another robot is in the process of to move to the cell
 
         void setTargetCellRequest(Coordinates targetcell, unsigned int target_robot);
 };

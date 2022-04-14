@@ -8,7 +8,6 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
     maze_ysize = ysize;
 
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
-
     number_of_unexplored_cells = 0;
 }
 
@@ -241,8 +240,6 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
 
 unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandler* r){ // adding robot to control system
                                                                                        // this must be completed by all robots before beginning exploration
-    
-    number_of_unexplored_cells++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
 
     num_of_added_robots++; // incrementing inorder to determine next id to give a robot
 
@@ -253,7 +250,11 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     temp.robot_position.y = y;
     temp.Robot_Message_Reciever = r; // assigning Request handler for Master -> robot communications
 
-    GlobalMap->nodes[y][x] = 2; // setting current position of robot to 2 as it has been seen but not explored until robot sends first scan update
+    if(GlobalMap->nodes[y][x] != 2){ // if the cell has not been marked as seen (e.g. another robot hasnt already been placed in the cell)
+        GlobalMap->nodes[y][x] = 2; // setting current position of robot to 2 as it has been seen but not explored until robot sends first scan update
+        number_of_unexplored_cells++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
+    }
+    
 
     tracked_robots.push_back(temp); // adding robot info to tracked_robots
 
@@ -436,6 +437,7 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // upda
     for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update
         if (tracked_robots[i].robot_id == *id){ // if robot found using id
             tracked_robots[i].robot_position = *C; // update position in RobotInfo
+            tracked_robots[i].robot_moving = false; // setting robot_moving flag to false as robot is done moving
             tracked_robots[i].planned_path.pop_front(); // remove front of planned_path as movement has occured
             
             break; 
@@ -654,7 +656,7 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
             break;
         }
     }
-
+    if(response != NULL){
     switch(response->request_type){ // switch to determine which type of response is being sent
                                    // this is required inorder to typecast and export the appropriate information
         case shutDownRequest_ID:
@@ -720,6 +722,7 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
             // no data loaded into response as only map information is in response
             break;
         }
+    }
     }
 
     // transaction information has been encapsulated into two seperate jsons

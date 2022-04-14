@@ -32,6 +32,8 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
 
     bool cell_reserved; // variable to whether cell reservation is possible
 
+    RobotInfo* reserving_robot = isCellReserved(&target_cell, robot_id); // checking if another robot is reserving the target cell
+
     // processing if cell can be reserved
     // in this case, vectors allocated in response_data will be modified
     if(GlobalMap->nodes[target_cell.y][target_cell.x] == 1){ // if the target cell has already been explored
@@ -39,7 +41,7 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
         gatherPortionofMap(target_cell, neighbouring_cell, response_data->map_coordinates, response_data->map_connections, response_data->map_status);
         cell_reserved = false; // cell has not been successfully reserved for requesting robot
     }
-    else if(isCellReserved(&target_cell, robot_id)){ // if the target cell has already been reserved
+    else if(reserving_robot != NULL){ // if the target cell has already been reserved
         response_data->target_cell = target_cell; // adding target cell to response so robot knows which cell is already reserved by another robot
         cell_reserved = false; // return false as cell has not been reserved
     }
@@ -72,12 +74,12 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
 }
 
 
-bool RobotMaster_IE::isCellReserved(Coordinates* target_cell, unsigned int robot_id){ // determines if another robot has already reserved the cell
+RobotInfo* RobotMaster_IE::isCellReserved(Coordinates* target_cell, unsigned int robot_id){ // determines if another robot has already reserved the cell
     for(int i = 0; i < tracked_robots.size(); i++){
         if(tracked_robots[i].robot_target == *target_cell && tracked_robots[i].robot_id != robot_id){ // if the cell is currently a different robot's target
-            return true;
+            return &(tracked_robots[i]);
         }
     }
 
-    return false;
+    return NULL;
 }
