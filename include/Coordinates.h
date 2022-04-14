@@ -1,6 +1,8 @@
 #ifndef COORDINATES_H
 #define COORDINATES_H
 
+#define NULL_COORDINATE Coordinates(0,0)
+
 struct Coordinates{ // structure to track x and y coordinates of a position
     // Coordinates data members
     unsigned int x; // x location

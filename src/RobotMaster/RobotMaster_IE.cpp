@@ -41,14 +41,32 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
         gatherPortionofMap(target_cell, neighbouring_cell, response_data->map_coordinates, response_data->map_connections, response_data->map_status);
         cell_reserved = false; // cell has not been successfully reserved for requesting robot
     }
-    else if(reserving_robot != NULL){ // if the target cell has already been reserved
+    else if(reserving_robot == NULL){ // no other robot has reserved the target cell and it has not been explored
+        // reserving target cell + updating current planned path
+        RobotInfo* robot_info = getRobotInfo(robot_id);// gathering planned_path for exploration
+        robot_info->planned_path = request_data->planned_path; // setting planned path to robot's target
+        robot_info->robot_target = target_cell; // gathering robot's target cell
+
+        // response data loading
+        cell_reserved = true; // cell has been reserved
+    }
+    else if(reserving_robot->planned_path.size() <= request_data->planned_path.size()){ // if the target cell has already been reserved and the reserving robot is closer to the target
         response_data->target_cell = target_cell; // adding target cell to response so robot knows which cell is already reserved by another robot
         cell_reserved = false; // return false as cell has not been reserved
     }
-    else{ // if unreserved and unexplored
+    else{ // if the current robot is closer to the target cell than the current reserving robot
+        // reserving target cell + updating current planned path
         RobotInfo* robot_info = getRobotInfo(robot_id);// gathering planned_path for exploration
         robot_info->planned_path = request_data->planned_path; // setting planned path to robot's target
         robot_info->robot_target = target_cell; // gathering robot's target cell 
+
+        // telling robot who was previously reserving the target cell to find a new target
+        // reserving_robot->planned_path.clear(); // clearing planned path as a new target must be located
+        reserving_robot->robot_target = NULL_COORDINATE; // setting robot target to an invalid value as no target is currently assigned
+
+        updateRobotState(1, reserving_robot->Robot_Message_Reciever); // tell previous reserving robot to find a new target
+
+        // response data loading
         cell_reserved = true; // cell has been reserved
     }
 

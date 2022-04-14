@@ -20,6 +20,10 @@ void RobotMaster_C::move2CellRequest(Message* request){
 
     RobotInfo* current_robot_info = getRobotInfo(robot_id);
 
+    if(current_robot_info->planned_path.size() == 0){ // if there is no planned path and the robot is attempting to move, movement request is stale as another path needs to be planned thus no need to check for collision
+        return;
+    }
+
     for(int i = 0; i < tracked_robots.size(); i++){ // simple test to ensure to robots are occupying the same location (this is a critical error)
         if(tracked_robots[i].robot_position == current_robot_info->robot_position && current_robot_info->robot_id != tracked_robots[i].robot_id)
             break;
@@ -51,7 +55,7 @@ void RobotMaster_C::move2CellRequest(Message* request){
             robot_causing_collision->planned_path.clear(); // clearing collision robot's planned path as it must find a path to its new target
 
             robot_causing_collision->robot_target = current_robot_info->robot_target; // giving robot_causing_collision current robot's target
-            current_robot_info->robot_target = current_robot_info->robot_position; // as robot causing collision has no target to swap, set robot's target as its current cell
+            current_robot_info->robot_target = NULL_COORDINATE; // as robot causing collision has no target to swap, set robot's target as its current cell
 
             // telling current robot to find a new target as collision robot has not target cell
             updateRobotState(2, current_robot_info->Robot_Message_Reciever); // tell robot to attempt to reserve another cell
