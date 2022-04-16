@@ -26,6 +26,8 @@ class MultiRobot: public Robot{
         virtual void robotSetUp() = 0; // function used by robot once before robot begins its loop function
         virtual int robotLoopStep(GridGraph* maze) = 0; // function used within each iteration of a robot's loop
                                                          // returns the value of the robot's status after iteration
+        virtual int robotLoopStepforSimulation(GridGraph* maze){} // robot loop step used for simulation to allow for turn delays based off specific requests
+                                                                 // must be used with turn based simulation system
 
         void updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status); // updates robot's map with information from vectors
 
@@ -50,6 +52,9 @@ class MultiRobot: public Robot{
 
         bool isResponseStale(int transaction_id); // simple function to check if there is an outstanding response of a given transaction id
         void makeResponseStale(int transaction_id); // removes entry of transaction from valid_response (e.g. making it stale)
+
+        void computeMove(); // function used to compute move of the robot
+        void computeScanCell(GridGraph* maze); // computing scan cell
        
     protected:
         unsigned int id; // robot id assigned to robot by robot controller
@@ -60,8 +65,17 @@ class MultiRobot: public Robot{
         std::vector<int> valid_responses; // vector to track id of transactions which require a response
                                           // if a response is recieved that is not tracked in here, it must be stale
 
+        int last_request_priority; // variable to track allow for priority between different RobotMaster's requests 
+                                   // e.g. ensures shut down request should have priority over all other requests (another update status request cannot override a shutdown request)
+                                   // this should only be used in getMessagesFromMaster and any other nested functions
+
+        bool accepting_requests; // tracks whether the robot is willing to accept request from RobotMaster
+                                 // will be set to false if RobotMaster has told robot to shutdown
+
         RequestHandler* Robot_2_Master_Message_Handler; // pointer to request handler shared by all Robot objects
         RequestHandler* Master_2_Robot_Message_Handler;
+
+        int robot_status; // tracks status of robot within the robot loop
 }; 
 
 #endif

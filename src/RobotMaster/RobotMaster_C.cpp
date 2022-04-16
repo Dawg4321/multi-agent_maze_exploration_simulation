@@ -25,7 +25,7 @@ void RobotMaster_C::move2CellRequest(Message* request){
     }
 
     for(int i = 0; i < tracked_robots.size(); i++){ // simple test to ensure to robots are occupying the same location (this is a critical error)
-        if(tracked_robots[i].robot_position == current_robot_info->robot_position && current_robot_info->robot_id != tracked_robots[i].robot_id)
+        if(tracked_robots[i].robot_position == current_robot_info->robot_position && current_robot_info->robot_id != tracked_robots[i].robot_id && current_robot_info->robot_position != Coordinates(0,0))
             break;
     }
 

@@ -248,6 +248,9 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     temp.robot_id = num_of_added_robots; // assigning id to new robot entry 
     temp.robot_position.x = x;  // assigning position to new robot entry 
     temp.robot_position.y = y;
+    temp.robot_moving = false;
+    temp.robot_target = Coordinates(0,0);
+
     temp.Robot_Message_Reciever = r; // assigning Request handler for Master -> robot communications
 
     if(GlobalMap->nodes[y][x] != 2){ // if the cell has not been marked as seen (e.g. another robot hasnt already been placed in the cell)

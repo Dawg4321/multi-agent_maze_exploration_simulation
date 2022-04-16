@@ -5,6 +5,8 @@ MultiRobot::MultiRobot(unsigned int x, unsigned int y, RequestHandler* outgoing_
     Robot_2_Master_Message_Handler = outgoing_req; // assigning message handler for robot -> master communications
     Master_2_Robot_Message_Handler = new RequestHandler; // assigning message handler for master -> robot communications
 
+    accepting_requests = false; // robot needs to be added to RobotMaster before it can accept requests
+
     transaction_counter = 0; // initializing to 0 as no transactions have occured
 }
 
@@ -43,6 +45,10 @@ int MultiRobot::getMessagesFromMaster(int current_status){ // checking if RobotM
     int new_robot_status; // return variable to update status in RobotLoop
 
     if(request != NULL){ // if there is a a request to handle, process it
+
+        last_request_priority = 10; // reseting last_request priority to a high value
+                                    // if a received RobotMaster request has lower priority than this value
+                                    // set the request priority so only request of same priority value or lower are handled 
         
         do{ // repeatedly process all messages until there are none left
 
@@ -61,7 +67,9 @@ int MultiRobot::getMessagesFromMaster(int current_status){ // checking if RobotM
                 }
             }
             else{ // if message is a request from master
-                new_robot_status = handleMasterRequest(request, current_status);
+                if(accepting_requests){ // if the robot is accepting requests, handle them
+                    new_robot_status = handleMasterRequest(request, current_status);
+                }
             }
 
             // message has been handled, can delete sent data
@@ -90,18 +98,31 @@ int MultiRobot::handleMasterRequest(Message* request, int current_status){
 
         case updateRobotStateRequest_ID: // update robot state
         {   
-            // updating robot state to specified value
-            m_updateRobotStateRequest* data = (m_updateRobotStateRequest*) request->msg_data;
-            new_robot_status = data->target_state;
+            if(last_request_priority >= 1){ // if the current request priority allows for this request to be handled
+                
+                // updating robot state to specified value
+                m_updateRobotStateRequest* data = (m_updateRobotStateRequest*) request->msg_data;
+                new_robot_status = data->target_state;
+                
+                valid_responses.clear(); // clearing valid_responses to cause any outstanding responses to become stale
+                                         // this is done as the update state message overrides any responses after it
 
-            valid_responses.clear(); // clearing valid_responses to cause any outstanding responses to become stale
-                                     // this is done as the update state message overrides any responses after it
+                if(new_robot_status == s_shut_down){ // if robot has been told to shut down
+                    last_request_priority = 0; // set request priority to a value where no future requests will be computed and prevent shutdown
+                }
+                else{ // if robot has not been told to shutdown
+                    last_request_priority = 1; // set priority so lower priority requests are not handled
+                }
+            }
+            else{ // if the request priority is a value which does not allow update robot state request to be handled
+                
+            }
 
             break;
         }
         default:
         {
-            new_robot_status = current_status; // keep current status if improper request is received
+            new_robot_status = current_status; // keep current status if an undefined status is received
 
             break;
         }
@@ -131,6 +152,8 @@ int MultiRobot::handleMasterResponse(Message* response, int current_status){
             m_addRobotResponse* message_response = (m_addRobotResponse*)response_data; // typecasting response data to appropriate format
             
             id = message_response->robot_id; // assigning id to Robot from RobotMaster's response
+
+            accepting_requests = true; // robot master has been added to the system meaning it can now accept requests from the RobotMaster
 
             new_robot_status = current_status; // keep current robot status as master has not told robot to begin exploring
             
@@ -289,5 +312,38 @@ void MultiRobot::updateLocalMap(std::vector<Coordinates>* map_info, std::vector<
         }
     }   
     
+    return;
+}
+
+void MultiRobot::computeScanCell(GridGraph* maze){ // function used to compute the cell scanning funciton of the robot
+    
+    std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
+
+    requestGlobalMapUpdate(connection_data); // sending message to master with scanned maze information
+
+    robot_status = s_pathfind; // setting status to 2 so pathfinding will occur on next loop cycle
+
+    return;
+}
+
+void MultiRobot::computeMove(){ // function used to compute movement of the robot
+
+    bool move_occured = move2Cell(planned_path[0]); // attempt to move robot to next location in planned path queue
+
+    if(move_occured){ // if movement succeed 
+        planned_path.pop_front(); // remove element at start of planned path queue as it has occured 
+    
+        if(planned_path.empty()){ // if there are no more moves to occur, must be at an unscanned cell
+            robot_status = s_scan_cell; // set robot to scan cell on next loop iteration as at desination cell
+        }
+        else{ // if more moves left, try another movement
+            robot_status = s_move_robot;
+        }
+    }
+    else{ // if movement failed
+            planned_path.clear(); // clearing current planned path
+            robot_status = s_pathfind; // attempt to plan a new path which will hopefully not cause movement to faile
+    }
+
     return;
 }

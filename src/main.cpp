@@ -20,11 +20,9 @@ struct TurnControlData{ // struct containing data used by robot and master threa
     
     pthread_mutex_t finished_counter_mutex; // mutexes to protect the counters
 
-    int finished_robots_counter; // tracks number of robots which have completed a turn
+    bool all_robots_completed; // tracks number of robots which have completed a turn
 
-    const int number_of_robots; // constant value of number of robots being simulated
-
-    TurnControlData(int num_robots): number_of_robots(num_robots){
+    TurnControlData(int num_robots){
         // initialzing barrier to number of robots + 1 (all robots + robot master must be waiting before next turn can start/finish)
         pthread_barrier_init(&turn_start_barrier, NULL, num_robots + 1);
         pthread_barrier_init(&turn_end_barrier, NULL, num_robots + 1);
@@ -32,7 +30,7 @@ struct TurnControlData{ // struct containing data used by robot and master threa
         // intialzing pthread mutexes
         pthread_mutex_init(&finished_counter_mutex, NULL);
 
-        finished_robots_counter = 0; // initializing finished_robots to 0 as no robots have finished executing fully
+        all_robots_completed = false; // initializing finished_robots to 0 as no robots have finished executing fully
     }
     ~TurnControlData(){
         // detroying pthread barrier and mutexes
@@ -55,12 +53,12 @@ struct RobotMasterArgs{ // structure to hold args for passing RobotMaster inform
 };
 
 struct RobotArgs{ // structure to hold args for passing robot information into a new thread
-    Robot* Generated_Robot; // dynamically allocated robot
+    MultiRobot* Generated_Robot; // dynamically allocated robot
     GridGraph Maze_Map; // Map of maze used by robot to scan cells
 
     TurnControlData* turn_control; // struct containing info to control robot's turn
 
-    RobotArgs(Robot* R1, GridGraph M, TurnControlData* control_info){
+    RobotArgs(MultiRobot* R1, GridGraph M, TurnControlData* control_info){
         Generated_Robot = R1;
         Maze_Map.nodes = M.nodes;
         Maze_Map.x_edges = M.x_edges;
@@ -69,10 +67,28 @@ struct RobotArgs{ // structure to hold args for passing robot information into a
     }
 };
 
+int getTurns2Wait(int last_status_of_execution){ // returns the number of turns to wait depending on type of request processed
+
+    switch(last_status_of_execution){
+        case s_compute_move: // if robot is currently moving
+        {
+            return 5; // wait a four turns before update master of new position
+        }
+        case s_scan_cell: // if robot is currently scanning a cell
+        {
+            return 2; // wait a turn to before sending scan data to master
+        }
+        default: // if robot performing any other operation
+        {
+            return 1; // don't wait any turns
+        }
+    }
+}
+
 void* robotFunc(void* Robot_Info){ // function for robot running threads
     // gathering passed data
     RobotArgs* Data = (RobotArgs*) Robot_Info; // argument structure containing passed data
-    Robot* R = Data->Generated_Robot; // robot to run in this thread
+    MultiRobot* R = Data->Generated_Robot; // robot to run in this thread
     TurnControlData* TurnControl = Data->turn_control; // turn control mechanisms
 
     R->robotSetUp(); // setting up robot before loop intialization
@@ -88,9 +104,18 @@ void* robotFunc(void* Robot_Info){ // function for robot running threads
 
         if(number_of_turns_to_wait == 0){ // if robot does not have to sit out for a turn, execute robot loop step
 
-            robot_execution_status = R->robotLoopStep(&Data->Maze_Map); // executing one step of the robot loop
+            robot_execution_status = R->robotLoopStepforSimulation(&Data->Maze_Map); // executing one step of the robot loop
  
-            number_of_turns_to_wait++;
+            number_of_turns_to_wait = getTurns2Wait(robot_execution_status); // determing how many turns robot has to sit out for before next operation 
+                                                                             // these turns help give the illusion of time taken for each type of request
+        }
+        else if(number_of_turns_to_wait == 1){ // if there is only 1 turn left to wait, compute the function which has been waiting
+            if(robot_execution_status == s_scan_cell){
+                R->computeScanCell(&Data->Maze_Map);
+            }
+            else if(robot_execution_status == s_compute_move){
+                R->computeMove();
+            }
         }
 
         pthread_barrier_wait(&TurnControl->turn_end_barrier); // waiting for all threads to complete preivous turn initialization before starting next turn
@@ -100,14 +125,25 @@ void* robotFunc(void* Robot_Info){ // function for robot running threads
 
     bool all_robots_done = false; // boolean to track whether all robots have completed their turns
 
-    // safely incrementing finished_robots counter as robot is done exploring
     pthread_mutex_lock(&TurnControl->finished_counter_mutex);
-    TurnControl->finished_robots_counter++;
-    
-    if(TurnControl->finished_robots_counter == TurnControl->number_of_robots){
-        all_robots_done = true;
-    }
+    if(TurnControl->all_robots_completed){ // checking if all robots are completed (e.g. is this the last robot to finish)
+           all_robots_done = true; // no need to utilise barrier to facilitate more turns
+        }
     pthread_mutex_unlock(&TurnControl->finished_counter_mutex);
+
+    while(!all_robots_done){ // loop to allow other robots to complete their turns by using the barriers
+
+        pthread_barrier_wait(&TurnControl->turn_start_barrier); // using various turn control barrier to allow other robots to complete their turns
+        pthread_barrier_wait(&TurnControl->turn_end_barrier);
+
+        // checking if all robots are completed (e.g. does this thread need to keep using the barriers to ensure other threads finish)
+        pthread_mutex_lock(&TurnControl->finished_counter_mutex);
+        if(TurnControl->all_robots_completed){ // all robots have completed their turns 
+           all_robots_done = true; // exit loop as no need to use various barriers anymore
+        }
+        pthread_mutex_unlock(&TurnControl->finished_counter_mutex);
+
+    }
 
     pthread_exit(NULL); // return from thread
 }
@@ -147,6 +183,11 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
         pthread_barrier_wait(&TurnControl->turn_start_barrier); // signalling robots to begin next turn
     }
 
+    // safely telling other threads that all robots have completed their exploration
+    pthread_mutex_lock(&TurnControl->finished_counter_mutex);
+    TurnControl->all_robots_completed = true;
+    pthread_mutex_unlock(&TurnControl->finished_counter_mutex);
+
     pthread_barrier_wait(&TurnControl->turn_end_barrier); // Signalling robot they can finally exit their loop after completion
     
     Data->turn_json["Info"]["Total_Turns_Taken"] = turn_counter;
@@ -156,7 +197,7 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
     pthread_exit(NULL); // return from thread
 }
 
-Robot* getNewRobot(int robot_type, unsigned int x_pos, unsigned int y_pos, RequestHandler* request_handler, unsigned int xsize, unsigned int ysize){
+MultiRobot* getNewRobot(int robot_type, unsigned int x_pos, unsigned int y_pos, RequestHandler* request_handler, unsigned int xsize, unsigned int ysize){
     
     switch(robot_type){ // returning selected robot type
         case 1: // Selecting No Collision, Unintelligent Exploration
@@ -291,7 +332,7 @@ void simulateOneTime(){
     pthread_create(&master_thread, NULL, &controllerFunc, (void*)&RMArgs);
 
     // ~~~ Robot Thread Generation ~~~
-    Robot* Robots_Array[number_of_robots]; // generating array for robots to be stored in
+    MultiRobot* Robots_Array[number_of_robots]; // generating array for robots to be stored in
     RobotArgs* Robot_Thread_Args[number_of_robots]; // generating array for arguments to be passed into robot threads
 
     pthread_t thread_id[number_of_robots]; // creating threads for each robot              
@@ -379,13 +420,13 @@ void testCases(){
     RobotMasterArgs RM1args(RM1, &turn_control_data);
     RM1->setGlobalMap(&g2);
     
-    Robot* R1 = new MultiRobot_NC_IE(4, 0, req, 9, 3);
+    MultiRobot* R1 = new MultiRobot_NC_IE(4, 0, req, 9, 3);
     RobotArgs R1args(R1, g1, &turn_control_data);
     R1->setLocalMap(&g2);
-    Robot* R2 = new MultiRobot_NC_IE(5, 0, req, 9, 3);
+    MultiRobot* R2 = new MultiRobot_NC_IE(5, 0, req, 9, 3);
     RobotArgs R2args(R2, g1, &turn_control_data);
     R2->setLocalMap(&g2);
-    Robot* R3 = new MultiRobot_NC_IE(6, 0, req, 9, 3);
+    MultiRobot* R3 = new MultiRobot_NC_IE(6, 0, req, 9, 3);
     RobotArgs R3args(R3, g1, &turn_control_data);
     R3->setLocalMap(&g2);
 
@@ -417,7 +458,7 @@ void testCases(){
 }
 
 
-void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robots){
+void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robots, vector<Coordinates>* robot_start_positions){
     // ~~~ Turn Tracking System Variable Creation ~~~~
     TurnControlData turn_control_data(number_of_robots);
     
@@ -433,7 +474,7 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
     pthread_create(&master_thread, NULL, &controllerFunc, (void*)&RMArgs);
 
     // ~~~ Robot Thread Generation ~~~
-    Robot* Robots_Array[number_of_robots]; // generating array for robots to be stored in
+    MultiRobot* Robots_Array[number_of_robots]; // generating array for robots to be stored in
     RobotArgs* Robot_Thread_Args[number_of_robots]; // generating array for arguments to be passed into robot threads
 
     pthread_t thread_id[number_of_robots]; // creating threads for each robot              
@@ -441,15 +482,8 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
     for (int i = 0; i < number_of_robots; i++){
         // determining robot position within maze
         int robot_x_position, robot_y_position;
-        /*
-        // x position
-        cout << "Robot " << i <<". set x position:"; 
-        cin >> robot_x_position;
-        // y position
-        cout <<"Robot " << i <<". set y position:";
-        cin >> robot_y_position;*/
 
-        Robots_Array[i] = getNewRobot(type_of_robots, i, i, request_handler, Generated_Maze->getMazeXSize(), Generated_Maze->getMazeYSize());
+        Robots_Array[i] = getNewRobot(type_of_robots, (*robot_start_positions)[i].x, (*robot_start_positions)[i].y, request_handler, Generated_Maze->getMazeXSize(), Generated_Maze->getMazeYSize()); // gathering new robot of specified type and start position
         
         // passing robot into
         Robot_Thread_Args[i] = new RobotArgs(Robots_Array[i], Generated_Maze->getMazeMap(), &turn_control_data);
@@ -490,7 +524,9 @@ void testSwarmSize(){
 
     int number_of_robots;
     cout << "What is maximum number of robots to simulate?\n";
-    cin >> number_of_robots;  
+    cin >> number_of_robots;
+
+    vector<Coordinates> start_positions(number_of_robots, Coordinates(0,0));
 
     for(int i = 0; i < number_of_mazes; i++){
         Maze m;
@@ -498,7 +534,7 @@ void testSwarmSize(){
         m.generateRandomNxNMaze(maze_size, maze_size);
 
         for(int i = 1; i < number_of_robots + 1; i++)
-            runSimulation(&m, i, 3);
+            runSimulation(&m, i, 3, &start_positions);
     }
 
     return;

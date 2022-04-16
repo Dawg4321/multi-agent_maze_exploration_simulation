@@ -24,13 +24,37 @@ void MultiRobot_C_IE::robotSetUp(){
     return;
 }
 
-
 int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
     
     robot_status = getMessagesFromMaster(robot_status); // checking if master wants robot to update status
 
     int status_of_execution = robot_status; // gathering robot_status before exectuion for return purposes
                                             // this must be done before execution as status may update after execution
+
+    computeRobotStatus(maze); // compute a function based off of the robot's status     
+
+    return status_of_execution;
+}
+
+int MultiRobot_C_IE::robotLoopStepforSimulation(GridGraph* maze){ // robot loop step used for simulation to allow for turn delays based off specific requests
+                                                                  // this is meant to be used in conjunction with the turn system, used robotLoopStep if computing without turns
+
+    robot_status = getMessagesFromMaster(robot_status); // checking if master wants robot to update status
+
+    int status_of_execution = robot_status; // gathering robot_status before exectuion for return purposes
+                                            // this must be done before execution as status may update after execution
+
+    // place any states which require more than one turn here
+    if(status_of_execution == s_compute_move || status_of_execution == s_scan_cell){ // if the current robot execution status computation must be delay
+        return status_of_execution;                                                  // exit with status of execution and compute function from main()
+    }
+
+    computeRobotStatus(maze); // compute a function based off of the robot's status  
+
+    return status_of_execution;
+}
+
+void MultiRobot_C_IE::computeRobotStatus(GridGraph* maze){ // function to compute the current robot's status
 
     switch(robot_status){
         case s_exit_loop: // exit status (fully shut off robot)
@@ -43,7 +67,9 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
         {
             requestShutDown(); // notify master that robot is ready to shutdown
 
-            robot_status = s_stand_by; // enter standy to await master response 
+            robot_status = s_stand_by; // enter standy to await master response
+
+            accepting_requests = false; // robot is no longer accepting requests as it has been told to shut down
 
             break;
         }
@@ -55,11 +81,7 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
         }
         case s_scan_cell: // scan cell
         {   
-            std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
-
-            requestGlobalMapUpdate(connection_data); // sending message to master with scanned maze information
-
-            robot_status = s_pathfind; // setting status to 2 so pathfinding will occur on next loop cycle
+            computeScanCell(maze); // computing scan cell
 
             break;
         }
@@ -93,22 +115,8 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
         }
         case s_compute_move: // move robot 1 step
         {   
-            bool move_occured = MultiRobot::move2Cell(planned_path[0]); // attempt to move robot to next location in planned path queue
+            computeMove(); // compute movement request
 
-            if(move_occured){ // if movement succeed 
-                planned_path.pop_front(); // remove element at start of planned path queue as it has occured 
-            
-                if(planned_path.empty()){ // if there are no more moves to occur, must be at an unscanned cell
-                    robot_status = s_scan_cell; // set robot to scan cell on next loop iteration as at desination cell
-                }
-                else{ // if more moves left, try another movement
-                    robot_status = s_move_robot;
-                }
-            }
-            else{ // if movement failed
-                    planned_path.clear(); // clearing current planned path
-                    robot_status = s_pathfind; // attempt to plan a new path which will hopefully not cause movement to faile
-            }
             break;
         }
         case s_pathfind2target:
@@ -129,7 +137,7 @@ int MultiRobot_C_IE::robotLoopStep(GridGraph* maze){
         }
     }
 
-    return status_of_execution;
+    return;
 }
 
 int MultiRobot_C_IE::handleMasterResponse(Message* response, int current_status){
@@ -150,3 +158,4 @@ int MultiRobot_C_IE::handleMasterRequest(Message* response, int current_status){
 
     return new_robot_status; // return changes to status
 }
+

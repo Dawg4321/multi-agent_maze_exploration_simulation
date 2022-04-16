@@ -108,17 +108,24 @@ int MultiRobot_C::handleCollisionRequest(Message* request, int current_status){
     switch (r->request_type){ // determining type of request before processing
 
         case setTargetCell_ID: // setTargetCell
-        {   
-            // updating robot state to specified value
-            m_setTargetCellRequest* data = (m_setTargetCellRequest*) request->msg_data;
-            target_2_pathfind = data->new_target_cell; // passing new target onto robot
+        {
+            if(last_request_priority >= 1){ // if the current request priority allows for this request to be handled
+                // updating robot state to specified value
+                m_setTargetCellRequest* data = (m_setTargetCellRequest*) request->msg_data;
+                target_2_pathfind = data->new_target_cell; // passing new target onto robot
 
-            planned_path.clear(); // clearing planned path as robot needs to create a new path to the new target
+                planned_path.clear(); // clearing planned path as robot needs to create a new path to the new target
 
-            valid_responses.clear(); // clearing valid_responses to cause any outstanding responses to become stale
-                                     // this is done as setTargetCell message overrides any responses after it
+                valid_responses.clear(); // clearing valid_responses to cause any outstanding responses to become stale
+                                        // this is done as setTargetCell message overrides any responses after it
 
-            new_robot_status = s_pathfind2target; // attempt to pathfind to target with new target
+                new_robot_status = s_pathfind2target; // attempt to pathfind to target with new target
+                
+                last_request_priority = 1; // set priority so lower priority requests are not handled
+            }
+            else{ // if the request priority is a value which does not allow set targetcell request to be handled
+                
+            }
 
             break;
         }
