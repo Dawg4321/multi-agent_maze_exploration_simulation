@@ -1,6 +1,6 @@
 #include "Robot.h"
 
-Robot::Robot(unsigned int x, unsigned int y, unsigned int xsize, unsigned int ysize){ // constructor used by child classes to allocate LocalMap
+Robot::Robot(int x, int y, unsigned int xsize, unsigned int ysize){ // constructor used by child classes to allocate LocalMap
     
     x_position = x; // initialising robots current position with passed in values
     y_position = y;
@@ -155,7 +155,7 @@ bool Robot::move2Cell(Coordinates destination){ // overloaded version of move2Ce
     
 }
 
-std::vector<Coordinates> Robot::getValidNeighbours(unsigned int x, unsigned  int y){ // function to gather valid neighbouring cells of a selected cell based on robot's local map
+std::vector<Coordinates> Robot::getValidNeighbours(int x, int y){ // function to gather valid neighbouring cells of a selected cell based on robot's local map
     std::vector<Coordinates> ret_value; // vector of Coordinates to return
                                         // this will contain the coordinates of valid neighbouring nodes
 

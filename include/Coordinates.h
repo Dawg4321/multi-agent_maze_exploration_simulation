@@ -5,8 +5,8 @@
 
 struct Coordinates{ // structure to track x and y coordinates of a position
     // Coordinates data members
-    unsigned int x; // x location
-    unsigned int y; // y location
+    int x; // x location
+    int y; // y location
 
     // Coordinates Constructors
     Coordinates(){
@@ -14,7 +14,7 @@ struct Coordinates{ // structure to track x and y coordinates of a position
         y = 0;
     }
 
-    Coordinates(unsigned int x_pos, unsigned int y_pos){
+    Coordinates(int x_pos, int y_pos){
         x = x_pos;
         y = y_pos;
     }

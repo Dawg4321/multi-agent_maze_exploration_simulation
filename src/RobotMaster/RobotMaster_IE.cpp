@@ -23,9 +23,24 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
     // gathering incoming request data
     m_reserveCellRequest* request_data = (m_reserveCellRequest*)request->msg_data;
 
+    /*    Coordinates target_cell; // variable to store target cell of requesting robot
+
+    unsigned int robot_id = request_data->robot_id;
+    if(request_data->planned_path.size() > 0){
+         target_cell = request_data->planned_path.back();
+    }
+    else{
+        target_cell = NULL_COORDINATE;
+    }  */
+    
     unsigned int robot_id = request_data->robot_id;
     Coordinates target_cell = request_data->planned_path.back();                    
     Coordinates neighbouring_cell = request_data->neighbouring_cell;
+
+    RobotInfo* robot_info = getRobotInfo(robot_id); // gathering robot who wants to reserve the cell
+    
+    robot_info->planned_path.clear(); // clearing planned path and robot moving flag in the event that these are set despite robot not moving
+    robot_info->robot_moving = false;
 
     // return data allocation
     m_reserveCellResponse* response_data = new m_reserveCellResponse; // response message
@@ -43,7 +58,6 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
     }
     else if(reserving_robot == NULL){ // no other robot has reserved the target cell and it has not been explored
         // reserving target cell + updating current planned path
-        RobotInfo* robot_info = getRobotInfo(robot_id);// gathering planned_path for exploration
         robot_info->planned_path = request_data->planned_path; // setting planned path to robot's target
         robot_info->robot_target = target_cell; // gathering robot's target cell
 
@@ -56,13 +70,24 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
     }
     else{ // if the current robot is closer to the target cell than the current reserving robot
         // reserving target cell + updating current planned path
-        RobotInfo* robot_info = getRobotInfo(robot_id);// gathering planned_path for exploration
         robot_info->planned_path = request_data->planned_path; // setting planned path to robot's target
         robot_info->robot_target = target_cell; // gathering robot's target cell 
 
         // telling robot who was previously reserving the target cell to find a new target
         // reserving_robot->planned_path.clear(); // clearing planned path as a new target must be located
         reserving_robot->robot_target = NULL_COORDINATE; // setting robot target to an invalid value as no target is currently assigned
+        
+        if(reserving_robot->robot_moving){ // if the previously reserving robot is currently moving into a cell
+            if(reserving_robot->planned_path.size() > 1){
+                reserving_robot->planned_path.erase(reserving_robot->planned_path.begin() + 1, reserving_robot->planned_path.end());
+            }
+            else{
+
+            }
+        }
+        else{
+            reserving_robot->planned_path.clear();
+        }
 
         updateRobotState(1, reserving_robot->Robot_Message_Reciever); // tell previous reserving robot to find a new target
 

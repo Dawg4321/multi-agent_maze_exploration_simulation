@@ -14,7 +14,7 @@
 class Robot{ // parent class used as a template for further robot implementations for simulation purposes
     public:
         // ** Robot Constructors **
-        Robot(unsigned int x, unsigned int y, unsigned int xsize, unsigned int ysize);
+        Robot(int x, int y, unsigned int xsize, unsigned int ysize);
  
         // ** Destructor **
         virtual ~Robot(); // virtual destructor to ensure child destructor is called during "delete" to base class pointer
@@ -36,7 +36,7 @@ class Robot{ // parent class used as a template for further robot implementation
         virtual void BFS_noPathFound(); // function which handles if a path is not found
         virtual bool BFS_exitCondition(Coordinates* node_to_test); // function used to determine exit condition from BFS_pf2NearestUnknownCell
 
-        std::vector<Coordinates> getValidNeighbours(unsigned int x, unsigned  int y); // gathers valid neighbours of a cell
+        std::vector<Coordinates> getValidNeighbours(int x, int y); // gathers valid neighbours of a cell
                                                                                       // used in pathfinding functions
         // **Printing Functions**
         bool printRobotMaze();
@@ -47,8 +47,8 @@ class Robot{ // parent class used as a template for further robot implementation
         void setLocalMap(GridGraph* new_map); // passes contents of map in robot's LocalMap
 
     protected:
-        unsigned int x_position; // x position within cells 
-        unsigned int y_position; // y position within cells
+        int x_position; // x position within cells 
+        int y_position; // y position within cells
 
         int number_of_unexplored; // number of unexplored cells encountered
 

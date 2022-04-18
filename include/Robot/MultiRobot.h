@@ -16,7 +16,7 @@
 class MultiRobot: public Robot{
     public:
 
-        MultiRobot(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
+        MultiRobot(int x, int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
         virtual ~MultiRobot(); // virtual destructor to ensure child destructor is called during "delete" to base class pointer
         
         bool move2Cell(Coordinates destination); // move robot operation used when exploring using controller

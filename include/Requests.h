@@ -70,8 +70,8 @@ struct m_shutDownResponse:m_genericRequest{ // no response needed to shutdown re
 // ** addRobotRequest Messages **
 struct m_addRobotRequest:m_genericRequest{ // request to notify controller of robot's existance and location
 
-    unsigned int x; // cordinates of robot
-    unsigned int y; // this will be updated in robot information of robot master
+    int x; // cordinates of robot
+    int y; // this will be updated in robot information of robot master
 
     RequestHandler* robot_request_handler; // pointer to request handler for master -> robot communications
 

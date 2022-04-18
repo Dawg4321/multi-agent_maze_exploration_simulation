@@ -1,6 +1,6 @@
 #include "MultiRobot.h"
 
-MultiRobot::MultiRobot(unsigned int x, unsigned int y, RequestHandler* outgoing_req, unsigned int xsize, unsigned int ysize): Robot(x, y, xsize, ysize){
+MultiRobot::MultiRobot(int x, int y, RequestHandler* outgoing_req, unsigned int xsize, unsigned int ysize): Robot(x, y, xsize, ysize){
 
     Robot_2_Master_Message_Handler = outgoing_req; // assigning message handler for robot -> master communications
     Master_2_Robot_Message_Handler = new RequestHandler; // assigning message handler for master -> robot communications
@@ -299,8 +299,8 @@ void MultiRobot::requestGlobalMapUpdate(std::vector<bool> connection_data){
 void MultiRobot::updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status){
 
     for(int i = 0; i < map_info->size(); i++){ // iterate through node information
-        unsigned int x = (*map_info)[i].x; // gathering x and y position for data transfer
-        unsigned int y = (*map_info)[i].y;
+        int x = (*map_info)[i].x; // gathering x and y position for data transfer
+        int y = (*map_info)[i].y;
 
         LocalMap->nodes[y][x] = (*map_status)[i]; // passing map status of cell into LocalMap
         

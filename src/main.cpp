@@ -197,7 +197,7 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
     pthread_exit(NULL); // return from thread
 }
 
-MultiRobot* getNewRobot(int robot_type, unsigned int x_pos, unsigned int y_pos, RequestHandler* request_handler, unsigned int xsize, unsigned int ysize){
+MultiRobot* getNewRobot(int robot_type, int x_pos, int y_pos, RequestHandler* request_handler, unsigned int xsize, unsigned int ysize){
     
     switch(robot_type){ // returning selected robot type
         case 1: // Selecting No Collision, Unintelligent Exploration
@@ -522,18 +522,22 @@ void testSwarmSize(){
     cout << "How many Mazes to generate for tests?\n";
     cin >> number_of_mazes;
 
-    int number_of_robots;
-    cout << "What is maximum number of robots to simulate?\n";
-    cin >> number_of_robots;
+    int min_number_of_robots;
+    cout << "What is minimum number of robots to simulate?\n";
+    cin >> min_number_of_robots;
 
-    vector<Coordinates> start_positions(number_of_robots, Coordinates(0,0));
+    int max_number_of_robots;
+    cout << "What is maximum number of robots to simulate?\n";
+    cin >> max_number_of_robots;
+
+    vector<Coordinates> start_positions(max_number_of_robots, Coordinates(0,0));
 
     for(int i = 0; i < number_of_mazes; i++){
         Maze m;
         
         m.generateRandomNxNMaze(maze_size, maze_size);
 
-        for(int i = 1; i < number_of_robots + 1; i++)
+        for(int i = min_number_of_robots; i < max_number_of_robots + 1; i++)
             runSimulation(&m, i, 3, &start_positions);
     }
 

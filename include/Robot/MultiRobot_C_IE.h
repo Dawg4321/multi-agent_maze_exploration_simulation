@@ -6,7 +6,7 @@
 
 class MultiRobot_C_IE: public MultiRobot_IE, public MultiRobot_C{
     public:
-        MultiRobot_C_IE(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
+        MultiRobot_C_IE(int x, int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
 
         // ** Robot loop function **
         void robotLoop(GridGraph* maze); // loop used by robot for operation
