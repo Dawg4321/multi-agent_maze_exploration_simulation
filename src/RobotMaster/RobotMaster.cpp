@@ -249,7 +249,7 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     temp.robot_position.x = x;  // assigning position to new robot entry 
     temp.robot_position.y = y;
     temp.robot_moving = false;
-    temp.robot_target = Coordinates(0,0);
+    temp.robot_target = NULL_COORDINATE; 
 
     temp.Robot_Message_Reciever = r; // assigning Request handler for Master -> robot communications
 

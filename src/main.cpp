@@ -1,6 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <pthread.h>
+#include <filesystem>
+#include <utility>
+#include <random>
 
 #include "Maze.h"
 #include "RobotMaster_NC_UI.h"
@@ -72,7 +75,7 @@ int getTurns2Wait(int last_status_of_execution){ // returns the number of turns 
     switch(last_status_of_execution){
         case s_compute_move: // if robot is currently moving
         {
-            return 5; // wait a four turns before update master of new position
+            return 10; // wait a four turns before update master of new position
         }
         case s_scan_cell: // if robot is currently scanning a cell
         {
@@ -191,7 +194,7 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
     pthread_barrier_wait(&TurnControl->turn_end_barrier); // Signalling robot they can finally exit their loop after completion
     
     Data->turn_json["Info"]["Total_Turns_Taken"] = turn_counter;
-
+    Data->turn_json["Info"]["Number_of_Robots"] = RM->getNumberofRobots();
     Data->turn_json["Maze_Characteristics"] = { {"X_Size", }, {"Y_Size", }, {"Node_Map", }, {"X_Edges", }, {"Y_Edges"}};
 
     pthread_exit(NULL); // return from thread
@@ -228,10 +231,10 @@ RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHand
     }
 }
 
-bool exportJSON(json json_2_export, string json_name){
+bool exportJSON(json json_2_export, string json_name, string target_directory){
 
 
-    json_name += ".json"; // adding .json extension to passed in name
+    json_name = target_directory + json_name + ".json"; // adding target_directory and .json extension to passed in name
 
     std::ofstream json_file(json_name); // creating file stream to the json file
 
@@ -244,7 +247,7 @@ bool exportJSON(json json_2_export, string json_name){
 
     // failed to open file for export
 
-    cout << "Error: Failed to write to " << json_name << ".json\n";
+    cout << "Error: Failed to write to " << json_name;
 
     return false;
 }
@@ -293,7 +296,7 @@ void simulateOneTime(){
         }
         case 4:
         {
-            Generated_Maze.generateRandomNxNMaze(100,100);
+            Generated_Maze.generateRandomNxNMaze(50,50);
             Generated_Maze.printMaze();
             
             break;
@@ -363,7 +366,7 @@ void simulateOneTime(){
     // ~~~ Awaiting Robot Master Thread Completion ~~~
     pthread_join(master_thread, NULL); // waiting for robot master thread to finish
     
-    exportJSON(RMArgs.turn_json, "Simulation");
+    exportJSON(RMArgs.turn_json, "Simulation", "./");
 
     // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
 
@@ -445,7 +448,7 @@ void testCases(){
     pthread_join(T4, NULL); 
 
     // exporting JSON
-    exportJSON(RM1args.turn_json, "Test_Case");
+    exportJSON(RM1args.turn_json, "Test_Case", "./");
 
     // deleting dynamically allocated data
     delete RM1;
@@ -458,7 +461,7 @@ void testCases(){
 }
 
 
-void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robots, vector<Coordinates>* robot_start_positions){
+void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robots, vector<Coordinates>* robot_start_positions, string export_target_directory){
     // ~~~ Turn Tracking System Variable Creation ~~~~
     TurnControlData turn_control_data(number_of_robots);
     
@@ -480,8 +483,6 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
     pthread_t thread_id[number_of_robots]; // creating threads for each robot              
     
     for (int i = 0; i < number_of_robots; i++){
-        // determining robot position within maze
-        int robot_x_position, robot_y_position;
 
         Robots_Array[i] = getNewRobot(type_of_robots, (*robot_start_positions)[i].x, (*robot_start_positions)[i].y, request_handler, Generated_Maze->getMazeXSize(), Generated_Maze->getMazeYSize()); // gathering new robot of specified type and start position
         
@@ -498,7 +499,7 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
     // ~~~ Awaiting Robot Master Thread Completion ~~~
     pthread_join(master_thread, NULL); // waiting for robot master thread to finish
     
-    exportJSON(RMArgs.turn_json, "Simulation");
+    exportJSON(RMArgs.turn_json, "Simulation", export_target_directory);
 
     // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
 
@@ -508,6 +509,115 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
         delete Robots_Array[i];
 
     delete request_handler; // deleting request handler used by robots
+
+    return;
+}
+
+void testGroupSize(){
+    
+    int maze_size;
+    cout << "What Size Maze to Perform Tests on?\n";
+    cin >> maze_size;
+
+    int number_of_mazes;
+    cout << "How many Mazes to generate for tests?\n";
+    cin >> number_of_mazes;
+
+    int number_of_robots;
+    cout << "What is number of robots to simulate?\n";
+    cin >> number_of_robots;
+    
+    // getting all factor pairs of the number of robots
+    vector<pair<int,int>> group_sizes; // first = number of robots in group, second = number of start positions
+    for(int i = 1; i < number_of_robots + 1; i++){
+        if(number_of_robots % i == 0){ // if the number is a factor
+            group_sizes.push_back(pair<int,int>(i, number_of_robots/i)); // add factor and its pair to group_sizes
+        }
+    }
+
+    string target_directory;
+    cout << "Enter a directory to store results of the simulation:\n";
+    cin >> target_directory;
+
+    json simulation_info;
+    simulation_info["Number_of_Robots"] = number_of_robots;
+    // creating directories for simulation
+    for(int i = 0; i < group_sizes.size(); i++){
+        std::filesystem::create_directories(target_directory + to_string(number_of_robots) + "_group_size_" + to_string(group_sizes[i].first)); // creating parent directories to store robot simulations of various swarm sizes
+        simulation_info["Group_Sizes"].push_back(group_sizes[i].first); // adding group size to simulation_info json 
+    }
+
+    for(int j = 0; j < number_of_mazes; j++){
+
+        for(int i = 0; i < group_sizes.size(); i++){
+
+            vector<Coordinates> start_positions; // vector to store start positions for each robot
+            
+            std::random_device rd; // non-deterministic number generator
+            std::mt19937 rand_location(rd()); // seeding mersenne twister
+            std::uniform_int_distribution<> dist(1, 2*maze_size + 2*(maze_size - 2)); // distribute random value between 1 and the number of border cells
+
+            for(int group_num = 0; group_num < group_sizes[i].second; group_num++){
+                
+                bool valid_location = false; // boolean to track whether the group's start location is valid
+            
+                while(!valid_location){
+                    int chosen_location = dist(rand_location); // choosing a random border cell
+                    Coordinates chosen_start_position;
+
+                    int xpos = 0;
+                    int ypos = 0;
+                    bool cell_found = false;
+                    while(!cell_found){
+                        
+                        chosen_location--;
+                        if(chosen_location == 0){
+                            cell_found = true;
+                            chosen_start_position = Coordinates(xpos,ypos);
+                        }
+                        else{
+                            if(ypos == 0 && xpos < maze_size - 1){
+                                xpos++;
+                            }
+                            else if(xpos == maze_size - 1 && ypos < maze_size - 1){
+                                ypos++;
+                            }
+                            else if(ypos == maze_size - 1 && xpos > 0){
+                                xpos--;
+                            }
+                            else{
+                                ypos--;
+                            }
+                        }
+                    }
+
+                    bool position_already_in_use = false;
+                    for(int k = 0; k < start_positions.size(); k++){
+                        if(chosen_start_position == start_positions[k]){
+                            position_already_in_use = true;
+                        }
+                    }
+
+                    if(!position_already_in_use){
+                        valid_location = true; // setting valid_location to true as a new group start position has been found
+                        for(int k = 0; k < group_sizes[i].first; k++) // adding start positions according to the number of robots in a group
+                            start_positions.push_back(chosen_start_position);
+                    }
+                }
+            }
+            
+
+            Maze m;
+            m.generateRandomNxNMaze(maze_size, maze_size); // generating new random maze
+
+            string directory_for_export = target_directory + to_string(number_of_robots) + "_group_size_" + to_string(group_sizes[i].first) + "/sim_" + to_string(j + 1) +  "/"; // getting directory for target output
+            std::filesystem::create_directories(directory_for_export); // creating child directory to store robot simulation for this test
+
+            runSimulation(&m, number_of_robots, 3, &start_positions, directory_for_export); // running simulation
+        }
+    }
+
+    exportJSON(simulation_info, "Sim_Settings", target_directory);
 
     return;
 }
@@ -530,16 +640,34 @@ void testSwarmSize(){
     cout << "What is maximum number of robots to simulate?\n";
     cin >> max_number_of_robots;
 
+    string target_directory;
+    cout << "Enter a directory to store results of the simulation:\n";
+    cin >> target_directory;
+
+    json simulation_info;
+    // creating directories for simulation
+    for(int i = min_number_of_robots; i <= max_number_of_robots; i++){
+        std::filesystem::create_directories(target_directory + "sim_size_" + to_string(i)); // creating parent directories to store robot simulations of various swarm sizes
+        simulation_info["Robot_Sizes"].push_back(i); // adding swarm size to simulation_info json 
+    }
+
     vector<Coordinates> start_positions(max_number_of_robots, Coordinates(0,0));
 
-    for(int i = 0; i < number_of_mazes; i++){
-        Maze m;
-        
-        m.generateRandomNxNMaze(maze_size, maze_size);
+    for(int j = 0; j < number_of_mazes; j++){
 
-        for(int i = min_number_of_robots; i < max_number_of_robots + 1; i++)
-            runSimulation(&m, i, 3, &start_positions);
+        for(int i = min_number_of_robots; i <= max_number_of_robots; i++){
+            
+            Maze m;
+            m.generateRandomNxNMaze(maze_size, maze_size); // generating new random maze
+
+            string directory_for_export = target_directory + "sim_size_" + to_string(i) + "/sim_" + to_string(j + 1) +  "/"; // getting directory for target output
+            std::filesystem::create_directories(directory_for_export); // creating child directory to store robot simulation for this test
+
+            runSimulation(&m, i, 3, &start_positions, directory_for_export); // running simulation
+        }
     }
+
+    exportJSON(simulation_info, "Sim_Settings", target_directory);
 
     return;
 }
@@ -570,6 +698,11 @@ int main(){
         case 3:
         {
             testSwarmSize();
+            break;
+        }
+        case 4:
+        {
+            testGroupSize();
             break;
         }
     }

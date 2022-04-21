@@ -89,7 +89,7 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
             reserving_robot->planned_path.clear();
         }
 
-        updateRobotState(1, reserving_robot->Robot_Message_Reciever); // tell previous reserving robot to find a new target
+        updateRobotState(2, reserving_robot->Robot_Message_Reciever); // tell previous reserving robot to find a new target
 
         // response data loading
         cell_reserved = true; // cell has been reserved

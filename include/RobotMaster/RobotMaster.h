@@ -48,6 +48,7 @@ class RobotMaster{
         void updateRobotLocationRequest(Message* request);
 
         // ** General Purpose Functions **
+        int getNumberofRobots() { return max_num_of_robots; }
         bool checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable); // checks if a cell is occupied by a robot
 
         int getNumRequestsinQueue(){ return Message_Handler->getNumberofMessages(); } // returns number of requests in RobotMaster's Queue
