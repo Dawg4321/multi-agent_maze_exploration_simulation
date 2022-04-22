@@ -5,7 +5,7 @@
 
 class RobotMaster_C: virtual public RobotMaster{
     protected:
-        RobotMaster_C(unsigned int xsize, unsigned int ysize);
+        RobotMaster_C();
         ~RobotMaster_C();
 
         void move2CellRequest(Message* request); // attempts to reserve a cell for movement

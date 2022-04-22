@@ -1,6 +1,6 @@
 #include "RobotMaster_NC_IE.h"
 
-RobotMaster_NC_IE::RobotMaster_NC_IE(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): RobotMaster(r, num_of_robots, xsize, ysize), RobotMaster_IE(xsize, ysize){
+RobotMaster_NC_IE::RobotMaster_NC_IE(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): RobotMaster(r, num_of_robots, xsize, ysize){
 
 }
 

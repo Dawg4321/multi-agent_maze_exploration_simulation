@@ -5,7 +5,7 @@ import os
 import analysis_functions
 from scipy.stats import entropy
 
-parent_directory = "/home/ryan/maze_simulations/test/"
+parent_directory = "/home/ryan/code/git_workspace/junk/"
 
 evaluation_settings_name = "Sim_Settings.json"
 simulation_json_name = "Simulation.json"

@@ -1,6 +1,6 @@
 #include "RobotMaster_IE.h"
 
-RobotMaster_IE::RobotMaster_IE(unsigned int xsize, unsigned int ysize){
+RobotMaster_IE::RobotMaster_IE(){
 
 }
 
@@ -22,16 +22,6 @@ void RobotMaster_IE::reserveCellRequest(Message* request){
 
     // gathering incoming request data
     m_reserveCellRequest* request_data = (m_reserveCellRequest*)request->msg_data;
-
-    /*    Coordinates target_cell; // variable to store target cell of requesting robot
-
-    unsigned int robot_id = request_data->robot_id;
-    if(request_data->planned_path.size() > 0){
-         target_cell = request_data->planned_path.back();
-    }
-    else{
-        target_cell = NULL_COORDINATE;
-    }  */
     
     unsigned int robot_id = request_data->robot_id;
     Coordinates target_cell = request_data->planned_path.back();                    

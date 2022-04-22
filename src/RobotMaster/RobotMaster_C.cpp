@@ -1,6 +1,6 @@
 #include "RobotMaster_C.h"
 
-RobotMaster_C::RobotMaster_C(unsigned int xsize, unsigned int ysize){
+RobotMaster_C::RobotMaster_C(){
 
 }
 

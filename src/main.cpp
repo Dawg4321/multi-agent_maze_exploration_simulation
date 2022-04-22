@@ -9,6 +9,7 @@
 #include "RobotMaster_NC_UI.h"
 #include "RobotMaster_NC_IE.h"
 #include "RobotMaster_C_IE.h"
+#include "RobotMaster_C_IE_V2.h"
 #include "MultiRobot_NC_UI.h"
 #include "MultiRobot_NC_IE.h"
 #include "MultiRobot_C_IE.h"
@@ -212,6 +213,7 @@ MultiRobot* getNewRobot(int robot_type, int x_pos, int y_pos, RequestHandler* re
             return new MultiRobot_NC_IE(x_pos, y_pos, request_handler, xsize, ysize);
         }
         case 3:
+        case 4:
         {
             return new MultiRobot_C_IE(x_pos, y_pos, request_handler, xsize, ysize);
         }
@@ -227,6 +229,9 @@ RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHand
         return new RobotMaster_NC_IE(request_handler, number_of_robots, xsize, ysize);
     }
     else if(robot_type == 3){ // if the robots to simulate are of type C_IE
+        return new RobotMaster_C_IE(request_handler, number_of_robots, xsize, ysize);
+    }
+    else if(robot_type == 4){
         return new RobotMaster_C_IE(request_handler, number_of_robots, xsize, ysize);
     }
 }
@@ -663,7 +668,7 @@ void testSwarmSize(){
             string directory_for_export = target_directory + "sim_size_" + to_string(i) + "/sim_" + to_string(j + 1) +  "/"; // getting directory for target output
             std::filesystem::create_directories(directory_for_export); // creating child directory to store robot simulation for this test
 
-            runSimulation(&m, i, 3, &start_positions, directory_for_export); // running simulation
+            runSimulation(&m, i, 4, &start_positions, directory_for_export); // running simulation
         }
     }
 

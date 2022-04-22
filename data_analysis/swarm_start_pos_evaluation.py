@@ -109,7 +109,7 @@ for num_of_used_robots in num_of_used_robots_matrix:
 plt.figure()
 plt.scatter(number_of_robots_list, average_used_robots)
 plt.scatter(number_of_robots_list, std_used_robots)
-plt.title("Average number of agents used to map the maze")
+plt.title("Average number of agents used in mapping")
 plt.ylabel("Number of Agents Used")
 plt.xlabel("Number of Agents in a Group")
 plt.legend(["Number of Agents Used", "Standard Deviation"])
