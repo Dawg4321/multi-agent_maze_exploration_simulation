@@ -232,7 +232,7 @@ RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHand
         return new RobotMaster_C_IE(request_handler, number_of_robots, xsize, ysize);
     }
     else if(robot_type == 4){
-        return new RobotMaster_C_IE(request_handler, number_of_robots, xsize, ysize);
+        return new RobotMaster_C_IE_V2(request_handler, number_of_robots, xsize, ysize);
     }
 }
 

@@ -5,7 +5,7 @@ import os
 import analysis_functions
 from scipy.stats import entropy
 
-parent_directory = "/home/ryan/code/git_workspace/junk/"
+parent_directory = "/home/ryan_work/Desktop/temp/"
 
 evaluation_settings_name = "Sim_Settings.json"
 simulation_json_name = "Simulation.json"
