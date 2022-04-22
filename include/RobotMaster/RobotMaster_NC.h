@@ -3,10 +3,10 @@
 
 #include "RobotMaster.h"
 
-class RobotMaster_NC_UI: public RobotMaster{
+class RobotMaster_NC: public RobotMaster{
     public:
-        RobotMaster_NC_UI(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize);
-        ~RobotMaster_NC_UI();
+        RobotMaster_NC(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize);
+        ~RobotMaster_NC();
 
         void handleIncomingRequest(Message* m); // processes all requests except shutdown notifications
 

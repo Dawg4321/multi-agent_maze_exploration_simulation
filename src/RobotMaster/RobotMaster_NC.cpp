@@ -1,14 +1,14 @@
-#include "RobotMaster_NC_UI.h"
+#include "RobotMaster_NC.h"
 
-RobotMaster_NC_UI::RobotMaster_NC_UI(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): RobotMaster(r, num_of_robots, xsize, ysize){
-
-}
-
-RobotMaster_NC_UI::~RobotMaster_NC_UI(){
+RobotMaster_NC::RobotMaster_NC(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): RobotMaster(r, num_of_robots, xsize, ysize){
 
 }
 
-void RobotMaster_NC_UI::handleIncomingRequest(Message* incoming_request){
+RobotMaster_NC::~RobotMaster_NC(){
+
+}
+
+void RobotMaster_NC::handleIncomingRequest(Message* incoming_request){
 
     m_genericRequest* r = (m_genericRequest*) incoming_request->msg_data; // use generic message pointer to gather request type
 
@@ -51,7 +51,7 @@ void RobotMaster_NC_UI::handleIncomingRequest(Message* incoming_request){
     return;
 }
 
-void RobotMaster_NC_UI::updateRobotLocation(unsigned int* id, Coordinates* C){ // updates the location of a robot to the location specified
+void RobotMaster_NC::updateRobotLocation(unsigned int* id, Coordinates* C){ // updates the location of a robot to the location specified
 
     for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update
         if (tracked_robots[i].robot_id == *id){ // if robot found using id

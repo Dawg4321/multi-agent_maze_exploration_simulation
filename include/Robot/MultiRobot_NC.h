@@ -1,12 +1,12 @@
-#ifndef MULTIROBOT_NC_UI_H
-#define MULTIROBOT_NC_UI_H
+#ifndef MULTIROBOT_NC_H
+#define MULTIROBOT_NC_H
 
 #include "MultiRobot.h"
 
-class MultiRobot_NC_UI: public MultiRobot{
+class MultiRobot_NC: public MultiRobot{
     public:
 
-        MultiRobot_NC_UI(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
+        MultiRobot_NC(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
 
         // ** Robot loop functions **
         void robotLoop(GridGraph* maze); // loop used by robot for operation

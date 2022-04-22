@@ -6,12 +6,12 @@
 #include <random>
 
 #include "Maze.h"
-#include "RobotMaster_NC_UI.h"
-#include "RobotMaster_NC_IE.h"
+#include "RobotMaster_NC.h"
+#include "RobotMaster_NC_Greedy.h"
 #include "RobotMaster_C_Greedy.h"
 #include "RobotMaster_C_FCFS.h"
-#include "MultiRobot_NC_UI.h"
-#include "MultiRobot_NC_IE.h"
+#include "MultiRobot_NC.h"
+#include "MultiRobot_NC_CellReservation.h"
 #include "MultiRobot_C_CellReservation.h"
 
 using namespace std;
@@ -206,11 +206,11 @@ MultiRobot* getNewRobot(int robot_type, int x_pos, int y_pos, RequestHandler* re
     switch(robot_type){ // returning selected robot type
         case 1: // Selecting No Collision, Unintelligent Exploration
         {
-            return new MultiRobot_NC_UI(x_pos, y_pos, request_handler, xsize, ysize);
+            return new MultiRobot_NC(x_pos, y_pos, request_handler, xsize, ysize);
         }
         case 2: // Selecting No Collision, Intelligent Exploration
         {
-            return new MultiRobot_NC_IE(x_pos, y_pos, request_handler, xsize, ysize);
+            return new MultiRobot_NC_CellReservation(x_pos, y_pos, request_handler, xsize, ysize);
         }
         case 3:
         case 4:
@@ -223,10 +223,10 @@ MultiRobot* getNewRobot(int robot_type, int x_pos, int y_pos, RequestHandler* re
 RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHandler* request_handler, unsigned int xsize, unsigned int ysize){
     
     if(robot_type == 1){ // if the robots to simulate are of type NC_UI
-        return new RobotMaster_NC_UI(request_handler, number_of_robots, xsize, ysize);
+        return new RobotMaster_NC(request_handler, number_of_robots, xsize, ysize);
     }
     else if(robot_type == 2){ // if the robots to simulate are of type NC_IE
-        return new RobotMaster_NC_IE(request_handler, number_of_robots, xsize, ysize);
+        return new RobotMaster_NC_Greedy(request_handler, number_of_robots, xsize, ysize);
     }
     else if(robot_type == 3){ // if the robots to simulate are of type C_IE
         return new RobotMaster_C_Greedy(request_handler, number_of_robots, xsize, ysize);
@@ -424,17 +424,17 @@ void testCases(){
                   {0, 0, 0, 0, 0, 0, 0, 0, 0}};
                 
     // initialzing robot positions
-    RobotMaster* RM1 = new RobotMaster_NC_IE(req, num_robots, 9, 3);
+    RobotMaster* RM1 = new RobotMaster_NC_Greedy(req, num_robots, 9, 3);
     RobotMasterArgs RM1args(RM1, &turn_control_data);
     RM1->setGlobalMap(&g2);
     
-    MultiRobot* R1 = new MultiRobot_NC_IE(4, 0, req, 9, 3);
+    MultiRobot* R1 = new MultiRobot_NC_CellReservation(4, 0, req, 9, 3);
     RobotArgs R1args(R1, g1, &turn_control_data);
     R1->setLocalMap(&g2);
-    MultiRobot* R2 = new MultiRobot_NC_IE(5, 0, req, 9, 3);
+    MultiRobot* R2 = new MultiRobot_NC_CellReservation(5, 0, req, 9, 3);
     RobotArgs R2args(R2, g1, &turn_control_data);
     R2->setLocalMap(&g2);
-    MultiRobot* R3 = new MultiRobot_NC_IE(6, 0, req, 9, 3);
+    MultiRobot* R3 = new MultiRobot_NC_CellReservation(6, 0, req, 9, 3);
     RobotArgs R3args(R3, g1, &turn_control_data);
     R3->setLocalMap(&g2);
 

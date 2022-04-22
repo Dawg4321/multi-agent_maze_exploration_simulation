@@ -1,10 +1,10 @@
-#include "MultiRobot_NC_UI.h"
+#include "MultiRobot_NC.h"
 
-MultiRobot_NC_UI::MultiRobot_NC_UI(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize): MultiRobot(x, y, r, xsize, ysize){
+MultiRobot_NC::MultiRobot_NC(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize): MultiRobot(x, y, r, xsize, ysize){
 
 }
 
-void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
+void MultiRobot_NC::robotLoop(GridGraph* maze){
 
     robotSetUp(); // call start up function before the robot loop
 
@@ -15,7 +15,7 @@ void MultiRobot_NC_UI::robotLoop(GridGraph* maze){
     return;
 }
 
-void MultiRobot_NC_UI::robotSetUp(){
+void MultiRobot_NC::robotSetUp(){
 
     assignIdFromMaster(); // getting id from robotmaster before begining robot exploration
 
@@ -24,7 +24,7 @@ void MultiRobot_NC_UI::robotSetUp(){
     return;
 }
 
-int MultiRobot_NC_UI::robotLoopStep(GridGraph* maze){
+int MultiRobot_NC::robotLoopStep(GridGraph* maze){
 
     robot_status = getMessagesFromMaster(robot_status); // checking if master wants robot to update status
 
@@ -36,7 +36,7 @@ int MultiRobot_NC_UI::robotLoopStep(GridGraph* maze){
     return status_of_execution; // return what robot did during this iteration of the loop
 }
 
-int MultiRobot_NC_UI::robotLoopStepforSimulation(GridGraph* maze){ // robot loop step used for simulation to allow for turn delays based off specific requests
+int MultiRobot_NC::robotLoopStepforSimulation(GridGraph* maze){ // robot loop step used for simulation to allow for turn delays based off specific requests
                                                                    // this is meant to be used in conjunction with the turn system, used robotLoopStep if computing without turns
 
     robot_status = getMessagesFromMaster(robot_status); // checking if master wants robot to update status
@@ -57,7 +57,7 @@ int MultiRobot_NC_UI::robotLoopStepforSimulation(GridGraph* maze){ // robot loop
     return status_of_execution;
 }
 
-void MultiRobot_NC_UI::computeRobotStatus(GridGraph* maze){
+void MultiRobot_NC::computeRobotStatus(GridGraph* maze){
     
     switch(robot_status){
         case s_exit_loop: // exit status (fully shut off robot)

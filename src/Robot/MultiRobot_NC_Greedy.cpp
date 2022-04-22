@@ -1,10 +1,10 @@
-#include "MultiRobot_NC_IE.h"
+#include "MultiRobot_NC_CellReservation.h"
 
-MultiRobot_NC_IE::MultiRobot_NC_IE(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize): MultiRobot(x, y, r, xsize, ysize){
+MultiRobot_NC_CellReservation::MultiRobot_NC_CellReservation(unsigned int x, unsigned int y, RequestHandler* r, unsigned int xsize, unsigned int ysize): MultiRobot(x, y, r, xsize, ysize){
 
 }
 
-void MultiRobot_NC_IE::robotLoop(GridGraph* maze){
+void MultiRobot_NC_CellReservation::robotLoop(GridGraph* maze){
     
     robotSetUp(); // call start up function before the robot loop
 
@@ -15,7 +15,7 @@ void MultiRobot_NC_IE::robotLoop(GridGraph* maze){
     return;
 }
 
-void MultiRobot_NC_IE::robotSetUp(){
+void MultiRobot_NC_CellReservation::robotSetUp(){
 
     assignIdFromMaster(); // getting id from robotmaster before begining robot exploration
 
@@ -27,7 +27,7 @@ void MultiRobot_NC_IE::robotSetUp(){
 
 
 
-int MultiRobot_NC_IE::robotLoopStep(GridGraph* maze){
+int MultiRobot_NC_CellReservation::robotLoopStep(GridGraph* maze){
     
     robot_status = getMessagesFromMaster(robot_status); // checking if master wants robot to update status
 
@@ -39,7 +39,7 @@ int MultiRobot_NC_IE::robotLoopStep(GridGraph* maze){
     return status_of_execution;
 }
 
-int MultiRobot_NC_IE::robotLoopStepforSimulation(GridGraph* maze){ // robot loop step used for simulation to allow for turn delays based off specific requests
+int MultiRobot_NC_CellReservation::robotLoopStepforSimulation(GridGraph* maze){ // robot loop step used for simulation to allow for turn delays based off specific requests
                                                                    // this is meant to be used in conjunction with the turn system, used robotLoopStep if computing without turns
 
     robot_status = getMessagesFromMaster(robot_status); // checking if master wants robot to update status
@@ -60,7 +60,7 @@ int MultiRobot_NC_IE::robotLoopStepforSimulation(GridGraph* maze){ // robot loop
     return status_of_execution;
 }
 
-void MultiRobot_NC_IE::computeRobotStatus(GridGraph* maze){
+void MultiRobot_NC_CellReservation::computeRobotStatus(GridGraph* maze){
 
     switch(robot_status){
         case s_exit_loop: // exit status (fully shut off robot)
@@ -135,7 +135,7 @@ void MultiRobot_NC_IE::computeRobotStatus(GridGraph* maze){
     }
 }
 
-int MultiRobot_NC_IE::handleMasterResponse(Message* response, int current_status){
+int MultiRobot_NC_CellReservation::handleMasterResponse(Message* response, int current_status){
 
     current_status = handleCellReserveResponse(response, current_status); // attempt to handle reserve response
 
