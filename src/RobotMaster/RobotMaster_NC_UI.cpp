@@ -50,3 +50,15 @@ void RobotMaster_NC_UI::handleIncomingRequest(Message* incoming_request){
 
     return;
 }
+
+void RobotMaster_NC_UI::updateRobotLocation(unsigned int* id, Coordinates* C){ // updates the location of a robot to the location specified
+
+    for(int i = 0; i < tracked_robots.size(); i++){ // finding robot to update
+        if (tracked_robots[i].robot_id == *id){ // if robot found using id
+            tracked_robots[i].robot_position = *C; // update position in RobotInfo
+            break; 
+        }
+    }
+
+    return;
+}

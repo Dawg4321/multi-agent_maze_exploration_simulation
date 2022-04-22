@@ -18,7 +18,7 @@ void RobotMaster_FCFS::handleAlreadyReservedCell(RobotInfo* current_robot, Robot
         
         reserving_robot->robot_target = NULL_COORDINATE; // setting robot target to an invalid value as previous robot now has no currently reserved cell
         
-        if(reserving_robot->robot_moving){ // if the previously reserving robot is currently moving into a cell
+        /*if(reserving_robot->robot_moving){ // if the previously reserving robot is currently moving into a cell
             if(reserving_robot->planned_path.size() > 1){
                 reserving_robot->planned_path.erase(reserving_robot->planned_path.begin() + 1, reserving_robot->planned_path.end());
             }
@@ -28,7 +28,7 @@ void RobotMaster_FCFS::handleAlreadyReservedCell(RobotInfo* current_robot, Robot
         }
         else{
             reserving_robot->planned_path.clear();
-        }
+        }*/
 
         updateRobotState(2, reserving_robot->Robot_Message_Reciever); // tell previous reserving robot to find a new target
 

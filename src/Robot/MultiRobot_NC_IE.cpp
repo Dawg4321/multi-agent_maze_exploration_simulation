@@ -25,12 +25,42 @@ void MultiRobot_NC_IE::robotSetUp(){
 }
 
 
+
+
 int MultiRobot_NC_IE::robotLoopStep(GridGraph* maze){
     
     robot_status = getMessagesFromMaster(robot_status); // checking if master wants robot to update status
 
     int status_of_execution = robot_status; // gathering robot_status before exectuion for return purposes
                                             // this must be done before execution as status may update after execution
+
+    computeRobotStatus(maze); // compute a function based off of the robot's status
+
+    return status_of_execution;
+}
+
+int MultiRobot_NC_IE::robotLoopStepforSimulation(GridGraph* maze){ // robot loop step used for simulation to allow for turn delays based off specific requests
+                                                                   // this is meant to be used in conjunction with the turn system, used robotLoopStep if computing without turns
+
+    robot_status = getMessagesFromMaster(robot_status); // checking if master wants robot to update status
+
+    int status_of_execution = robot_status; // gathering robot_status before exectuion for return purposes
+                                            // this must be done before execution as status may update after execution
+
+    // place any states which require more than one turn here
+    if(status_of_execution == s_scan_cell){ // if the current robot execution status computation must be delay
+        return status_of_execution;         // exit with status of execution and compute function from main()
+    }
+    else if(status_of_execution == s_move_robot){ // need to handle special case if robot is computing a move
+        return s_compute_move;                    // this needs to be done as simulator has been programmed to use s_compute_move as the status to trigger movement delay
+    }
+
+    computeRobotStatus(maze); // compute a function based off of the robot's status  
+
+    return status_of_execution;
+}
+
+void MultiRobot_NC_IE::computeRobotStatus(GridGraph* maze){
 
     switch(robot_status){
         case s_exit_loop: // exit status (fully shut off robot)
@@ -65,7 +95,6 @@ int MultiRobot_NC_IE::robotLoopStep(GridGraph* maze){
         }
         case s_pathfind: // planned path
         {   
-            bool cell_reserved = false;
 
             // repeat loop until cell which is being planned to has been reserved
             
@@ -73,7 +102,7 @@ int MultiRobot_NC_IE::robotLoopStep(GridGraph* maze){
 
             if(path_found){
                 requestReserveCell();
-            
+
                 robot_status = s_stand_by; // must wait for response
             }
             else{
@@ -104,8 +133,6 @@ int MultiRobot_NC_IE::robotLoopStep(GridGraph* maze){
             break;
         }
     }
-
-    return status_of_execution;
 }
 
 int MultiRobot_NC_IE::handleMasterResponse(Message* response, int current_status){

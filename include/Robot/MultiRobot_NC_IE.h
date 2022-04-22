@@ -13,10 +13,12 @@ class MultiRobot_NC_IE: public MultiRobot_CellReservation{
         int robotLoopStep(GridGraph* maze); // function used within each iteration of a robot's loop
                                             // returns the value of the robot's status after iteration
 
+        int robotLoopStepforSimulation(GridGraph* maze); // robot loop step used for simulation to allow for turn delays based off specific requests
+                                                         // must be used with turn based simulation system  
+                                                         
         int  handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
         
-    private:
-        int robot_status; // tracks status of robot within the robot loop
+        void computeRobotStatus(GridGraph* maze); // function which computes a function based off the robot's current status
 }; 
 
 #endif

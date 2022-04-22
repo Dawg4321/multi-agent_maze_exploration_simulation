@@ -9,6 +9,8 @@ class RobotMaster_NC_UI: public RobotMaster{
         ~RobotMaster_NC_UI();
 
         void handleIncomingRequest(Message* m); // processes all requests except shutdown notifications
+
+        void updateRobotLocation(unsigned int* id, Coordinates* C); // updates the location of a robot to the location specified
 };
 
 #endif
