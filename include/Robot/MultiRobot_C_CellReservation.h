@@ -2,9 +2,9 @@
 #define MULTIROBOT_C_IE_H
 
 #include "MultiRobot_C.h"
-#include "MultiRobot_IE.h"
+#include "MultiRobot_CellReservation.h"
 
-class MultiRobot_C_IE: public MultiRobot_IE, public MultiRobot_C{
+class MultiRobot_C_IE: public MultiRobot_CellReservation, public MultiRobot_C{
     public:
         MultiRobot_C_IE(int x, int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
 

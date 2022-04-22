@@ -1,16 +1,16 @@
-#include "RobotMaster_IE.h"
+#include "RobotMaster_Greedy.h"
 
-RobotMaster_IE::RobotMaster_IE(){
+RobotMaster_Greedy::RobotMaster_Greedy(){
 
 }
 
-RobotMaster_IE::~RobotMaster_IE(){
+RobotMaster_Greedy::~RobotMaster_Greedy(){
 
 }
 
 // function to handle if there is two robots who are reserving the same cell
 // this is the "greedy" implementation (e.g. if two robots are reserving the same cell, let the closer robot keep the reservation)
-void RobotMaster_IE::handleAlreadyReservedCell(RobotInfo* current_robot, RobotInfo* reserving_robot, m_reserveCellRequest* request_data, m_reserveCellResponse* response_data, Coordinates target_cell){
+void RobotMaster_Greedy::handleAlreadyReservedCell(RobotInfo* current_robot, RobotInfo* reserving_robot, m_reserveCellRequest* request_data, m_reserveCellResponse* response_data, Coordinates target_cell){
     
     if(reserving_robot->planned_path.size() <= request_data->planned_path.size()){ // if the target cell has already been reserved and the reserving robot is closer to the target
         response_data->target_cell = target_cell; // adding target cell to response so robot knows which cell is already reserved by another robot

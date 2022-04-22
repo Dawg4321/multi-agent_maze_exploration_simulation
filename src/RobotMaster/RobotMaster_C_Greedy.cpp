@@ -1,14 +1,14 @@
-#include "RobotMaster_C_IE.h"
+#include "RobotMaster_C_Greedy.h"
 
-RobotMaster_C_IE::RobotMaster_C_IE(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): RobotMaster(r, num_of_robots, xsize, ysize){
-
-}
-
-RobotMaster_C_IE::~RobotMaster_C_IE(){
+RobotMaster_C_Greedy::RobotMaster_C_Greedy(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): RobotMaster(r, num_of_robots, xsize, ysize){
 
 }
 
-void RobotMaster_C_IE::handleIncomingRequest(Message* incoming_request){
+RobotMaster_C_Greedy::~RobotMaster_C_Greedy(){
+
+}
+
+void RobotMaster_C_Greedy::handleIncomingRequest(Message* incoming_request){
 
     m_genericRequest* r = (m_genericRequest*) incoming_request->msg_data; // use generic message pointer to gather request type
 

@@ -1,13 +1,13 @@
-#ifndef MULTIROBOT_IE_H
-#define MULTIROBOT_IE_H
+#ifndef MULTIROBOT_CELLRESERVATION_H
+#define MULTIROBOT_CELLRESERVATION_H
 
 #include "MultiRobot.h"
 
-class MultiRobot_IE: virtual public MultiRobot{
+class MultiRobot_CellReservation: virtual public MultiRobot{
     public:
 
-        MultiRobot_IE(); // constructor for multi-robot collision
-        virtual ~MultiRobot_IE(); // virtual destructor to ensure child destructor is called during "delete" to base class pointer
+        MultiRobot_CellReservation(); // constructor for multi-robot collision
+        virtual ~MultiRobot_CellReservation(); // virtual destructor to ensure child destructor is called during "delete" to base class pointer
 
         void requestReserveCell(); // attempts to reserve a cell to explore from the RobotMaster
                                    // if cell to reserve fails, LocalMap is updated with GlobalMap information

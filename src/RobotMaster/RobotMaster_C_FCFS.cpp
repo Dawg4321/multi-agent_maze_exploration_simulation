@@ -1,14 +1,14 @@
-#include "RobotMaster_C_IE_V2.h"
+#include "RobotMaster_C_FCFS.h"
 
-RobotMaster_C_IE_V2::RobotMaster_C_IE_V2(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): RobotMaster(r, num_of_robots, xsize, ysize){
-
-}
-
-RobotMaster_C_IE_V2::~RobotMaster_C_IE_V2(){
+RobotMaster_C_FCFS::RobotMaster_C_FCFS(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): RobotMaster(r, num_of_robots, xsize, ysize){
 
 }
 
-void RobotMaster_C_IE_V2::handleIncomingRequest(Message* incoming_request){
+RobotMaster_C_FCFS::~RobotMaster_C_FCFS(){
+
+}
+
+void RobotMaster_C_FCFS::handleIncomingRequest(Message* incoming_request){
 
     m_genericRequest* r = (m_genericRequest*) incoming_request->msg_data; // use generic message pointer to gather request type
 

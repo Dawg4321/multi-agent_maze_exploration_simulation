@@ -8,11 +8,11 @@
 #include "Maze.h"
 #include "RobotMaster_NC_UI.h"
 #include "RobotMaster_NC_IE.h"
-#include "RobotMaster_C_IE.h"
-#include "RobotMaster_C_IE_V2.h"
+#include "RobotMaster_C_Greedy.h"
+#include "RobotMaster_C_FCFS.h"
 #include "MultiRobot_NC_UI.h"
 #include "MultiRobot_NC_IE.h"
-#include "MultiRobot_C_IE.h"
+#include "MultiRobot_C_CellReservation.h"
 
 using namespace std;
 
@@ -229,10 +229,10 @@ RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHand
         return new RobotMaster_NC_IE(request_handler, number_of_robots, xsize, ysize);
     }
     else if(robot_type == 3){ // if the robots to simulate are of type C_IE
-        return new RobotMaster_C_IE(request_handler, number_of_robots, xsize, ysize);
+        return new RobotMaster_C_Greedy(request_handler, number_of_robots, xsize, ysize);
     }
     else if(robot_type == 4){
-        return new RobotMaster_C_IE_V2(request_handler, number_of_robots, xsize, ysize);
+        return new RobotMaster_C_FCFS(request_handler, number_of_robots, xsize, ysize);
     }
 }
 

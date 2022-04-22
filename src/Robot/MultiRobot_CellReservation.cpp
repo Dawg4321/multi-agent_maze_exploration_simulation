@@ -1,14 +1,14 @@
-#include "MultiRobot_IE.h"
+#include "MultiRobot_CellReservation.h"
 
-MultiRobot_IE::MultiRobot_IE(){
-
-}
-
-MultiRobot_IE::~MultiRobot_IE(){
+MultiRobot_CellReservation::MultiRobot_CellReservation(){
 
 }
 
-void MultiRobot_IE::requestReserveCell(){
+MultiRobot_CellReservation::~MultiRobot_CellReservation(){
+
+}
+
+void MultiRobot_CellReservation::requestReserveCell(){
     
     transaction_counter++; // incrementing transaction counter as new request is being sent
 
@@ -41,7 +41,7 @@ void MultiRobot_IE::requestReserveCell(){
 }
 
 
-int MultiRobot_IE::handleCellReserveResponse(Message* response, int current_status){
+int MultiRobot_CellReservation::handleCellReserveResponse(Message* response, int current_status){
         
     // gathering response type for switch statement
     m_genericRequest* response_data = (m_genericRequest*) response->msg_data; // use generic message pointer to gather request type
@@ -83,7 +83,7 @@ int MultiRobot_IE::handleCellReserveResponse(Message* response, int current_stat
     return new_robot_status;
 }
 
-bool MultiRobot_IE::isCellAlreadyReserved(Coordinates *C){ // checks if a cell is already reserved by another robot
+bool MultiRobot_CellReservation::isCellAlreadyReserved(Coordinates *C){ // checks if a cell is already reserved by another robot
 
     for(int i = 0; i < already_reserved_cells.size(); i++){
         if(already_reserved_cells[i] == *C){ // if cell is already reserved
@@ -94,11 +94,11 @@ bool MultiRobot_IE::isCellAlreadyReserved(Coordinates *C){ // checks if a cell i
     return false; // if cell is not already reserved
 }
 
-bool MultiRobot_IE::BFS_exitCondition(Coordinates* node_to_test){ // overriden pathfinding exit condition
+bool MultiRobot_CellReservation::BFS_exitCondition(Coordinates* node_to_test){ // overriden pathfinding exit condition
     return (Robot::BFS_exitCondition(node_to_test) && !isCellAlreadyReserved(node_to_test)); // return true if cell is not reserved and is unexplored
 }
 
-void MultiRobot_IE::BFS_noPathFound(){
+void MultiRobot_CellReservation::BFS_noPathFound(){
     already_reserved_cells.clear(); // clearing already reserved cells as no unreserved cell found
                                     // these cells should be queried again by robot
 

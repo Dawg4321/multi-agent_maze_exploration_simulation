@@ -1,4 +1,4 @@
-#include "MultiRobot_C_IE.h"
+#include "MultiRobot_C_CellReservation.h"
 
 MultiRobot_C_IE::MultiRobot_C_IE(int x, int y, RequestHandler* r, unsigned int xsize, unsigned int ysize): MultiRobot(x, y, r, xsize, ysize){
 

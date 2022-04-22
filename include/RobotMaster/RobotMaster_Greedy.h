@@ -1,15 +1,15 @@
-#ifndef ROBOTMASTER_IE_H
-#define ROBOTMASTER_IE_H
+#ifndef ROBOTMASTER_GREEDY_H
+#define ROBOTMASTER_GREEDY_H
 
 #include "RobotMaster_CellReservation.h"
 
-class RobotMaster_IE: virtual public RobotMaster_CellReservation{
+class RobotMaster_Greedy: virtual public RobotMaster_CellReservation{
     protected:
-        RobotMaster_IE();
-        ~RobotMaster_IE();
+
+        RobotMaster_Greedy();
+        ~RobotMaster_Greedy();
         
         void handleAlreadyReservedCell(RobotInfo* current_robot, RobotInfo* reserving_robot, m_reserveCellRequest* request_data, m_reserveCellResponse* response_data, Coordinates target_cell);
-
 };
 
 #endif
