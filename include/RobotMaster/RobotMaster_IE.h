@@ -1,18 +1,15 @@
 #ifndef ROBOTMASTER_IE_H
 #define ROBOTMASTER_IE_H
 
-#include "RobotMaster.h"
+#include "RobotMaster_CellReservation.h"
 
-class RobotMaster_IE: virtual public RobotMaster{
+class RobotMaster_IE: virtual public RobotMaster_CellReservation{
     protected:
         RobotMaster_IE();
         ~RobotMaster_IE();
+        
+        void handleAlreadyReservedCell(RobotInfo* current_robot, RobotInfo* reserving_robot, m_reserveCellRequest* request_data, m_reserveCellResponse* response_data, Coordinates target_cell);
 
-        void reserveCellRequest(Message* request); // handles reserve cell requests
-                                                           
-        //void updateGlobalMap(unsigned int* id, std::vector<bool>* connections, Coordinates* C); // overloading update global map as cell must be unreserved after scan has been completed
-
-         RobotInfo* isCellReserved(Coordinates* target_cell, unsigned int robot_id); // checks if cell is already a target of another robot using parent's "tracked_robots" vector
 };
 
 #endif
