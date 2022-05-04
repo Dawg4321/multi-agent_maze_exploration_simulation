@@ -1,6 +1,8 @@
 #ifndef ROBOTMASTER_C_H
 #define ROBOTMASTER_C_H
 
+#include <stdexcept>
+
 #include "RobotMaster.h"
 
 class RobotMaster_C: virtual public RobotMaster{

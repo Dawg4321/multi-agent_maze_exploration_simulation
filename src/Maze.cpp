@@ -337,10 +337,8 @@ bool Maze::printMaze(){ // function to print layout of maze in an intuitive mann
 
     std::string logos[5] = { "   ", "---", "|", " ", " R "}; // array with logos to use when printing maze
     
-    if(maze_xsize == 0 || maze_ysize == 0){ // if maze has not been allocated
-        printf("Error: Maze has not been allocated\n");
-        return false; // return false as printing failed
-    }
+    if(maze_xsize == 0 || maze_ysize == 0) // if maze has not been allocated
+        throw "Critical Error: Cannot print maze as it has not been allocated"; // throw except as critical failure
 
     printf("**Generated Maze**\n"); // printing title and maze information
     printf("Size = %d x %d\n", maze_xsize, maze_ysize);

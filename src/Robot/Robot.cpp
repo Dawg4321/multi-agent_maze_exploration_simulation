@@ -147,7 +147,7 @@ bool Robot::move2Cell(Coordinates destination){ // overloaded version of move2Ce
         direction = 4;
     }
     else{
-        printf("Error: invalid movement passed into move2Cell\n");
+        throw "Error: invalid movement passed into move2Cell";
         return false; // return false as movement failed dur to invalid direction
     }
 
@@ -156,45 +156,45 @@ bool Robot::move2Cell(Coordinates destination){ // overloaded version of move2Ce
 }
 
 std::vector<Coordinates> Robot::getValidNeighbours(int x, int y){ // function to gather valid neighbouring cells of a selected cell based on robot's local map
-    std::vector<Coordinates> ret_value; // vector of Coordinates to return
-                                        // this will contain the coordinates of valid neighbouring nodes
+    std::vector<Coordinates> neighbours; // vector of Coordinates to return
+                                         // this will contain the coordinates of valid neighbouring nodes
 
-    if(LocalMap->nodes[y][x] == 2){ // if the current node is unexplored, don't get nearest neighbours
-        return ret_value;
+    if(LocalMap->nodes[y][x] == 2 || LocalMap->nodes[y][x] == 3){ // if the current node is unexplored or leads to a dead end, don't get nearest neighbours
+        return neighbours;
     }
 
     Coordinates buffer; // buffer structor to gather positions of neighbouring nodes before pushing to vector
 
     // check if neighbour to the north is valid and connected via an edge (no wall)
     if(!LocalMap->y_edges[y][x]){
-        if (LocalMap->nodes[y-1][x] > 0){
+        if (LocalMap->nodes[y-1][x] == 1 || LocalMap->nodes[y-1][x] == 2){
             buffer.x = x; 
             buffer.y = y - 1;
-            ret_value.push_back(buffer);
+            neighbours.push_back(buffer);
         }
     }
     // check if neighbour to the south is valid and connected via an edge (no wall)
     if(!LocalMap->y_edges[y+1][x]){
-        if (LocalMap->nodes[y+1][x] > 0){
+        if (LocalMap->nodes[y+1][x] == 1 || LocalMap->nodes[y+1][x] == 2){
             buffer.x = x; 
             buffer.y = y + 1;
-            ret_value.push_back(buffer);
+            neighbours.push_back(buffer);
         }
     }
     // check if neighbour to the east is valid and connected via an edge (no wall)
     if(!LocalMap->x_edges[y][x]){
-        if (LocalMap->nodes[y][x-1] > 0){
+        if (LocalMap->nodes[y][x-1] == 1 || LocalMap->nodes[y][x-1] == 2){
             buffer.x = x - 1; 
             buffer.y = y;
-            ret_value.push_back(buffer);
+            neighbours.push_back(buffer);
         }
     }
     // check if neighbour to the west is valid and connected via an edge (no wall)
     if(!LocalMap->x_edges[y][x+1]){
-        if (LocalMap->nodes[y][x+1] > 0){
+        if (LocalMap->nodes[y][x+1] == 1 || LocalMap->nodes[y][x+1] == 2){
             buffer.x = x + 1; 
             buffer.y = y;
-            ret_value.push_back(buffer);
+            neighbours.push_back(buffer);
         }
     }
     
@@ -203,7 +203,9 @@ std::vector<Coordinates> Robot::getValidNeighbours(int x, int y){ // function to
         printf("%d,%d\n",ret_value[i].x,ret_value[i].y);
     }*/
 
-    return ret_value; // returning vector
+    std::random_shuffle(neighbours.begin(), neighbours.end()); // randomizing neighbours to remove bias when selecting a neighbor at intersections
+
+    return neighbours; // returning vector
 }
 
 bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot to follow from current position to a specified destination
@@ -318,15 +320,32 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
         curr_node = node_queue.front(); // gathering node from front of queue
 
         //printf("curr node: %d,%d\n", curr_node.x, curr_node.y);
+        std::vector<Coordinates>  valid_neighbours; // creating cector to store valid neigbours in following else if statement
 
         if (BFS_exitCondition(&curr_node)){ // if exit conditon has been met
             ret_value = true; // return true as path to unexplored node found
             break; // break from while loop
         }
+        // gathering nearest neighbours and checking if the node is a dead end (e.g. one neighbour and has already been visited). 
+        // if it is a dead end, mark nodes along dead end path with 3. this prevents these paths from being searched during pathfinding
+        else if(valid_neighbours = getValidNeighbours(curr_node.x, curr_node.y); valid_neighbours.size() == 1 && LocalMap->nodes[curr_node.y][curr_node.x] == 1 && curr_node.x != x_position && curr_node.y != y_position){
+                    Coordinates node_to_test = curr_node; // gathering dead end node before testing
+                    std::vector<Coordinates> neighbours; // vector to store neighbours during branch removal
+                    do{
+                        LocalMap->nodes[node_to_test.y][node_to_test.x] = 3; // marking node leading to dead end as 3
+
+                        for(auto [key, val]: visited_nodes){ // searching to find parent node (node before this node)
+                            if (key == node_to_test){ // if parent node found
+                                node_to_test = val; // test it on next iteration
+                                break;
+                            }
+                        }
+
+                        neighbours = getValidNeighbours(node_to_test.x, node_to_test.y); // check next node's neighbours to see if it still leads to dead end
+                    }while(neighbours.size() == 1 && node_to_test.x != x_position && node_to_test.y != y_position); // checking if node leads to a dead end (1 valid neighbour)
+                }
 
         node_queue.pop(); // removing node from front of the queue as new nodes must be added to queue
-
-        std::vector<Coordinates> valid_neighbours = getValidNeighbours(curr_node.x, curr_node.y); // gathering neighbours of current node
 
         for(int i = 0; i < valid_neighbours.size(); i ++){ // iterate through all of the current node's neighbours to see if they have been explored
             bool node_in_map = false; // variable to track whether neighbour is in map
@@ -339,7 +358,7 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
             }
             if(!node_in_map){ // if neighbour not found in map
                 node_queue.push(valid_neighbours[i]); // add to node_queue and visited nodes
-                visited_nodes.insert({valid_neighbours[i], curr_node}); 
+                visited_nodes.insert({valid_neighbours[i], curr_node});
             }
         }
     }
@@ -358,9 +377,9 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
 
         ret_stack->push_front(curr_node); // add current node to top of planned path "stack"
 
-        for(auto [key, val]: visited_nodes){ // TODO: use better search for key function
-            if (key == curr_node){
-                curr_node = val;
+        for(auto [key, val]: visited_nodes){ // iterating through visited nodes map
+            if (key == curr_node){ // if parent node to current node it found
+                curr_node = val; // set parent node as current node
                 break;
             }
         }
@@ -380,7 +399,7 @@ bool Robot::printRobotMaze(){ // function to print robot's local map of maze
     std::string logos[8] = { "   ", "---", "|", " ", " R ", " . ", " X ", " * "}; // array with logos to use when printing maze
     
     if(maze_xsize == 0 || maze_ysize == 0){ // if maze has not been allocated
-        printf("Error: Maze size has not been specified\n");
+        throw "Critical Error: Cannot print maze as it has not been allocated";
         return false; // return false as printing failed
     }
 

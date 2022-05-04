@@ -248,8 +248,9 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
     temp.robot_id = num_of_added_robots; // assigning id to new robot entry 
     temp.robot_position.x = x;  // assigning position to new robot entry 
     temp.robot_position.y = y;
-    temp.robot_moving = false;
-    temp.robot_target = NULL_COORDINATE; 
+    temp.starting_position = temp.robot_position; // assigning starting position to robot
+    temp.robot_moving = false; // initializing robot_moving flag to false as robot has not begun moving
+    temp.robot_target = NULL_COORDINATE;  // setting target to an invalid coordinate as robots have not begun exploring
 
     temp.Robot_Message_Reciever = r; // assigning Request handler for Master -> robot communications
 
@@ -257,7 +258,6 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
         GlobalMap->nodes[y][x] = 2; // setting current position of robot to 2 as it has been seen but not explored until robot sends first scan update
         number_of_unexplored_cells++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
     }
-    
 
     tracked_robots.push_back(temp); // adding robot info to tracked_robots
 
@@ -748,7 +748,7 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
     std::string logos[9] = { "   ", "---", "|", " ", " R ", " . ", " X ", " * "}; // array with logos to use when printing maze
     
     if(maze_xsize == 0 || maze_ysize == 0){ // if maze has not been allocated
-        printf("Error: Maze size has not been specified\n");
+        throw "Critical Error: Cannot print maze as it has not been allocated";
         return false; // return false as printing failed
     }
 
@@ -797,7 +797,6 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
                 }
                 else if(checkIfOccupied(j, i, found_id)){ // if current node is the robot's location
                     printf("%2d ", *found_id); // printing id number of robot within the cell
-                                               // TODO: print 3 width digit numbers in centre of cell without error
                     string_pointer = -1; // print nothing after this ifelse statement as the printing has been handled locally
                 }
                 else if(GlobalMap->nodes[i][j] == 0){ // if current node is invalid (unseen and unexplored)

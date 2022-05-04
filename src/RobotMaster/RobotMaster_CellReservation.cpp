@@ -35,10 +35,6 @@ void RobotMaster_CellReservation::reserveCellRequest(Message* request){
     // return data allocation
     m_reserveCellResponse* response_data = new m_reserveCellResponse; // response message
 
-    bool cell_reserved; // variable to whether cell reservation is possible
-
-    RobotInfo* reserving_robot = isCellReserved(&target_cell, robot_id); // checking if another robot is reserving the target cell
-
     // processing if cell can be reserved
     // in this case, vectors allocated in response_data will be modified
     if(GlobalMap->nodes[target_cell.y][target_cell.x] == 1){ // if the target cell has already been explored
@@ -47,7 +43,7 @@ void RobotMaster_CellReservation::reserveCellRequest(Message* request){
         
         response_data->cell_reserved = false; // adding information about cell not being reserved to response
     }
-    else if(reserving_robot == NULL){ // no other robot has reserved the target cell and it has not been explored
+    else if(RobotInfo* reserving_robot = isCellReserved(&target_cell, robot_id); reserving_robot == NULL){ // no other robot has reserved the target cell and it has not been explored
         
         reserveCell(robot_info, &request_data->planned_path, target_cell); // reserving target cell + updating current planned path
 

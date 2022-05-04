@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <random>
+#include <stdexcept>
 
 #include "GridGraph.h"
 #include "Coordinates.h"

@@ -76,7 +76,7 @@ int getTurns2Wait(int last_status_of_execution){ // returns the number of turns 
     switch(last_status_of_execution){
         case s_compute_move: // if robot is currently moving
         {
-            return 10; // wait a four turns before update master of new position
+            return 3; // wait a four turns before update master of new position
         }
         case s_scan_cell: // if robot is currently scanning a cell
         {
@@ -668,7 +668,7 @@ void testSwarmSize(){
             string directory_for_export = target_directory + "sim_size_" + to_string(i) + "/sim_" + to_string(j + 1) +  "/"; // getting directory for target output
             std::filesystem::create_directories(directory_for_export); // creating child directory to store robot simulation for this test
 
-            runSimulation(&m, i, 4, &start_positions, directory_for_export); // running simulation
+            runSimulation(&m, i, 3, &start_positions, directory_for_export); // running simulation
         }
     }
 

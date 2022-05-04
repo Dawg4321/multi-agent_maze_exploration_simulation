@@ -7,11 +7,14 @@
 #include <map>
 #include <deque>
 #include <string>
+#include <stdexcept>
+#include <algorithm>
 
 #include "GridGraph.h"
 #include "Coordinates.h"
 
-class Robot{ // parent class used as a template for further robot implementations for simulation purposes
+class Robot{ // parent class used as a template for further robot implementations
+             // contains all basic robot functions (movement, scanning, etc.)
     public:
         // ** Robot Constructors **
         Robot(int x, int y, unsigned int xsize, unsigned int ysize);

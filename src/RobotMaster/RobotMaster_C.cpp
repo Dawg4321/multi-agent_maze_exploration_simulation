@@ -13,33 +13,33 @@ void RobotMaster_C::move2CellRequest(Message* request){
     // gathering incoming request
     m_move2CellRequest* request_data = (m_move2CellRequest*)request->msg_data; 
     
-    unsigned int robot_id = request_data->robot_id;
-    Coordinates target_cell = request_data->target_cell;
+    unsigned int robot_id = request_data->robot_id; // gahtering robot id 
+    Coordinates target_cell = request_data->target_cell; // gathering target cell
 
-    m_move2CellResponse* response_data = new m_move2CellResponse;
+    m_move2CellResponse* response_data = new m_move2CellResponse; // allocating response
 
-    RobotInfo* current_robot_info = getRobotInfo(robot_id);
+    RobotInfo* current_robot_info = getRobotInfo(robot_id); // getting robot info of requesting robot
 
     if(current_robot_info->planned_path.size() == 0){ // if there is no planned path and the robot is attempting to move, movement request is stale as another path needs to be planned thus no need to check for collision
-        return;
+        return; // return as movement is stale
     }
 
     for(int i = 0; i < tracked_robots.size(); i++){ // simple test to ensure to robots are occupying the same location (this is a critical error)
-        if(tracked_robots[i].robot_position == current_robot_info->robot_position && current_robot_info->robot_id != tracked_robots[i].robot_id && current_robot_info->robot_position != Coordinates(0,0))
-            break;
+        if(tracked_robots[i].robot_position == current_robot_info->robot_position && current_robot_info->robot_id != tracked_robots[i].robot_id && current_robot_info->robot_position != current_robot_info->starting_position)
+            throw "Critical Error: Two robots occupying same location when not in starting position!";
     }
 
     RobotInfo* robot_causing_collision = checkForCollision(&target_cell, robot_id); // check and find robot information from robot who is causing a collision  
 
-    if(isRobotMoving(target_cell, current_robot_info->robot_id)){ // checking to see if another robot is currently in the process of moving into the target cell
-        response_data->can_movement_occur = false;
+    if(isRobotMoving(target_cell, current_robot_info->robot_id) || current_robot_info->robot_target == NULL_COORDINATE){ // checking to see if another robot is currently in the process of moving into the target cell
+        response_data->can_movement_occur = false; // must wait as another robot is currently about to move into the targetcell
     }
     else if(robot_causing_collision == NULL){ // if no robot was found to be causing a collision
         current_robot_info->robot_moving = true; // setting robot_moving flag to true as robot is now moving
         response_data->can_movement_occur = true; // update message to notify robot that movement can occur
     }
     else if(robot_causing_collision->robot_id == current_robot_info->robot_id){ // if the robot causing the collision is the current robot
-        printf("Critical Error: Robot attempting to move to a cell it already occupies\n"); // critical error message
+        throw "Critical Error: Robot attempting to move to a cell it already occupies"; // critical error message
         response_data->can_movement_occur = false; //  update message to notify robot that movement can't occur
     }
     else{ // target cell is occupied by another robot, try to "job swap"

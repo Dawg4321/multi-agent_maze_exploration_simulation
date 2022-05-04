@@ -17,15 +17,18 @@ using json = nlohmann::json; // simplifying namespace so "json" can be used inst
 struct RobotInfo{ // structure to track information of various robots in the swarm
 
     unsigned int robot_id; // tracks the id of a robot in order for robot differentiation
+   
     RequestHandler* Robot_Message_Reciever; // pointer to request handler for messages from RobotMaster to Robot
 
-    Coordinates robot_position; // tracks the current position of a robot in the graph maze in cartesian form
+    Coordinates robot_position; // tracks the current position of a robot in the maze
+    
+    Coordinates starting_position; // tracks the starting location of the robot
 
-    std::deque<Coordinates> planned_path; // path which robot plans to take to destination
+    std::deque<Coordinates> planned_path; // path which robot plans to take to frontier cell
 
-    bool robot_moving; // boolean to determine whether a robot has scanned the last cell it plans to travel to
+    bool robot_moving; // boolean to determine whether a robot is in the process of moving to a cell
 
-    Coordinates robot_target; // target cell which robot is travelling to for scanning
+    Coordinates robot_target; // target frontier cell which the robot is travelling to
 };
 
 class RobotMaster{
