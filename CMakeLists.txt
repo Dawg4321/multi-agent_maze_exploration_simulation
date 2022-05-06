@@ -13,3 +13,6 @@ add_executable(Multi-Agent_Maze_Simulation ${SRC_FILES})
 target_include_directories(Multi-Agent_Maze_Simulation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(Multi-Agent_Maze_Simulation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/Robot)
 target_include_directories(Multi-Agent_Maze_Simulation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/RobotMaster)
+
+find_package(fmt)
+target_link_libraries(Multi-Agent_Maze_Simulation fmt::fmt)

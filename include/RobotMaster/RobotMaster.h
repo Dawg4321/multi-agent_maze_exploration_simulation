@@ -4,6 +4,9 @@
 #include <vector>
 #include <map>
 #include <string.h>
+#include <iostream>
+#include <fmt/format.h>
+#include <fstream>
 
 #include "GridGraph.h"
 #include "Coordinates.h"
@@ -96,6 +99,8 @@ class RobotMaster{
 
         RobotInfo* getRobotInfo(unsigned int id); // gets pointer to robot info of a robot based on its id
 
+        std::vector<std::string> getMazePrintsouts(){ return maze_printouts; } // returning vector of all maze print outs
+
     protected:
         GridGraph* GlobalMap; // Global Map of maze
 
@@ -120,6 +125,8 @@ class RobotMaster{
 
         bool accepting_requests; // boolean to track whether robotmaster is receiving requests
                                  // true = accept requests, false = ignore all requests except shut down request
+        private:
+            std::vector<std::string> maze_printouts; // vector with strings of maze print out values 
 };
 
 #endif

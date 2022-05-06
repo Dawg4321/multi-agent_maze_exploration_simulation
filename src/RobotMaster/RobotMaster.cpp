@@ -8,7 +8,9 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
     maze_ysize = ysize;
 
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
-    number_of_unexplored_cells = 0;
+    
+    num_of_receieve_transactions = 0; // no transactions recieved yet
+    number_of_unexplored_cells = 0; // no cells have been explored
 }
 
 RobotMaster::~RobotMaster(){
@@ -744,37 +746,40 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
 
 bool RobotMaster::printGlobalMap(){ // function to print global map of maze including robot location
                                      // maze design based off what can be seen here: https://www.chegg.com/homework-help/questions-and-answers/using-c-1-write-maze-solving-program-following-functionality-note-implementation-details-a-q31826669
-
-    std::string logos[9] = { "   ", "---", "|", " ", " R ", " . ", " X ", " * "}; // array with logos to use when printing maze
     
     if(maze_xsize == 0 || maze_ysize == 0){ // if maze has not been allocated
         throw "Critical Error: Cannot print maze as it has not been allocated";
         return false; // return false as printing failed
     }
 
-    printf("*Global Map*\n"); // printing title and maze information
+    static unsigned int print_counter = 0; // counters the number of printouts which have occured
+    print_counter++; // incrementing print counter to track printout
+
+    std::string logos[9] = { "   ", "---", "|", " ", " R ", " . ", " X ", " * "}; // array with logos to use when printing maze
 
     int string_pointer = 0; // integer used to determine which logo needs to be printed from logo vector
 
     int count = 0; // counter to determine if both the column and row edges have been printed
     int i = 0; // counter to track if the whole maze has been printed
 
+    std::cout << "*Global Map*\n*Size: " << maze_xsize << maze_ysize << "\n";
+
+    std::stringstream string_stream; // string stream object to store maze before printout
+
     while(!(i >= maze_ysize && count == 1)){ // while loop to determing which row to print (i = node row number)
     
         if(count == 0){ // printing the horizontal walls of maze
 
             for(int j = 0; j < maze_xsize; j++){
-
                 if(GlobalMap->y_edges[i][j]){ // if there is no edge between two nodes
                     string_pointer = 1; // print horizontal line
                 }
                 else{ // if there is an edge between two nodes
                     string_pointer = 0; // print horizontal line
                 }
-
-                printf("+%s", logos[string_pointer].c_str());
+                string_stream << fmt::format("+{}", logos[string_pointer]);;
             }
-            printf("+");
+            string_stream << "+";
         }
         else{ // printing vertical walls of the maze
 
@@ -787,7 +792,7 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
                 else{ // if there is an edge between two nodes
                     string_pointer = 3; // print horizontal line
                 }
-                printf("%s", logos[string_pointer].c_str());
+                string_stream << fmt::format("{}", logos[string_pointer]);
 
                 unsigned int* found_id = new unsigned int; // variable to store id of robot if found using checkIfOccupied in the second else if statement
 
@@ -796,7 +801,7 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
                     string_pointer = 3; // print empty space as node is outside of maze
                 }
                 else if(checkIfOccupied(j, i, found_id)){ // if current node is the robot's location
-                    printf("%2d ", *found_id); // printing id number of robot within the cell
+                    string_stream << fmt::format("{0:2d} ", *found_id);
                     string_pointer = -1; // print nothing after this ifelse statement as the printing has been handled locally
                 }
                 else if(GlobalMap->nodes[i][j] == 0){ // if current node is invalid (unseen and unexplored)
@@ -808,8 +813,9 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
                 else{ // if current cell has been seen and explored (valid)
                     string_pointer = 0; // print empty space
                 }
-                if (string_pointer != -1) // if printing is needed
-                    printf("%s",logos[string_pointer].c_str());
+                if (string_pointer != -1){ // if printing is needed
+                    string_stream << fmt::format("{}",logos[string_pointer]);
+                }
 
                 delete found_id; // deleting found_id as dynamically allocated
             }
@@ -819,13 +825,16 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
             count = 0; // reset count value
             i++; // increment i to access next row
         }
-        else // if only the column edges corresponding to i have been printed
+        else{ // if only the column edges corresponding to i have been printed
             count++;
+        }
 
-        printf("\n");
-
+        string_stream << "\n";
     }
 
+    std::cout << string_stream.str(); // printing string from string stream
+    maze_printouts.push_back(string_stream.str()); // adding maze printout for later usage
+    
     return true; // return true as printing succeeded
 }
 

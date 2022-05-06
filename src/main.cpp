@@ -49,6 +49,8 @@ struct RobotMasterArgs{ // structure to hold args for passing RobotMaster inform
     TurnControlData* turn_control; // struct containing info to control robot's turn
 
     json turn_json; // json containing request infomation of robot's action during each turn
+    
+    vector<string> maze_printouts; // vector containing maze printouts for export to text files
 
     RobotMasterArgs(RobotMaster* R1, TurnControlData* control_info){
         Generated_RobotMaster = R1;
@@ -177,11 +179,12 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
         }
         
         json buffer_json; // load requests handled during turn into a json
-        string name = "Turn_";
+        
+        string name = "Turn_"; // creating turn number name
         name += to_string(turn_counter);
+        
         buffer_json[name] = RM->getRequestInfo(); // gathering json containing request info during this turn
         Data->turn_json["Simulation"].push_back(buffer_json);
-
         RM->clearRequestInfo(); // clearing contents of request info before next turn
 
         pthread_barrier_wait(&TurnControl->turn_start_barrier); // signalling robots to begin next turn
@@ -197,6 +200,12 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
     Data->turn_json["Info"]["Total_Turns_Taken"] = turn_counter;
     Data->turn_json["Info"]["Number_of_Robots"] = RM->getNumberofRobots();
     Data->turn_json["Maze_Characteristics"] = { {"X_Size", }, {"Y_Size", }, {"Node_Map", }, {"X_Edges", }, {"Y_Edges"}};
+
+    vector<string> buffer = RM->getMazePrintsouts(); // getting maze prinouts which occurred during this turn
+    Data->turn_json["Info"]["Number_of_Printouts"] = buffer.size(); // adding number of printouts to simulation.json
+    for(int i = 0; i < buffer.size(); i++){ 
+        Data->maze_printouts.push_back(buffer[i]); // adding maze prinouts to arguments for later export
+    }
 
     pthread_exit(NULL); // return from thread
 }
@@ -255,6 +264,22 @@ bool exportJSON(json json_2_export, string json_name, string target_directory){
     cout << "Error: Failed to write to " << json_name;
 
     return false;
+}
+
+void exportPrintOuts(vector<string>* strings_to_export, string target_directory){
+
+    std::filesystem::create_directories(target_directory + "printouts"); // creating directory to store printouts in  
+
+    for(int i = 0; i < (*strings_to_export).size(); i++){
+        string print_name = target_directory + "printouts/" + "printout_" + to_string(i+1) + ".txt"; // creating file in target_directory
+
+        std::ofstream json_file(print_name); // creating file stream to the printouts to      
+        if(json_file.is_open()){ // if file was created successfully
+            json_file << (*strings_to_export)[i]; // export printout to txt file
+        }
+    }
+
+    return;
 }
 
 void simulateOneTime(){
@@ -504,7 +529,8 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
     // ~~~ Awaiting Robot Master Thread Completion ~~~
     pthread_join(master_thread, NULL); // waiting for robot master thread to finish
     
-    exportJSON(RMArgs.turn_json, "Simulation", export_target_directory);
+    exportJSON(RMArgs.turn_json, "Simulation", export_target_directory); // exporting json
+    exportPrintOuts(&RMArgs.maze_printouts, export_target_directory); // exporting print outs
 
     // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
 
@@ -529,8 +555,12 @@ void testGroupSize(){
     cin >> number_of_mazes;
 
     int number_of_robots;
-    cout << "What is number of robots to simulate?\n";
+    cout << "How many robots to simulate?\n";
     cin >> number_of_robots;
+
+    int type_of_robot;
+    cout << "";
+    cin >> type_of_robot;
     
     // getting all factor pairs of the number of robots
     vector<pair<int,int>> group_sizes; // first = number of robots in group, second = number of start positions
@@ -658,7 +688,7 @@ void testSwarmSize(){
 
     vector<Coordinates> start_positions(max_number_of_robots, Coordinates(0,0));
 
-    for(int j = 0; j < number_of_mazes; j++){
+    for(int j = 0; j < number_of_mazes; j++){ // for loops to run simulations
 
         for(int i = min_number_of_robots; i <= max_number_of_robots; i++){
             
@@ -672,7 +702,7 @@ void testSwarmSize(){
         }
     }
 
-    exportJSON(simulation_info, "Sim_Settings", target_directory);
+    exportJSON(simulation_info, "Sim_Settings", target_directory); // exporting info about simulations performed
 
     return;
 }

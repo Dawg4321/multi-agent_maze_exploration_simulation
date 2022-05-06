@@ -23,9 +23,10 @@ void RobotMaster_Greedy::handleAlreadyReservedCell(RobotInfo* current_robot, Rob
 
         reserving_robot->robot_target = NULL_COORDINATE; // setting robot target to an invalid value as previous robot now has no currently reserved cell
         
+        // target is invalid on previously revsering robot thus planned path muct be cleared
         if(reserving_robot->robot_moving){ // if the previously reserving robot is currently moving into a cell
             if(reserving_robot->planned_path.size() > 1){ // if it only has one more move to complete
-                reserving_robot->planned_path.erase(reserving_robot->planned_path.begin() + 1, reserving_robot->planned_path.end()); // erase all entries except next movement
+                reserving_robot->planned_path.erase(reserving_robot->planned_path.begin() + 1, reserving_robot->planned_path.end()); // erase all entries except next movement to prevent collisions
             }
         }
         else{
