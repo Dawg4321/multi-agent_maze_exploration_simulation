@@ -187,6 +187,11 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
         Data->turn_json["Simulation"].push_back(buffer_json);
         RM->clearRequestInfo(); // clearing contents of request info before next turn
 
+        if(!maze_mapped){ // if statement to prevent maze from being print once all robots have completed exploration
+            cout << "*Turn_" << turn_counter << "*\n"; // printing turn number
+            Data->maze_printouts.push_back("*Turn_" + to_string(turn_counter) + "*\n" + RM->printGlobalMap()); // printing global map
+        }
+
         pthread_barrier_wait(&TurnControl->turn_start_barrier); // signalling robots to begin next turn
     }
 
@@ -200,12 +205,7 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
     Data->turn_json["Info"]["Total_Turns_Taken"] = turn_counter;
     Data->turn_json["Info"]["Number_of_Robots"] = RM->getNumberofRobots();
     Data->turn_json["Maze_Characteristics"] = { {"X_Size", }, {"Y_Size", }, {"Node_Map", }, {"X_Edges", }, {"Y_Edges"}};
-
-    vector<string> buffer = RM->getMazePrintsouts(); // getting maze prinouts which occurred during this turn
-    Data->turn_json["Info"]["Number_of_Printouts"] = buffer.size(); // adding number of printouts to simulation.json
-    for(int i = 0; i < buffer.size(); i++){ 
-        Data->maze_printouts.push_back(buffer[i]); // adding maze prinouts to arguments for later export
-    }
+    Data->turn_json["Info"]["Number_of_Printouts"] = Data->maze_printouts.size(); // adding number of printouts to simulation.json
 
     pthread_exit(NULL); // return from thread
 }
@@ -559,7 +559,7 @@ void testGroupSize(){
     cin >> number_of_robots;
 
     int type_of_robot;
-    cout << "";
+    cout << "What type of robot to use?\n";
     cin >> type_of_robot;
     
     // getting all factor pairs of the number of robots

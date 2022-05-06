@@ -40,7 +40,7 @@ for i in range(1,num_of_printouts + 1): # iterate through all text files to make
         test_draw.text((0,0), test_txt.read(), (0,0,0), font=test_font) # drawing text file into large image
 
         for j in range (0, 10000): # iterating through pixels to determine x and y maximum of image
-            pix1 = test_image.getpixel((j, 7)) # getting pixe;s
+            pix1 = test_image.getpixel((j, 25)) # getting pixe;s
             pix2 = test_image.getpixel((5, j)) 
 
             if pix1 == (0,0,0): # if this pixel is black
@@ -50,7 +50,7 @@ for i in range(1,num_of_printouts + 1): # iterate through all text files to make
                 y_size = j # mark it as new y maximum
     
     txt_file = open(directory + "printouts/printout_" + str(i) + ".txt")  # opening text file for gif creation
-    image = Image.new(mode="RGB", size=(x_size + 7, y_size + 10), color=(255,255,255)) # creating a new image using the x_size and y_size maximums
+    image = Image.new(mode="RGB", size=(x_size + 5, y_size + 10), color=(255,255,255)) # creating a new image using the x_size and y_size maximums
     draw = ImageDraw.Draw(image) # creating draw object
     font = ImageFont.truetype("/usr/share/fonts/noto/NotoMono-Regular.ttf/NotoMono-Regular.ttf",size=15) # getting font
     draw.text((0,0), txt_file.read(), (0,0,0), font=font) # drawing maze from txt file into image
@@ -60,4 +60,4 @@ for i in range(1,num_of_printouts + 1): # iterate through all text files to make
 
 print("All images successfully generated!") # image creation completion printout
 
-os.system("ffmpeg -f image2 -framerate 8 -i " + img_directory + "frame_%d.png -loop 0 " + directory + "maze_exploration.gif") # using ffmpeg to make a gif using generated images
+os.system("ffmpeg -f image2 -framerate 15 -i " + img_directory + "frame_%d.png -loop 0 " + directory + "maze_exploration.gif") # using ffmpeg to make a gif using generated images

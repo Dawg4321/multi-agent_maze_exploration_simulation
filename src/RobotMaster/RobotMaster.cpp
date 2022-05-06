@@ -218,7 +218,7 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
     // return data allocation
     m_updateRobotLocationResponse* response_data = new m_updateRobotLocationResponse; // response message
 
-    printGlobalMap();
+    // printGlobalMap();
 
     exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
@@ -320,7 +320,7 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 
     }
 
-    printGlobalMap(); // print updated GlobalMap
+    // printGlobalMap(); // print updated GlobalMap
 
     return;
 }
@@ -443,7 +443,8 @@ void RobotMaster::updateRobotLocation(unsigned int* id, Coordinates* C){ // upda
         if (tracked_robots[i].robot_id == *id){ // if robot found using id
             tracked_robots[i].robot_position = *C; // update position in RobotInfo
             tracked_robots[i].robot_moving = false; // setting robot_moving flag to false as robot is done moving
-            tracked_robots[i].planned_path.pop_front(); // remove front of planned_path as movement has occured
+            if(tracked_robots[i].planned_path.size() > 0)
+                tracked_robots[i].planned_path.pop_front(); // remove front of planned_path as movement has occured
             
             break; 
         }
@@ -744,12 +745,11 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
     return; 
 }
 
-bool RobotMaster::printGlobalMap(){ // function to print global map of maze including robot location
+std::string RobotMaster::printGlobalMap(){ // function to print global map of maze including robot location
                                      // maze design based off what can be seen here: https://www.chegg.com/homework-help/questions-and-answers/using-c-1-write-maze-solving-program-following-functionality-note-implementation-details-a-q31826669
     
     if(maze_xsize == 0 || maze_ysize == 0){ // if maze has not been allocated
         throw "Critical Error: Cannot print maze as it has not been allocated";
-        return false; // return false as printing failed
     }
 
     static unsigned int print_counter = 0; // counters the number of printouts which have occured
@@ -761,8 +761,6 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
 
     int count = 0; // counter to determine if both the column and row edges have been printed
     int i = 0; // counter to track if the whole maze has been printed
-
-    std::cout << "*Global Map*\n*Size: " << maze_xsize << maze_ysize << "\n";
 
     std::stringstream string_stream; // string stream object to store maze before printout
 
@@ -833,9 +831,8 @@ bool RobotMaster::printGlobalMap(){ // function to print global map of maze incl
     }
 
     std::cout << string_stream.str(); // printing string from string stream
-    maze_printouts.push_back(string_stream.str()); // adding maze printout for later usage
     
-    return true; // return true as printing succeeded
+    return string_stream.str(); // returning string of printout for later usage
 }
 
 void RobotMaster::setGlobalMap(GridGraph* g){ 

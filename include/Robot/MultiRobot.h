@@ -26,7 +26,7 @@ class MultiRobot: public Robot{
         virtual void robotSetUp() = 0; // function used by robot once before robot begins its loop function
         virtual int robotLoopStep(GridGraph* maze) = 0; // function used within each iteration of a robot's loop
                                                          // returns the value of the robot's status after iteration
-        virtual int robotLoopStepforSimulation(GridGraph* maze) {} // robot loop step used for simulation to allow for turn delays based off specific requests
+        virtual int robotLoopStepforSimulation(GridGraph* maze) = 0; // robot loop step used for simulation to allow for turn delays based off specific requests
                                                                      // must be used with turn based simulation system
 
         void updateLocalMap(std::vector<Coordinates>* map_info, std::vector<std::vector<bool>>* edge_info, std::vector<char>* map_status); // updates robot's map with information from vectors
