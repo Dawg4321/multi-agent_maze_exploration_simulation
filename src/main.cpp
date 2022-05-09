@@ -189,7 +189,7 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
 
         if(!maze_mapped){ // if statement to prevent maze from being print once all robots have completed exploration
             cout << "*Turn_" << turn_counter << "*\n"; // printing turn number
-            Data->maze_printouts.push_back("*Turn_" + to_string(turn_counter) + "*\n" + RM->printGlobalMap()); // printing global map
+            Data->maze_printouts.push_back("*Turn_" + to_string(turn_counter) + "*\n" + RM->printGlobalMap()); // printing global map and adding it to maze_prinouts
         }
 
         pthread_barrier_wait(&TurnControl->turn_start_barrier); // signalling robots to begin next turn
@@ -202,10 +202,14 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
 
     pthread_barrier_wait(&TurnControl->turn_end_barrier); // Signalling robot they can finally exit their loop after completion
     
-    Data->turn_json["Info"]["Total_Turns_Taken"] = turn_counter;
-    Data->turn_json["Info"]["Number_of_Robots"] = RM->getNumberofRobots();
-    Data->turn_json["Maze_Characteristics"] = { {"X_Size", }, {"Y_Size", }, {"Node_Map", }, {"X_Edges", }, {"Y_Edges"}};
+    // saving various maze info
+    Data->turn_json["Info"]["Total_Turns_Taken"] = turn_counter; 
+    Data->turn_json["Info"]["Number_of_Robots"] = RM->getNumberofRobots(); // getting number of robots
     Data->turn_json["Info"]["Number_of_Printouts"] = Data->maze_printouts.size(); // adding number of printouts to simulation.json
+
+    GridGraph* ptr = RM->getGlobalMap(); // loading maze characteristics into json
+    Data->turn_json["Maze_Characteristics"]["X_Size"] = ptr->nodes[0].size();
+    Data->turn_json["Maze_Characteristics"]["Y_Size"] = ptr->nodes.size();
 
     pthread_exit(NULL); // return from thread
 }
@@ -213,40 +217,43 @@ void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controlle
 MultiRobot* getNewRobot(int robot_type, int x_pos, int y_pos, RequestHandler* request_handler, unsigned int xsize, unsigned int ysize){
     
     switch(robot_type){ // returning selected robot type
-        case 1: // Selecting No Collision, Unintelligent Exploration
+        case 1: // Selecting Collision, Greedy/FCFS
+        case 2:
         {
-            return new MultiRobot_NC(x_pos, y_pos, request_handler, xsize, ysize);
+            return new MultiRobot_C_CellReservation(x_pos, y_pos, request_handler, xsize, ysize);
         }
-        case 2: // Selecting No Collision, Intelligent Exploration
+        case 3: // Selecting No Collision, Greedy/FCFS
+        case 4:
         {
             return new MultiRobot_NC_CellReservation(x_pos, y_pos, request_handler, xsize, ysize);
         }
-        case 3:
-        case 4:
+        case 5: // Selecting No Collision, No Reservation
         {
-            return new MultiRobot_C_IE(x_pos, y_pos, request_handler, xsize, ysize);
+            return new MultiRobot_NC(x_pos, y_pos, request_handler, xsize, ysize);
         }
     }
 }
 
 RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHandler* request_handler, unsigned int xsize, unsigned int ysize){
     
-    if(robot_type == 1){ // if the robots to simulate are of type NC_UI
-        return new RobotMaster_NC(request_handler, number_of_robots, xsize, ysize);
-    }
-    else if(robot_type == 2){ // if the robots to simulate are of type NC_IE
-        return new RobotMaster_NC_Greedy(request_handler, number_of_robots, xsize, ysize);
-    }
-    else if(robot_type == 3){ // if the robots to simulate are of type C_IE
+    if(robot_type == 1){ // if the robots to simulate are of type Collision, Greedy
         return new RobotMaster_C_Greedy(request_handler, number_of_robots, xsize, ysize);
     }
-    else if(robot_type == 4){
+    else if(robot_type == 2){ // if the robots to simulate are of type Collision, FCFS
         return new RobotMaster_C_FCFS(request_handler, number_of_robots, xsize, ysize);
+    }
+    else if(robot_type == 3){ // if the robots to simulate are of type No Collision, Greedy
+        return new RobotMaster_NC_Greedy(request_handler, number_of_robots, xsize, ysize);
+    }
+    else if(robot_type == 4){ // if the robots to simulate are of type No Collision, FCFS
+        return new RobotMaster_NC_Greedy(request_handler, number_of_robots, xsize, ysize);
+    }
+    else if(robot_type == 5){ // if the robots to simulate are of type Collision, No Reservation
+        return new RobotMaster_NC(request_handler, number_of_robots, xsize, ysize);
     }
 }
 
-bool exportJSON(json json_2_export, string json_name, string target_directory){
-
+bool exportJSON(json json_2_export, string json_name, string target_directory){ // exports json to .json
 
     json_name = target_directory + json_name + ".json"; // adding target_directory and .json extension to passed in name
 
@@ -266,7 +273,7 @@ bool exportJSON(json json_2_export, string json_name, string target_directory){
     return false;
 }
 
-void exportPrintOuts(vector<string>* strings_to_export, string target_directory){
+void exportPrintOuts(vector<string>* strings_to_export, string target_directory){ // exports all printouts to a directory
 
     std::filesystem::create_directories(target_directory + "printouts"); // creating directory to store printouts in  
 
@@ -282,216 +289,7 @@ void exportPrintOuts(vector<string>* strings_to_export, string target_directory)
     return;
 }
 
-void simulateOneTime(){
-    // ~~~ Maze Selection ~~~
-    cout << "Which Maze would you like to simulate?\n";
-    cout << "1 - 4x4 Sample Maze\n";
-    cout << "2 - NxN empty grid\n";
-
-    int maze_selection_input; // variable to store input
-
-    Maze Generated_Maze; // Maze object to be used for maze allocation
-    cin >> maze_selection_input; // gathering input value
-
-    switch(maze_selection_input){ // returning selected robot type
-        case 1: // 4x4 Sample Maze
-        {
-            Generated_Maze.generate4x4SampleMaze(); // generating sample maze
-            Generated_Maze.printMaze();
-
-            break;
-        }
-        case 2: // NxN empty grid
-        {
-            // determining grid size
-            int x_size, y_size;
-
-            // x position
-            cout << "Maze x size: "; 
-            cin >> x_size;
-            // y position
-            cout << "Maze y size: ";
-            cin >> y_size;
-
-            Generated_Maze.generateInterconnectedMaze(x_size, y_size); // generating NxN empty grid  
-        
-            break;
-        }
-        case 3:
-        {
-            Generated_Maze.generate8x8SampleMaze(); // generating sample maze
-            Generated_Maze.printMaze();
-
-            break;
-        }
-        case 4:
-        {
-            Generated_Maze.generateRandomNxNMaze(50,50);
-            Generated_Maze.printMaze();
-            
-            break;
-        }
-    }
-
-    // ~~~ Gathering Robot Simulation Information ~~~
-
-    // determining number of robots to simulate
-    cout << "How many robots would you like to simulate?\n";
-    
-    int number_of_robots = 0;
-    cin >> number_of_robots;
-
-    // determining type of robots to simulate
-    cout << "What type of robots do you want to simulate?\n";
-    cout << "1 - No Collision, Unintelligent Exploration\n";
-    cout << "2 - No Collision, Intelligent Exploration\n";
-    cout << "3 - Collision, Intelligent Exploration\n";
-
-    int type_of_robots = 0;
-    cin >> type_of_robots;
-
-    // ~~~ Turn Tracking System Variable Creation ~~~~
-    TurnControlData turn_control_data(number_of_robots);
-    
-    // ~~~ Robot Master Thread Generation ~~~
-    RequestHandler* request_handler = new RequestHandler(); // creating message handler for robot -> master communcation
-    
-    // gathering new RobotMaster compatible with specified type of robots
-    RobotMaster* Robot_Controller = getNewRobotMaster(type_of_robots, number_of_robots, request_handler, Generated_Maze.getMazeXSize(), Generated_Maze.getMazeYSize());
-    RobotMasterArgs RMArgs(Robot_Controller, &turn_control_data);
-
-    // creating thread to run Robot_Controller 
-    pthread_t master_thread;
-    pthread_create(&master_thread, NULL, &controllerFunc, (void*)&RMArgs);
-
-    // ~~~ Robot Thread Generation ~~~
-    MultiRobot* Robots_Array[number_of_robots]; // generating array for robots to be stored in
-    RobotArgs* Robot_Thread_Args[number_of_robots]; // generating array for arguments to be passed into robot threads
-
-    pthread_t thread_id[number_of_robots]; // creating threads for each robot              
-    
-    for (int i = 0; i < number_of_robots; i++){
-        // determining robot position within maze
-        int robot_x_position, robot_y_position;
-
-        // x position
-        cout << "Robot " << i <<". set x position:"; 
-        cin >> robot_x_position;
-        // y position
-        cout <<"Robot " << i <<". set y position:";
-        cin >> robot_y_position;
-
-        Robots_Array[i] = getNewRobot(type_of_robots, robot_x_position, robot_y_position, request_handler, Generated_Maze.getMazeXSize(), Generated_Maze.getMazeYSize());
-        
-        // passing robot into
-        Robot_Thread_Args[i] = new RobotArgs(Robots_Array[i], Generated_Maze.getMazeMap(), &turn_control_data);
-        // running robot thread
-        pthread_create(&thread_id[i], NULL, &robotFunc, (void*)Robot_Thread_Args[i]);
-    }
-
-    // ~~~ Awaiting Robot Thread Completion  ~~~
-    for(int i = 0; i < number_of_robots; i++) // waiting for robot threads to finish
-        pthread_join(thread_id[i], NULL); 
-
-    // ~~~ Awaiting Robot Master Thread Completion ~~~
-    pthread_join(master_thread, NULL); // waiting for robot master thread to finish
-    
-    exportJSON(RMArgs.turn_json, "Simulation", "./");
-
-    // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
-
-    delete Robot_Controller; // deleting RobotMaster
-    
-    for(int i = 0; i < number_of_robots; i++) // deleting all generated robots
-        delete Robots_Array[i];
-
-    delete request_handler; // deleting request handler used by robots
-
-    return;
-}
-
-void testCases(){
-
-    int num_robots = 3; // two robots
-
-    RequestHandler* req = new RequestHandler;
-
-    TurnControlData turn_control_data(num_robots);
-
-    GridGraph g1; // gridgraph for maze data
-
-    g1.nodes = {{1, 1, 1, 1, 1, 1, 1, 1, 1},
-                {0, 0, 0, 0, 0, 0, 0, 1, 0},
-                {0, 0, 0, 0, 0, 0, 0, 1, 0}};
-
-    g1.x_edges = {{1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-                  {0, 0, 0, 0, 0, 0, 0, 1, 1, 0},
-                  {0, 0, 0, 0, 0, 0, 0, 1, 1, 0}};
-
-    g1.y_edges = {{1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 0, 1},
-                  {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                  {0, 0, 0, 0, 0, 0, 0, 1, 0}};
-    
-    GridGraph g2; // gridgraph for Local/Global Maps
-    
-    g2.nodes = {{2, 1, 1, 1, 1, 1, 1, 2, 0},
-                {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 0, 0, 0, 0}};
-
-    g2.x_edges = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-                  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-                  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
-
-    g2.y_edges = {{0, 1, 1, 1, 1, 1, 1, 0, 0},
-                  {0, 1, 1, 1, 1, 1, 1, 0, 0},
-                  {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                  {0, 0, 0, 0, 0, 0, 0, 0, 0}};
-                
-    // initialzing robot positions
-    RobotMaster* RM1 = new RobotMaster_NC_Greedy(req, num_robots, 9, 3);
-    RobotMasterArgs RM1args(RM1, &turn_control_data);
-    RM1->setGlobalMap(&g2);
-    
-    MultiRobot* R1 = new MultiRobot_NC_CellReservation(4, 0, req, 9, 3);
-    RobotArgs R1args(R1, g1, &turn_control_data);
-    R1->setLocalMap(&g2);
-    MultiRobot* R2 = new MultiRobot_NC_CellReservation(5, 0, req, 9, 3);
-    RobotArgs R2args(R2, g1, &turn_control_data);
-    R2->setLocalMap(&g2);
-    MultiRobot* R3 = new MultiRobot_NC_CellReservation(6, 0, req, 9, 3);
-    RobotArgs R3args(R3, g1, &turn_control_data);
-    R3->setLocalMap(&g2);
-
-    // creating threads
-    pthread_t T1, T2, T3, T4;
-
-    pthread_create(&T1, NULL, &controllerFunc, (void*)&RM1args);
-    pthread_create(&T2, NULL, &robotFunc, (void*)&R1args);
-    pthread_create(&T3, NULL, &robotFunc, (void*)&R2args);
-    pthread_create(&T4, NULL, &robotFunc, (void*)&R3args);
-
-    // awaiting threads 
-    pthread_join(T1, NULL); 
-    pthread_join(T2, NULL); 
-    pthread_join(T3, NULL); 
-    pthread_join(T4, NULL); 
-
-    // exporting JSON
-    exportJSON(RM1args.turn_json, "Test_Case", "./");
-
-    // deleting dynamically allocated data
-    delete RM1;
-    delete R1;
-    delete R2;
-    delete R3;
-    delete req;
-
-    return;
-}
-
-
-void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robots, vector<Coordinates>* robot_start_positions, string export_target_directory){
+void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robots, vector<Coordinates>* robot_start_positions, string export_target_directory){ // function to run a single robot simulation with passed in parameters
     // ~~~ Turn Tracking System Variable Creation ~~~~
     TurnControlData turn_control_data(number_of_robots);
     
@@ -544,23 +342,123 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
     return;
 }
 
+void simulateOneTime(){
+    // ~~~ Maze Selection ~~~
+    cout << "Which Maze would you like to simulate?\n";
+    cout << "1 - 4x4 Sample Maze\n";
+    cout << "2 - 8x8 Sample Maze\n";
+    cout << "3 - NxN Random Maze\n";
+    cout << "4 - NxN Empty Grid\n";
+
+    int maze_selection_input; // variable to store input
+
+    Maze Generated_Maze; // Maze object to be used for maze allocation
+    cin >> maze_selection_input; // gathering input value
+
+    switch(maze_selection_input){ // returning selected robot type
+        case 1: // 4x4 Sample Maze
+        {
+            Generated_Maze.generate4x4SampleMaze(); // generating sample maze
+            Generated_Maze.printMaze();
+
+            break;
+        }
+        case 2:
+        {
+            Generated_Maze.generate8x8SampleMaze(); // generating sample maze
+            Generated_Maze.printMaze();
+
+            break;
+        }
+        case 3:
+        {
+            int x;
+            cout << "What maze size to simulate?\n";
+            cin >> x;
+            Generated_Maze.generateRandomNxNMaze(x,x);
+            Generated_Maze.printMaze();
+            
+            break;
+        }
+        case 4: // NxN empty grid
+        {
+            // determining grid size
+            int x_size, y_size;
+            // x position
+            cout << "Maze x size: "; 
+            cin >> x_size;
+            // y position
+            cout << "Maze y size: ";
+            cin >> y_size;
+
+            Generated_Maze.generateInterconnectedMaze(x_size, y_size); // generating NxN empty grid  
+            Generated_Maze.printMaze();
+            break;
+        }
+    }
+
+    // ~~~ Gathering Robot Simulation Information ~~~
+
+    // determining number of robots to simulate
+    int number_of_robots = 0;
+    cout << "How many robots would you like to simulate?\n";
+    cin >> number_of_robots;
+
+    // determining type of robots to simulate
+    int type_of_robots = 0;
+    cout << "What type of robots do you want to use?\n";
+    cout << "1 - Collision, Greedy\n";
+    cout << "2 - Collision, FCFS\n";
+    cout << "3 - No Collision, Greedy\n";
+    cout << "4 - No Collision, FCFS\n";
+    cin >> type_of_robots;         
+    
+    vector<Coordinates> start_positions; // vector to store start positions of robots
+
+    for (int i = 0; i < number_of_robots; i++){ // gathering robot start positions
+        
+        int robot_x_position, robot_y_position; // determining robot position within maze
+
+        // x position
+        cout << "Robot " << i + 1 <<". set x position:"; 
+        cin >> robot_x_position;
+        // y position
+        cout <<"Robot " << i + 1 <<". set y position:";
+        cin >> robot_y_position;
+
+        start_positions.push_back(Coordinates(robot_x_position, robot_y_position)); // adding start coordinates
+    }
+
+    string target_directory; // directory for simulation info
+    cout << "Enter a directory to store results of the simulation:\n";
+    cin >> target_directory;   
+
+    runSimulation(&Generated_Maze, number_of_robots, type_of_robots, &start_positions, target_directory); // starting simulation with passed in settings
+
+    return;
+}
+
 void testGroupSize(){
     
-    int maze_size;
+    int maze_size; // what size maze should simulations be performed on
     cout << "What Size Maze to Perform Tests on?\n";
     cin >> maze_size;
 
-    int number_of_mazes;
+    int number_of_mazes; // how many mazes to simulate at each swarm size
     cout << "How many Mazes to generate for tests?\n";
     cin >> number_of_mazes;
 
-    int number_of_robots;
+    int number_of_robots; // how many robots to simulate overall
     cout << "How many robots to simulate?\n";
     cin >> number_of_robots;
 
-    int type_of_robot;
+    int type_of_robots; // what type of robot to use in simulations
     cout << "What type of robot to use?\n";
-    cin >> type_of_robot;
+    cout << "1 - Collision, Greedy\n";
+    cout << "2 - Collision, FCFS\n";
+    cout << "3 - No Collision, Greedy\n";
+    cout << "4 - No Collision, FCFS\n";
+    cin >> type_of_robots;
     
     // getting all factor pairs of the number of robots
     vector<pair<int,int>> group_sizes; // first = number of robots in group, second = number of start positions
@@ -570,17 +468,21 @@ void testGroupSize(){
         }
     }
 
-    string target_directory;
+    string target_directory; // getting target directory for simulation results
     cout << "Enter a directory to store results of the simulation:\n";
     cin >> target_directory;
 
     json simulation_info;
     simulation_info["Number_of_Robots"] = number_of_robots;
+    simulation_info["Robot_Type"] = type_of_robots; // adding type of robots to info
+
     // creating directories for simulation
     for(int i = 0; i < group_sizes.size(); i++){
         std::filesystem::create_directories(target_directory + to_string(number_of_robots) + "_group_size_" + to_string(group_sizes[i].first)); // creating parent directories to store robot simulations of various swarm sizes
         simulation_info["Group_Sizes"].push_back(group_sizes[i].first); // adding group size to simulation_info json 
     }
+
+    simulation_info["Maze_Size"] = maze_size; // adding maze size to simulation info
 
     for(int j = 0; j < number_of_mazes; j++){
 
@@ -592,48 +494,50 @@ void testGroupSize(){
             std::mt19937 rand_location(rd()); // seeding mersenne twister
             std::uniform_int_distribution<> dist(1, 2*maze_size + 2*(maze_size - 2)); // distribute random value between 1 and the number of border cells
 
-            for(int group_num = 0; group_num < group_sizes[i].second; group_num++){
+            for(int group_num = 0; group_num < group_sizes[i].second; group_num++){ // generating robot start positions based on number of positions desited
                 
                 bool valid_location = false; // boolean to track whether the group's start location is valid
             
-                while(!valid_location){
+                while(!valid_location){ // while selected location is invalid
                     int chosen_location = dist(rand_location); // choosing a random border cell
                     Coordinates chosen_start_position;
 
-                    int xpos = 0;
-                    int ypos = 0;
+                    int xpos = 0; // tracks x position of selected cell
+                    int ypos = 0; // tracks y position of selected cell
                     bool cell_found = false;
-                    while(!cell_found){
+
+                    while(!cell_found){ // while the selected cell has not been found
                         
-                        chosen_location--;
-                        if(chosen_location == 0){
+                        chosen_location--; // subtract 1 movement for locatoin selection
+
+                        if(chosen_location == 0){ // if chosen location = 0, cell found
                             cell_found = true;
                             chosen_start_position = Coordinates(xpos,ypos);
                         }
-                        else{
-                            if(ypos == 0 && xpos < maze_size - 1){
-                                xpos++;
+                        else{ // if move movements around border of maze
+                            if(ypos == 0 && xpos < maze_size - 1){ // if on first on in maze
+                                xpos++; // move east
                             }
-                            else if(xpos == maze_size - 1 && ypos < maze_size - 1){
-                                ypos++;
+                            else if(xpos == maze_size - 1 && ypos < maze_size - 1){ // if on last column of maze
+                                ypos++; // move south
                             }
-                            else if(ypos == maze_size - 1 && xpos > 0){
-                                xpos--;
+                            else if(ypos == maze_size - 1 && xpos > 0){ // if on last row of maze
+                                xpos--; // move west
                             }
-                            else{
-                                ypos--;
+                            else{ // if on first column of maze
+                                ypos--; // move north
                             }
                         }
                     }
 
-                    bool position_already_in_use = false;
+                    bool position_already_in_use = false; // checking if the chosen start location is already being used
                     for(int k = 0; k < start_positions.size(); k++){
                         if(chosen_start_position == start_positions[k]){
                             position_already_in_use = true;
                         }
                     }
 
-                    if(!position_already_in_use){
+                    if(!position_already_in_use){ // if location already used
                         valid_location = true; // setting valid_location to true as a new group start position has been found
                         for(int k = 0; k < group_sizes[i].first; k++) // adding start positions according to the number of robots in a group
                             start_positions.push_back(chosen_start_position);
@@ -648,34 +552,42 @@ void testGroupSize(){
             string directory_for_export = target_directory + to_string(number_of_robots) + "_group_size_" + to_string(group_sizes[i].first) + "/sim_" + to_string(j + 1) +  "/"; // getting directory for target output
             std::filesystem::create_directories(directory_for_export); // creating child directory to store robot simulation for this test
 
-            runSimulation(&m, number_of_robots, 3, &start_positions, directory_for_export); // running simulation
+            runSimulation(&m, number_of_robots, type_of_robots, &start_positions, directory_for_export); // running simulation
         }
     }
 
-    exportJSON(simulation_info, "Sim_Settings", target_directory);
+    exportJSON(simulation_info, "Sim_Settings", target_directory); // exporting simulation settings json
 
     return;
 }
 
 void testSwarmSize(){
     
-    int maze_size;
+    int maze_size; // what size maze should simulations be performed on
     cout << "What Size Maze to Perform Tests on?\n";
     cin >> maze_size;
 
-    int number_of_mazes;
+    int number_of_mazes; // how many mazes to simulate at each swarm size
     cout << "How many Mazes to generate for tests?\n";
     cin >> number_of_mazes;
 
-    int min_number_of_robots;
+    int min_number_of_robots; // minimum number of robots to simulate
     cout << "What is minimum number of robots to simulate?\n";
     cin >> min_number_of_robots;
 
-    int max_number_of_robots;
+    int max_number_of_robots; // max number of robots to simulate
     cout << "What is maximum number of robots to simulate?\n";
     cin >> max_number_of_robots;
+    
+    int type_of_robots; // type of robot to simulate
+    cout << "What type of robot to use?\n";
+    cout << "1 - Collision, Greedy\n";
+    cout << "2 - Collision, FCFS\n";
+    cout << "3 - No Collision, Greedy\n";
+    cout << "4 - No Collision, FCFS\n";
+    cin >> type_of_robots;
 
-    string target_directory;
+    string target_directory; // getting target directory for simulation results
     cout << "Enter a directory to store results of the simulation:\n";
     cin >> target_directory;
 
@@ -685,6 +597,9 @@ void testSwarmSize(){
         std::filesystem::create_directories(target_directory + "sim_size_" + to_string(i)); // creating parent directories to store robot simulations of various swarm sizes
         simulation_info["Robot_Sizes"].push_back(i); // adding swarm size to simulation_info json 
     }
+    
+    simulation_info["Robot_Type"] = type_of_robots; // adding type of robots to info
+    simulation_info["Maze_Size"] = maze_size; // adding maze size to simulation info
 
     vector<Coordinates> start_positions(max_number_of_robots, Coordinates(0,0));
 
@@ -698,11 +613,11 @@ void testSwarmSize(){
             string directory_for_export = target_directory + "sim_size_" + to_string(i) + "/sim_" + to_string(j + 1) +  "/"; // getting directory for target output
             std::filesystem::create_directories(directory_for_export); // creating child directory to store robot simulation for this test
 
-            runSimulation(&m, i, 3, &start_positions, directory_for_export); // running simulation
+            runSimulation(&m, i, type_of_robots, &start_positions, directory_for_export); // running simulation
         }
     }
 
-    exportJSON(simulation_info, "Sim_Settings", target_directory); // exporting info about simulations performed
+    exportJSON(simulation_info, "Sim_Settings", target_directory); // exporting simulation settings json
 
     return;
 }
@@ -714,30 +629,27 @@ int main(){
     cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
     cout << "Which of the following would you like to simulate?\n";
     cout << "1 - One time Simulation\n";
-    cout << "2 - Test Cases\n";
+    cout << "2 - Test Effects of Swarm Size on Mapping Speed\n";
+    cout << "3 - Test Swarm Starting position on Mapping Speed\n";
+
     int input;
 
-    cin >> input;
+    cin >> input; // gathering mode to simulate
 
-    switch(input){
+    switch(input){ // calling simulation function based on selection
         case 1:
         {
-            simulateOneTime();
+            simulateOneTime(); // evaluate a single maze
             break;
         }
         case 2:
         {
-            testCases();
+            testSwarmSize(); // evaluate multiple number of robots over a single maze size
             break;
         }
         case 3:
         {
-            testSwarmSize();
-            break;
-        }
-        case 4:
-        {
-            testGroupSize();
+            testGroupSize(); // evaluate different group starting positions over a single maze and swarm size 
             break;
         }
     }

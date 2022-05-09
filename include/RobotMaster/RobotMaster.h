@@ -93,8 +93,8 @@ class RobotMaster{
         std::string printGlobalMap(); // prints global map with robot locations
 
         void setGlobalMap(GridGraph* g); // sets global map with new map value 
+        GridGraph* getGlobalMap() { return GlobalMap; } // gets blobal map
 
-        //bool setRobotTargetCell(unsigned int robot_id, Coordinates* target_cell); // sets targetcell of a robot
         void clearTargetCell(unsigned int* robot_id); // removes target cell from robot
 
         RobotInfo* getRobotInfo(unsigned int id); // gets pointer to robot info of a robot based on its id

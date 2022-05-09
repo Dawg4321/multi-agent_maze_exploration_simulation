@@ -4,9 +4,9 @@
 #include "MultiRobot_C.h"
 #include "MultiRobot_CellReservation.h"
 
-class MultiRobot_C_IE: public MultiRobot_CellReservation, public MultiRobot_C{
+class MultiRobot_C_CellReservation: public MultiRobot_CellReservation, public MultiRobot_C{
     public:
-        MultiRobot_C_IE(int x, int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
+        MultiRobot_C_CellReservation(int x, int y, RequestHandler* r, unsigned int xsize, unsigned int ysize); // constructor for multi-robot exploration purposes
 
         // ** Robot loop function **
         void robotLoop(GridGraph* maze); // loop used by robot for operation
