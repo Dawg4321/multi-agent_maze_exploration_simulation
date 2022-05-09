@@ -54,7 +54,7 @@ class RobotMaster{
         void updateRobotLocationRequest(Message* request);
 
         // ** General Purpose Functions **
-        int getNumberofRobots() { return max_num_of_robots; }
+        int getNumberofRobots() { return num_of_robots; }
         bool checkIfOccupied(unsigned int x, unsigned int y, unsigned int* ret_variable); // checks if a cell is occupied by a robot
 
         int getNumRequestsinQueue(){ return Message_Handler->getNumberofMessages(); } // returns number of requests in RobotMaster's Queue
@@ -99,8 +99,6 @@ class RobotMaster{
 
         RobotInfo* getRobotInfo(unsigned int id); // gets pointer to robot info of a robot based on its id
 
-        std::vector<std::string> getMazePrintsouts(){ return maze_printouts; } // returning vector of all maze print outs
-
     protected:
         GridGraph* GlobalMap; // Global Map of maze
 
@@ -108,25 +106,24 @@ class RobotMaster{
 
         RequestHandler* Message_Handler; // pointer to request handler shared by all Robots and a RobotMaster objects
         
-        int number_of_unexplored_cells; // number of unexplored cells encountered by Robots
+        int number_of_frontier_cells; // number of unexplored cells encountered by Robots
 
-        unsigned int maze_xsize; // size of maze
-        unsigned int maze_ysize; // this is only used for printing purposes
+        unsigned int num_of_added_robots = 0; // counter to track number of robots added to system
 
-        unsigned int num_of_added_robots; // tracks number of added robots
-        
-        const int max_num_of_robots; // variable which specifies number of robots needed for exploration
-                                     // exploration won't begin until enough robots have been added
+        const int num_of_robots; // variable which specifies number of robots needed for exploration
+                                 // exploration won't begin until enough robots have been added
 
         unsigned int num_of_receieve_transactions; // tracks the number of incoming transactions handled
 
         json RequestInfo; // json containing information regarding each request
         std::vector<std::string> RequestInfoString; // vector containing string version of requestinfo JSONs for debugging purposes
-
+        
         bool accepting_requests; // boolean to track whether robotmaster is receiving requests
                                  // true = accept requests, false = ignore all requests except shut down request
         private:
-            std::vector<std::string> maze_printouts; // vector with strings of maze print out values 
+            unsigned int maze_xsize; // size of maze
+            unsigned int maze_ysize; // this is only used for printing purposes
+
 };
 
 #endif

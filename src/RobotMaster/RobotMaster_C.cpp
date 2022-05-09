@@ -90,7 +90,7 @@ void RobotMaster_C::move2CellRequest(Message* request){
     exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
     // attaching response data to message
-    Message* response = new Message(t_Response, request->response_id); // creating new response with passed in response id
+    Message* response = new Message(t_Response, request->transaction_id); // creating new response with passed in response id
 
     RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
 
@@ -123,7 +123,7 @@ void RobotMaster_C::getMapRequest(Message* request){
     exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
     // attaching response data to message
-    Message* response = new Message(t_Response, request->response_id); // creating new response with passed in response id
+    Message* response = new Message(t_Response, request->transaction_id); // creating new response with passed in response id
 
     RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
 

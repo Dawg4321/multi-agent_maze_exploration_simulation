@@ -20,7 +20,7 @@ void RobotMaster_C_FCFS::handleIncomingRequest(Message* incoming_request){
 
             // if all robots have been added
             // send signal to all robots to begin exploration
-            if(tracked_robots.size() == max_num_of_robots)
+            if(tracked_robots.size() == num_of_robots)
                 updateAllRobotState(1); // updating all robot states to 1
                                         // this causes them to all begin exploring by first scanning their cell
             break;
@@ -29,7 +29,7 @@ void RobotMaster_C_FCFS::handleIncomingRequest(Message* incoming_request){
         {   
             updateGlobalMapRequest(incoming_request);
 
-            if(number_of_unexplored_cells < 1){ // if no more cells to explore
+            if(number_of_frontier_cells < 1){ // if no more cells to explore
                 updateAllRobotState(-1); // tell all robots to shut down
                 accepting_requests = false; // set robot master to ignore all incoming requests which are not a shut down request
             }

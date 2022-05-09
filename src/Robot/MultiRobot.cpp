@@ -55,11 +55,11 @@ int MultiRobot::getMessagesFromMaster(int current_status){ // checking if RobotM
             if(request->message_type){ // if sent message is a response for a previously sent request
 
                 // need to check if response is stale (e.g. another request has been sent overriding the previous one)
-                if(!(isResponseStale(request->response_id))){ // if response is not stale (transaction counter has not been changed since request sent)
+                if(!(isResponseStale(request->transaction_id))){ // if response is not stale (transaction counter has not been changed since request sent)
                     
                     new_robot_status = handleMasterResponse(request, current_status); // call Response handling function
 
-                    makeResponseStale(request->response_id); // response can now be made stale as it has been handled
+                    makeResponseStale(request->transaction_id); // response can now be made stale as it has been handled
                 }
                 else{ // if response is stale (another request has already been sent)
                     // keep previously set status

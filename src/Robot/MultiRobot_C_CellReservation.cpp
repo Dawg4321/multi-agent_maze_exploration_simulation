@@ -87,8 +87,6 @@ void MultiRobot_C_IE::computeRobotStatus(GridGraph* maze){ // function to comput
         }
         case s_pathfind: // planned path
         {   
-            bool cell_reserved = false;
-
             // repeat loop until cell which is being planned to has been reserved
             
             bool path_found = BFS_pf2NearestUnknownCell(&planned_path); // create planned path to nearest unknown cell

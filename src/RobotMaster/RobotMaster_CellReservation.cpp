@@ -56,7 +56,7 @@ void RobotMaster_CellReservation::reserveCellRequest(Message* request){
     exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
     // attaching response data to message
-    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
+    Message* response = new Message(t_Response, request->transaction_id); // creating new response with given response id
 
     RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
 

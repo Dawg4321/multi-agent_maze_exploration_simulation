@@ -1,7 +1,7 @@
 #include "RobotMaster.h"
 
-RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): max_num_of_robots(num_of_robots){
-    num_of_added_robots = 0; // initializing id counter to zero
+RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize): num_of_robots(num_of_robots){
+    
     Message_Handler = r; // gathering request handler to use for receiving robot -> master communications
     
     maze_xsize = xsize;
@@ -10,7 +10,9 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
     
     num_of_receieve_transactions = 0; // no transactions recieved yet
-    number_of_unexplored_cells = 0; // no cells have been explored
+    number_of_frontier_cells = 0; // no cells have been explored
+
+    num_of_added_robots = 0; // no robots have been added
 }
 
 RobotMaster::~RobotMaster(){
@@ -100,7 +102,7 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
     m_shutDownResponse* response_data = new m_shutDownResponse;
 
     // sending response message to robot
-    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id      
+    Message* response = new Message(t_Response, request->transaction_id); // creating new response with given response id      
     response->msg_data = response_data; // assigning response to message
 
     RequestHandler* robot_request_handler = getTargetRequestHandler(request_data->robot_id); // getting request handler to send response
@@ -148,7 +150,7 @@ void RobotMaster::addRobotRequest(Message* request){ // adds robot to controller
     exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
     
     // sending response message to robot
-    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
+    Message* response = new Message(t_Response, request->transaction_id); // creating new response with given response id
         
     response->msg_data = response_data; // assigning response to message
 
@@ -184,7 +186,7 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
     exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
     // sending response message to robot
-    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
+    Message* response = new Message(t_Response, request->transaction_id); // creating new response with given response id
 
     RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
 
@@ -223,7 +225,7 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
     exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
 
     // sending response message to robot
-    Message* response = new Message(t_Response, request->response_id); // creating new response with given response id
+    Message* response = new Message(t_Response, request->transaction_id); // creating new response with given response id
    
     RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
 
@@ -242,7 +244,6 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
 
 unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandler* r){ // adding robot to control system
                                                                                        // this must be completed by all robots before beginning exploration
-
     num_of_added_robots++; // incrementing inorder to determine next id to give a robot
 
     RobotInfo temp; // buffer to store robot info before pushing it to the tracked_robots vecto
@@ -258,7 +259,7 @@ unsigned int RobotMaster::addRobot(unsigned int x, unsigned int y, RequestHandle
 
     if(GlobalMap->nodes[y][x] != 2){ // if the cell has not been marked as seen (e.g. another robot hasnt already been placed in the cell)
         GlobalMap->nodes[y][x] = 2; // setting current position of robot to 2 as it has been seen but not explored until robot sends first scan update
-        number_of_unexplored_cells++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
+        number_of_frontier_cells++; // incrementing number of unexplored by 1 as current robot cells has presumably not been explored
     }
 
     tracked_robots.push_back(temp); // adding robot info to tracked_robots
@@ -282,7 +283,7 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 
     if (GlobalMap->nodes[C->y][C->x] != 1){ // checking if there is a need to update map (has the current node been explored?)
         
-        number_of_unexplored_cells--; // subtracting number of unexplored cells as new cell has been explored
+        number_of_frontier_cells--; // subtracting number of unexplored cells as new cell has been explored
 
         // updating vertical edges in GlobalMap using robot reading
         GlobalMap->y_edges[C->y][C->x] = (*connections)[0]; // north
@@ -298,22 +299,22 @@ void RobotMaster::updateGlobalMap(unsigned int* id, std::vector<bool>* connectio
 
         if(!GlobalMap->y_edges[C->y][C->x] && GlobalMap->nodes[C->y - 1][C->x] == 0){ // checking if node to north hasn't been explored by a Robot
             GlobalMap->nodes[C->y - 1][C->x] = 2; // if unexplored and no wall between robot and cell, set northern node to unexplored
-            number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
+            number_of_frontier_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
         // checking south
         if(!GlobalMap->y_edges[C->y + 1][C->x] && GlobalMap->nodes[C->y + 1][C->x] == 0){ // checking if node to north hasn't been explored by a Robot
             GlobalMap->nodes[C->y + 1][C->x] = 2; // if unexplored and no wall between robot and cell, set southern node to unexplored
-            number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
+            number_of_frontier_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
         // checking east
         if(!GlobalMap->x_edges[C->y][C->x] && GlobalMap->nodes[C->y][C->x - 1] == 0){ // checking if node to north hasn't been explored by a Robot
             GlobalMap->nodes[C->y][C->x - 1] = 2; // if unexplored and no wall between robot and cell, set eastern node to unexplored
-            number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
+            number_of_frontier_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
         // checking west
         if(!GlobalMap->x_edges[C->y][C->x + 1] && GlobalMap->nodes[C->y][C->x + 1] == 0){ // checking if node to north hasn't been explored by a Robot
             GlobalMap->nodes[C->y][C->x + 1] = 2; // if unexplored and no wall between robot and cell, set western node to unexplored
-            number_of_unexplored_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
+            number_of_frontier_cells++; // incrementing number of unexplored nodes by 1 as this neighbouring node has not been explored
         }
     }
     else{ // if there is no need to update map
@@ -752,9 +753,6 @@ std::string RobotMaster::printGlobalMap(){ // function to print global map of ma
         throw "Critical Error: Cannot print maze as it has not been allocated";
     }
 
-    static unsigned int print_counter = 0; // counters the number of printouts which have occured
-    print_counter++; // incrementing print counter to track printout
-
     std::string logos[9] = { "   ", "---", "|", " ", " R ", " . ", " X ", " * "}; // array with logos to use when printing maze
 
     int string_pointer = 0; // integer used to determine which logo needs to be printed from logo vector
@@ -841,7 +839,7 @@ void RobotMaster::setGlobalMap(GridGraph* g){
     for(int i = 0; i < GlobalMap->nodes.size(); i++){ // need to account for all unexplored cells in new map
         for(int j = 0; j < GlobalMap->nodes[i].size(); j++){
             if(GlobalMap->nodes[i][j] == 2)
-                number_of_unexplored_cells++;
+                number_of_frontier_cells++;
         }
     }
 }
