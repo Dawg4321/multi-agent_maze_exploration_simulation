@@ -12,8 +12,6 @@
 class Maze
 {
     public:
-        Maze();
-        ~Maze();
 
         void generateInterconnectedMaze(unsigned int x_size, unsigned int y_size); // function to generate a x * y sized maze with no walls
         void generate4x4SampleMaze();
@@ -32,7 +30,7 @@ class Maze
         bool printMaze();
 
     private:
-        GridGraph* MazeMap;
+        GridGraph MazeMap;
         unsigned int maze_xsize;
         unsigned int maze_ysize;
 

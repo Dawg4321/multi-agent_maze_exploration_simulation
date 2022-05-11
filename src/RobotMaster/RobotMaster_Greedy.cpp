@@ -17,9 +17,8 @@ void RobotMaster_Greedy::handleAlreadyReservedCell(RobotInfo* current_robot, Rob
         response_data->cell_reserved = false; // adding information about cell not being reserved to response
     }
     else{ // if the current robot is closer to the target cell than the current reserving robot
-        // reserving target cell + updating current planned path
-        current_robot->planned_path = request_data->planned_path; // setting planned path to robot's target
-        current_robot->robot_target = target_cell; // gathering robot's target cell 
+
+        reserveCell(current_robot, &request_data->planned_path, target_cell); // reserving target cell + updating current planned path
 
         reserving_robot->robot_target = NULL_COORDINATE; // setting robot target to an invalid value as previous robot now has no currently reserved cell
         

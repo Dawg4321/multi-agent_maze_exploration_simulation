@@ -12,7 +12,7 @@ RobotMaster_FCFS::~RobotMaster_FCFS(){
 // this is the "first come, first serve" implementation (e.g. if two robots are reserving the same cell, let the robot who reserved it first keep it unless the current robot is adjacent to the cell)
 void RobotMaster_FCFS::handleAlreadyReservedCell(RobotInfo* current_robot, RobotInfo* reserving_robot, m_reserveCellRequest* request_data, m_reserveCellResponse* response_data, Coordinates target_cell){
 
-    if(current_robot->planned_path.size() == 1 && reserving_robot->planned_path.size() > 1){ // if the current robot is adjacent to the cell and the currently reserving robot is not adjacent
+    if(request_data->planned_path.size() == 1 && reserving_robot->planned_path.size() > 1){ // if the current robot is adjacent to the cell and the currently reserving robot is not adjacent
         
         reserveCell(current_robot, &request_data->planned_path, target_cell); // reserving target cell + updating current planned path
         

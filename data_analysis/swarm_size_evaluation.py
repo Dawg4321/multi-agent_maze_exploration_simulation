@@ -28,8 +28,12 @@ for i in range_of_robots: # iterate through the various robot swarm sizes
     eveness_index_list = [] # list to store various values for the eveness index of a simulation
     num_of_used_robots_list = [] # list to store percentage of robots used in scanning
 
+    print("Calculating " + str(i) + "/" + str(range_of_robots[-1]))
+
     for root, subdirectories, files in os.walk(simulation_directory): # get subdirectories of simulation_directory
                                                                       # subdirectories contain simulation info for specified robot size
+        
+
         for subdirectory in subdirectories: # iterate through simulation directories
             directory_2_json = root + "/" + subdirectory  + "/" + simulation_json_name
 
@@ -46,9 +50,13 @@ for i in range_of_robots: # iterate through the various robot swarm sizes
             
             total_num_of_cells = sum(num_of_cells_scanned) # getting total number of cells scanned
             
-            probability_of_scanning = np.true_divide(num_of_cells_scanned, total_num_of_cells) # getting probability of a robot scanning a cell
+            probability_of_scanning = np.true_divide(list(filter(lambda x: x != 0, num_of_cells_scanned)), total_num_of_cells) # getting probability of a robot scanning a cell
             
-            balance_of_scanning = entropy(probability_of_scanning, base=2)/np.log2(len(probability_of_scanning))
+            if probability_of_scanning[0] != 1: # if more than one robot did the work
+                balance_of_scanning = entropy(probability_of_scanning, base=2)/np.log2(len(probability_of_scanning))
+            else: # if only one robot did scanning, even index should be one as only one robot did the work
+                balance_of_scanning = 1
+            
             eveness_index_list.append(balance_of_scanning)
 
             # getting percentage of used robots for exploration

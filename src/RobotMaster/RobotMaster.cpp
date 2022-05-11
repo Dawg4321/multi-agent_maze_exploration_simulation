@@ -9,6 +9,14 @@ RobotMaster::RobotMaster(RequestHandler* r, int num_of_robots, unsigned int xsiz
 
     GlobalMap = new GridGraph(maze_xsize, maze_ysize); // allocating GlobalMap to maze size
     
+    for(int i = 0; i < GlobalMap->x_edges.size(); i++) // placing wall in every cell location as they are unknown
+        for(int j = 0; j < GlobalMap->x_edges[i].size(); j++)
+            GlobalMap->x_edges[i][j] = true;
+
+    for(int i = 0; i < GlobalMap->y_edges.size(); i++) // placing wall in every cell location as they are unknown
+        for(int j = 0; j < GlobalMap->y_edges[i].size(); j++)
+            GlobalMap->y_edges[i][j] = true;
+
     num_of_receieve_transactions = 0; // no transactions recieved yet
     number_of_frontier_cells = 0; // no cells have been explored
 

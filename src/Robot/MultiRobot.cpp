@@ -111,7 +111,7 @@ int MultiRobot::handleMasterRequest(Message* request, int current_status){
                     last_request_priority = 0; // set request priority to a value where no future requests will be computed and prevent shutdown
                 }
                 else{ // if robot has not been told to shutdown
-                    last_request_priority = 1; // set priority so lower priority requests are not handled
+                    last_request_priority = 2; // set priority so lower priority requests are not handled
                 }
             }
             else{ // if the request priority is a value which does not allow update robot state request to be handled

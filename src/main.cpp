@@ -328,7 +328,7 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
     pthread_join(master_thread, NULL); // waiting for robot master thread to finish
     
     exportJSON(RMArgs.turn_json, "Simulation", export_target_directory); // exporting json
-    exportPrintOuts(&RMArgs.maze_printouts, export_target_directory); // exporting print outs
+    //exportPrintOuts(&RMArgs.maze_printouts, export_target_directory); // exporting print outs
 
     // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
 
