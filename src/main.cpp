@@ -473,16 +473,16 @@ void testGroupSize(){
     cin >> target_directory;
 
     json simulation_info;
-    simulation_info["Number_of_Robots"] = number_of_robots;
+    simulation_info["Number_of_Robots"] = number_of_robots; // adding total number of robots to simulation info
     simulation_info["Robot_Type"] = type_of_robots; // adding type of robots to info
+    simulation_info["Maze_Size"] = maze_size; // adding maze size to simulation info
+    simulation_info["Number_of_Mazes"] = number_of_mazes; // adding maze size to simulation info
 
     // creating directories for simulation
     for(int i = 0; i < group_sizes.size(); i++){
         std::filesystem::create_directories(target_directory + to_string(number_of_robots) + "_group_size_" + to_string(group_sizes[i].first)); // creating parent directories to store robot simulations of various swarm sizes
         simulation_info["Group_Sizes"].push_back(group_sizes[i].first); // adding group size to simulation_info json 
     }
-
-    simulation_info["Maze_Size"] = maze_size; // adding maze size to simulation info
 
     for(int j = 0; j < number_of_mazes; j++){
 
@@ -600,6 +600,7 @@ void testSwarmSize(){
     
     simulation_info["Robot_Type"] = type_of_robots; // adding type of robots to info
     simulation_info["Maze_Size"] = maze_size; // adding maze size to simulation info
+    simulation_info["Number_of_Mazes"] = number_of_mazes; // adding maze size to simulation info
 
     vector<Coordinates> start_positions(max_number_of_robots, Coordinates(0,0));
 

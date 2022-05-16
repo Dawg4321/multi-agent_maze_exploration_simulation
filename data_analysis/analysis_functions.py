@@ -79,26 +79,11 @@ def analyseExploredCellsOverTurns(simulation_data, num_turns): # plots and retur
     plt.show()
 
     return explored_cells_over_turns
-"""
-location = "/home/ryan/code/git_workspace/multi-agent_maze_exploration_simulation/build/"
 
-data_json = "Simulation.json"
-
-file = open(location + data_json) # gathering json data
-
-simulation = json.load(file) # placing json data into a dictionary
-
-simulation_info = simulation["Info"]
-
-simulation_data = simulation["Simulation"]
-
-num_turns = simulation_info["Total_Turns_Taken"]
-
-analyseExploredCellsOverTurns(simulation_data, num_turns) """
-
-
-#print(transaction_data)
-
-#df = pd.read_json(location + data_json)
-
-#print(df)
+def getRobotTypeName(robot_type): # function to get name for passed in robot type number
+    if robot_type == 1:
+        return "Greedy"
+    elif robot_type == 2:
+        return "FCFS"
+    else:
+        return ""
