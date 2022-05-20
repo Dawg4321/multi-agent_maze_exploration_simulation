@@ -12,11 +12,8 @@
 class Maze
 {
     public:
-
-        void generateInterconnectedMaze(unsigned int x_size, unsigned int y_size); // function to generate a x * y sized maze with no walls
-        void generate4x4SampleMaze();
-        void generate8x8SampleMaze();
-        void generateCollisionTest();
+        void generate4x4SampleMaze(); // generates the sample 4x4 maze
+        void generate8x8SampleMaze(); // generates the sample 8x8 maze
         void generateRandomNxNMaze(unsigned int x_size, unsigned int y_size); // generates a random NxN maze using Aldous-Broder Maze generation Algorithm
         
         GridGraph getMazeMap(); // MazeMap getter

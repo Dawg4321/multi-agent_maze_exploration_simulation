@@ -59,7 +59,7 @@ struct m_shutDownRequest:m_genericRequest{ // request to notify robot master of 
     }    
 };
 
-struct m_shutDownResponse:m_genericRequest{ // no response needed to shutdown request hence empty
+struct m_shutDownResponse:m_genericRequest{ // empty as no data needs to be transmitted for acknowledgement message
     
     // Constructor
     m_shutDownResponse():m_genericRequest(shutDownRequest_ID){ // assigning request id to response message    
@@ -104,13 +104,6 @@ struct m_updateGlobalMapRequest:m_genericRequest{
     m_updateGlobalMapRequest():m_genericRequest(updateGlobalMapRequest_ID){ // assigning request id to request message
 
     }  
-};
-struct m_updateGlobalMapResponse:m_genericRequest{ // no response needed hence empty
-
-    // Constructor
-    m_updateGlobalMapResponse():m_genericRequest(updateGlobalMapRequest_ID){ // assigning request id to request message
-
-    } 
 };
 
 // ** reserveCellRequest **
@@ -161,13 +154,6 @@ struct m_updateRobotLocationRequest:m_genericRequest{
         
     }  
 };
-struct m_updateRobotLocationResponse:m_genericRequest{ // no response needed hence empty
-    
-    // Constructor
-    m_updateRobotLocationResponse():m_genericRequest(updateRobotLocationRequest_ID){ // assigning request id to request message
-        
-    }  
-};
 
 // ** move2CellRequest **
 struct m_move2CellRequest:m_genericRequest{
@@ -180,7 +166,7 @@ struct m_move2CellRequest:m_genericRequest{
     }  
 };
 struct m_move2CellResponse:m_genericRequest{
-    bool can_movement_occur;
+    bool can_movement_occur; // can the movement happen?
 
     // Constructor
     m_move2CellResponse():m_genericRequest(move2CellRequest_ID){ // assigning request id to request message

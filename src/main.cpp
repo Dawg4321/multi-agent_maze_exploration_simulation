@@ -8,6 +8,7 @@
 #include "Maze.h"
 #include "RobotMaster_NC.h"
 #include "RobotMaster_NC_Greedy.h"
+#include "RobotMaster_NC_FCFS.h"
 #include "RobotMaster_C_Greedy.h"
 #include "RobotMaster_C_FCFS.h"
 #include "MultiRobot_NC.h"
@@ -115,15 +116,8 @@ void* robotFunc(void* Robot_Info){ // function for robot running threads
             number_of_turns_to_wait = getTurns2Wait(robot_execution_status); // determing how many turns robot has to sit out for before next operation 
                                                                              // these turns help give the illusion of time taken for each type of request
         }
-        else if(number_of_turns_to_wait == 1){ // if there is only 1 turn left to wait, compute the function which has been waiting
-            
-            R->computeRobotStatus(&Data->Maze_Map);
-            /*if(robot_execution_status == s_scan_cell){
-                R->computeScanCell(&Data->Maze_Map);
-            }
-            else if(robot_execution_status == s_compute_move){
-                R->computeMove();
-            }*/
+        else if(number_of_turns_to_wait == 1){ // if there is only 1 turn left to wait, compute the function which has been waiting  
+            R->computeRobotStatus(&Data->Maze_Map); // execute robot state
         }
 
         pthread_barrier_wait(&TurnControl->turn_end_barrier); // waiting for all threads to complete preivous turn initialization before starting next turn
@@ -248,7 +242,7 @@ RobotMaster* getNewRobotMaster(int robot_type, int number_of_robots, RequestHand
         return new RobotMaster_NC_Greedy(request_handler, number_of_robots, xsize, ysize);
     }
     else if(robot_type == 4){ // if the robots to simulate are of type No Collision, FCFS
-        return new RobotMaster_NC_Greedy(request_handler, number_of_robots, xsize, ysize);
+        return new RobotMaster_NC_FCFS(request_handler, number_of_robots, xsize, ysize);
     }
     else if(robot_type == 5){ // if the robots to simulate are of type Collision, No Reservation
         return new RobotMaster_NC(request_handler, number_of_robots, xsize, ysize);
@@ -351,7 +345,6 @@ void simulateOneTime(){
     cout << "1 - 4x4 Sample Maze\n";
     cout << "2 - 8x8 Sample Maze\n";
     cout << "3 - NxN Random Maze\n";
-    cout << "4 - NxN Empty Grid\n";
 
     int maze_selection_input; // variable to store input
 
@@ -381,21 +374,6 @@ void simulateOneTime(){
             Generated_Maze.generateRandomNxNMaze(x,x);
             Generated_Maze.printMaze();
             
-            break;
-        }
-        case 4: // NxN empty grid
-        {
-            // determining grid size
-            int x_size, y_size;
-            // x position
-            cout << "Maze x size: "; 
-            cin >> x_size;
-            // y position
-            cout << "Maze y size: ";
-            cin >> y_size;
-
-            Generated_Maze.generateInterconnectedMaze(x_size, y_size); // generating NxN empty grid  
-            Generated_Maze.printMaze();
             break;
         }
     }

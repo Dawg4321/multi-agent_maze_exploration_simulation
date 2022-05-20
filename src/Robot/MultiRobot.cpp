@@ -18,20 +18,11 @@ bool MultiRobot::move2Cell(Coordinates destination){ // overriden version of mov
                                                       // converts target destination to a direction then uses original move2Cell function
                                                       // messages master to confirm wh
 
-    // bool is_not_occupied = requestMove2Cell(destination); // checking if target cell is unoccupied
-
-    //if(is_not_occupied){ // attempt to move as cell unoccupied
-
     bool movement_occurred = Robot::move2Cell(destination); // moving robot using Robot classes move function
     
     requestRobotLocationUpdate(); // notifying master of robot position update
 
     return movement_occurred; // returning whether movement occured successfully
-    /*}
-    else {
-        return false; // return false as target cell occupied
-    }*/
-    
 }
 
 

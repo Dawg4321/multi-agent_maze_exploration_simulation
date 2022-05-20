@@ -186,27 +186,7 @@ void RobotMaster::updateGlobalMapRequest(Message* request){
 
     updateGlobalMap(&robot_id, &wall_info, &cords); // updating global map with information
 
-    //request->return_data.push_back((void*)&robot_id); // telling Robot that data was successfully added to GlobalMap and it can continue
-
-    // gathering response data
-    m_updateGlobalMapResponse* response_data = new m_updateGlobalMapResponse;
-
-    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
-
-    // sending response message to robot
-    Message* response = new Message(t_Response, request->transaction_id); // creating new response with given response id
-
-    RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
-
-    if (robot_request_handler != NULL){ // if request handler gathered send data
-        response->msg_data = response_data; // assigning response to message
-
-        robot_request_handler->sendMessage(response); // sending message
-    }
-    else{ // if no request handler found, must delete response data
-        delete response_data;
-        delete response;
-    }
+    exportRequestInfo2JSON(request_data, NULL, num_of_receieve_transactions); // adding request info to tracking JSON
 
     return;
 }
@@ -225,27 +205,7 @@ void RobotMaster::updateRobotLocationRequest(Message* request){
 
     updateRobotLocation(&robot_id, &new_robot_location); // updating robot location
 
-    // return data allocation
-    m_updateRobotLocationResponse* response_data = new m_updateRobotLocationResponse; // response message
-
-    // printGlobalMap();
-
-    exportRequestInfo2JSON(request_data, response_data, num_of_receieve_transactions); // adding request info to tracking JSON
-
-    // sending response message to robot
-    Message* response = new Message(t_Response, request->transaction_id); // creating new response with given response id
-   
-    RequestHandler* robot_request_handler = getTargetRequestHandler(robot_id); // getting request handler to send response
-
-    if (robot_request_handler != NULL){ // if request handler gathered send data
-        response->msg_data = response_data; // assigning response to message
-
-        robot_request_handler->sendMessage(response); // sending message
-    }
-    else{ // if no request handler found, must delete response data
-        delete response_data;
-        delete response;
-    }
+    exportRequestInfo2JSON(request_data, NULL, num_of_receieve_transactions); // adding request info to tracking JSON
 
     return;
 }
@@ -487,72 +447,6 @@ void RobotMaster::updateRobotState(int status, RequestHandler* Target_Robot_Rece
     return;
 }
 
-/*
-void RobotMaster::printRequestInfo(Message* request){
-    // gathering request information
-    unsigned int request_id = request_id_tracker;
-    int request_type = request->msg_data;
-    
-    //printing general request information
-    printf("~~~~~\n");
-    printf("Request %d\n", request_id);
-    printf("Type = %d", request_type);
-    
-    switch(request_type){
-        case -1: // shutDown confirmation request ( telling master robot has finished exploring)
-        {
-            printf(" - Shut Down Request\n");
-            printf("~~~~~\n");
-            printf("Robot Shutting Down: %d", request->msg_data[0]);
-            
-            break;
-        }
-        case 0: // addRobot request
-        {
-            printf(" - Add Robot Request\n");
-
-            printf("~~~~~\n");
-            printf("Request Data:\n");
-            printf("Robot X Position: %d\n", request->msg_data[0]);
-            printf("Robot Y Position: %d\n", request->msg_data[1]);
-
-            printf("~~~~~\n");
-            printf("Response Data:\n");
-            printf("Robot Assigned id: %d", request->return_data[0]);
-            
-            break;
-        }
-        case 1: // updateGlobalMap request
-        {   
-            printf(" - Update Global Map Request\n");
-
-            printf("~~~~~\n");
-            printf("Request Data:\n");
-            printf("Robot ID: %d\n", request->msg_data[0]);
-
-            // TODO: print wall information
-
-            printf("Scan Position: x - %d, y = %d\n");
-
-            break;
-        }
-        case 2: // move2cell request
-        {
-            break;
-        }
-        case 3: // reserveCell request (robot wants to start exploring from a cell without other robots using it)
-        {
-            break;
-        }
-        case 4: // update Robot Location  (tells master that robot has completed move operation)
-        {
-            break;
-        }
-    }
-
-    printf("~~~~~\n");
-}*/
-
 void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericRequest* response, unsigned int transaction_id){
     // creating jsons
     json request_buffer_json, response_buffer_json; // buffer jsons to store request and response information 
@@ -672,72 +566,72 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
         }
     }
     if(response != NULL){
-    switch(response->request_type){ // switch to determine which type of response is being sent
-                                   // this is required inorder to typecast and export the appropriate information
-        case shutDownRequest_ID:
-        {
-            // no response required thus no print out
+        switch(response->request_type){ // switch to determine which type of response is being sent
+                                    // this is required inorder to typecast and export the appropriate information
+            case shutDownRequest_ID:
+            {
+                // no response required thus no print out
 
-            break;
-        }
-        case addRobotRequest_ID:
-        {
-            // typecast to appropriate child class to gather response data
-            m_addRobotResponse* response_cast = (m_addRobotResponse*) response;
-            
-            // adding request infomation to buffer json
-            response_buffer_json["Assigned_ID"] = response_cast->robot_id;
+                break;
+            }
+            case addRobotRequest_ID:
+            {
+                // typecast to appropriate child class to gather response data
+                m_addRobotResponse* response_cast = (m_addRobotResponse*) response;
+                
+                // adding request infomation to buffer json
+                response_buffer_json["Assigned_ID"] = response_cast->robot_id;
 
-            break;
-        }
-        case updateGlobalMapRequest_ID:
-        {
-            // no response required thus no print out
+                break;
+            }
+            case updateGlobalMapRequest_ID:
+            {
+                // no response required thus no print out
 
-            break;
-        }
-        case move2CellRequest_ID:
-        {
-            // typecast to appropriate child class to gather response data
-            m_move2CellResponse* response_cast = (m_move2CellResponse*) response;
-            
-            // need to convert bool info into y/n
-            char can_movement_occur = 'n';
-            if (response_cast->can_movement_occur)
-                can_movement_occur = 'y';
+                break;
+            }
+            case move2CellRequest_ID:
+            {
+                // typecast to appropriate child class to gather response data
+                m_move2CellResponse* response_cast = (m_move2CellResponse*) response;
+                
+                // need to convert bool info into y/n
+                char can_movement_occur = 'n';
+                if (response_cast->can_movement_occur)
+                    can_movement_occur = 'y';
 
-            // adding request infomation to buffer json
-            response_buffer_json["Movement_Occured"] = can_movement_occur;
-            
-            break;
-        }
-        case reserveCellRequest_ID:
-        {
-            // typecast to appropriate child class to gather response data
-            m_reserveCellResponse* response_cast = (m_reserveCellResponse*) response;
-            
-            // need to convert bool info into y/n
-            std::string cell_reserved = "n";
-            if (response_cast->cell_reserved)
-                cell_reserved = "y";
+                // adding request infomation to buffer json
+                response_buffer_json["Movement_Occured"] = can_movement_occur;
+                
+                break;
+            }
+            case reserveCellRequest_ID:
+            {
+                // typecast to appropriate child class to gather response data
+                m_reserveCellResponse* response_cast = (m_reserveCellResponse*) response;
+                
+                // need to convert bool info into y/n
+                std::string cell_reserved = "n";
+                if (response_cast->cell_reserved)
+                    cell_reserved = "y";
 
-            // adding request infomation to buffer json
-            response_buffer_json["Cell_Reserved"] = cell_reserved;
+                // adding request infomation to buffer json
+                response_buffer_json["Cell_Reserved"] = cell_reserved;
 
-            break;
-        }
-        case updateRobotLocationRequest_ID:
-        {
-            // no response required thus no print out
+                break;
+            }
+            case updateRobotLocationRequest_ID:
+            {
+                // no response required thus no print out
 
-            break;
+                break;
+            }
+            case getMapRequest_ID:
+            {
+                // no data loaded into response as only map information is in response
+                break;
+            }
         }
-        case getMapRequest_ID:
-        {
-            // no data loaded into response as only map information is in response
-            break;
-        }
-    }
     }
 
     // transaction information has been encapsulated into two seperate jsons
@@ -850,21 +744,6 @@ void RobotMaster::setGlobalMap(GridGraph* g){
         }
     }
 }
-
-/*
-bool RobotMaster::setRobotTargetCell(unsigned int robot_id, Coordinates* target_cell){
-    
-    for(int i = 0; i < tracked_robots.size(); i++){ // attempt to set target_cell of robot 
-        if(tracked_robots[i].robot_id == robot_id){
-            tracked_robots[i].robot_target_value = *target_cell; // placing target cell into robot_target's memory location
-            tracked_robots[i].robot_target = &tracked_robots[i].robot_target_value; // ensuring pointer is pointer to memory location to notify that current robot target is valid (e.g. ptr != NULL)
-            
-            return true;
-        }
-    }
-
-    return false; // if robot of specified id is not found
-}*/
 
 RobotInfo* RobotMaster::getRobotInfo(unsigned int id){
 

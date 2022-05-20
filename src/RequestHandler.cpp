@@ -1,6 +1,6 @@
 #include "RequestHandler.h"
 
-RequestHandler::RequestHandler(/* args */){
+RequestHandler::RequestHandler(){
     pthread_mutex_init(&msg_mutex, NULL); // intialzing msg_mutex
                                           // TODO: add checks for if mutex is initialized properly
 }

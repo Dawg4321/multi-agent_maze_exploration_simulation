@@ -115,8 +115,7 @@ bool Robot::move2Cell(int direction){ // function to move robot depending on loc
             break;
         }
     }
-    /*if (ret_value) // if robot position movement successfull
-        std::cout << "Robot Sucessfully moved to " << x_position  << ", "<< y_position << "\n";*/
+
     return ret_value; // ret_value = true if robot moved sucessfully
                       // ret_value = false if robot failed to move
 }
@@ -197,11 +196,7 @@ std::vector<Coordinates> Robot::getValidNeighbours(int x, int y){ // function to
             neighbours.push_back(buffer);
         }
     }
-    
-    /*// printing all valid neighbouring nodes of selected node
-    for(int i = 0; i < ret_value.size(); i ++){ // TODO: after debugging
-        printf("%d,%d\n",ret_value[i].x,ret_value[i].y);
-    }*/
+
 
     std::random_shuffle(neighbours.begin(), neighbours.end()); // randomizing neighbours to remove bias when selecting a neighbor at intersections
 
@@ -212,15 +207,6 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
     
     planned_path.clear(); // clearing planned_path as new path is to be planned using breadth first search
 
-    // initial checks to ensure path needs to be planned
-    // no point using computation if robot is at destination or destination does not exist on robot's local map
-    
-    /*if(LocalMap->nodes[y_dest][x_dest] == 0) // if the destination node has not been explored
-        return false;                       // can't create a path thus return false;
-
-    else if(x_position == x_dest && y_position == y_dest) // if robot is at the destination already
-        return false;                                      // no need to move thus return false
-    */
     bool path_found = false; // variable to track whether a path has been found
 
     std::queue<Coordinates> node_queue; // creating node queue to store nodes to be "explored" by algorithm
@@ -286,11 +272,6 @@ bool Robot::pf_BFS(int x_dest, int y_dest){ // function to plan a path for robot
             }
         }
     }
-
-    /*printf("Planned Path\n"); // printing planned path
-    for(int i = 0; i <  planned_path.size(); i++){ // TODO: Remove after further debugging
-        printf("%d,%d\n",planned_path[i].x,planned_path[i].y);
-    }*/
 
     return path_found; 
 }
@@ -384,12 +365,6 @@ bool Robot::BFS_pf2NearestUnknownCell(std::deque<Coordinates>* ret_stack){
             }
         }
     }
-
-    /*printf("Planned Path\n"); // printing planned path
-    for(int i = 0; i <  ret_stack->size(); i++){ // TODO: Remove after further debugging
-        printf("%d,%d\n",(*ret_stack)[i].x,(*ret_stack)[i].y);
-    }*/
-
     return ret_value; 
 }
 
