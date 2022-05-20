@@ -156,7 +156,7 @@ void* robotFunc(void* Robot_Info){ // function for robot running threads
     pthread_exit(NULL); // return from thread
 }
 
-void* controllerFunc(void* RobotMaster_Info){ // function to run Robot Controller in a seperate thread
+void* masterFunc(void* RobotMaster_Info){ // function to run Robot Master in a seperate thread
     // gathering passed data
     RobotMasterArgs* Data = (RobotMasterArgs*) RobotMaster_Info; // argument structure containing passed data
     RobotMaster* RM = Data->Generated_RobotMaster; // robot master to run
@@ -299,12 +299,12 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
     RequestHandler* request_handler = new RequestHandler(); // creating message handler for robot -> master communcation
     
     // gathering new RobotMaster compatible with specified type of robots
-    RobotMaster* Robot_Controller = getNewRobotMaster(type_of_robots, number_of_robots, request_handler, Generated_Maze->getMazeXSize(), Generated_Maze->getMazeYSize());
-    RobotMasterArgs RMArgs(Robot_Controller, &turn_control_data);
+    RobotMaster* Robot_Master = getNewRobotMaster(type_of_robots, number_of_robots, request_handler, Generated_Maze->getMazeXSize(), Generated_Maze->getMazeYSize());
+    RobotMasterArgs RMArgs(Robot_Master, &turn_control_data);
 
-    // creating thread to run Robot_Controller 
+    // creating thread to run Robot_Master 
     pthread_t master_thread;
-    pthread_create(&master_thread, NULL, &controllerFunc, (void*)&RMArgs);
+    pthread_create(&master_thread, NULL, &masterFunc, (void*)&RMArgs);
 
     // ~~~ Robot Thread Generation ~~~
     MultiRobot* Robots_Array[number_of_robots]; // generating array for robots to be stored in
@@ -335,7 +335,7 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
 
     // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
 
-    delete Robot_Controller; // deleting RobotMaster
+    delete Robot_Master; // deleting RobotMaster
     
     for(int i = 0; i < number_of_robots; i++) // deleting all generated robots
         delete Robots_Array[i];

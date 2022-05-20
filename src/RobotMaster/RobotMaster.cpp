@@ -131,7 +131,7 @@ void RobotMaster::shutDownRequest(Message* request){ // disconnects robot from s
     return;
 }
 
-void RobotMaster::addRobotRequest(Message* request){ // adds robot to controller system with any required information
+void RobotMaster::addRobotRequest(Message* request){ // adds robot to master system with any required information
     // addRobot request msg_data layout:
     // [0] = type: (unsigned int*), content: x coordinate of robot
     // [1] = type: (unsigned int*), content: y coordinate of robot

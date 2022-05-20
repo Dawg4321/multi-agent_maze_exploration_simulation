@@ -23,7 +23,7 @@ class MultiRobot: public Robot{
         // protected functions:
 
         // ** Overriden Functions **
-        bool move2Cell(Coordinates destination); // move robot operation used when exploring using controller
+        bool move2Cell(Coordinates destination); // move robot operation used when exploring using master
 
         // ** General Purpose Functions **
         unsigned int getID() { return id;} // returns robot id
@@ -46,7 +46,7 @@ class MultiRobot: public Robot{
 
         //protected data members:
 
-        unsigned int id; // robot id assigned to robot by robot controller
+        unsigned int id; // robot id assigned to robot by robot master
 
         int transaction_counter; // counts the number of sent transactions executed
                                  // also used to assign transation id to sent messages to allow for response identification

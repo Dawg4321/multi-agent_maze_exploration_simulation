@@ -229,7 +229,7 @@ void MultiRobot::assignIdFromMaster(){
     // attaching message data to request
     temp_message->msg_data = message_data;
 
-    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot controller
+    Robot_2_Master_Message_Handler->sendMessage(temp_message); // sending message to robot master
 
     return;
 }

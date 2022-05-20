@@ -20,7 +20,7 @@ enum MessageType{t_Request,t_Response};
 
 struct Message{
     // content of messages and responses, information will be encapsulated using messages defined in RequestTemplates.h
-    m_genericRequest* msg_data; // message data for controller to unpack
+    m_genericRequest* msg_data; // message data for master to unpack
     
     MessageType message_type; // used to determine if sent message is a request or a response within robot
                        // true = message is a response to a previous request
