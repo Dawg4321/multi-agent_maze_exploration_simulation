@@ -16,11 +16,13 @@ class MultiRobot_C_CellReservation: public MultiRobot_CellReservation, public Mu
 
         int robotLoopStepforSimulation(GridGraph* maze); // robot loop step used for simulation to allow for turn delays based off specific requests
                                                          // must be used with turn based simulation system  
-        
+        void computeRobotStatus(GridGraph* maze); // function which computes a function based off the robot's current status
+
+    protected:
+        // ** Master -> Robot Communication Stub Functions ** 
         int handleMasterResponse(Message* response, int current_status); // function to handle Master Response Messages
         int handleMasterRequest(Message* response, int current_status); // function to handle Master Request Messages
-
-        void computeRobotStatus(GridGraph* maze); // function which computes a function based off the robot's current status
+                                                                            // must be overriden to implement stub functions from parent classes
 }; 
 
 #endif

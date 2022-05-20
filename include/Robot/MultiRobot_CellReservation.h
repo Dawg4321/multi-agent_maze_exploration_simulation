@@ -8,15 +8,22 @@ class MultiRobot_CellReservation: virtual public MultiRobot{
 
         MultiRobot_CellReservation(); // constructor for multi-robot collision
         virtual ~MultiRobot_CellReservation(); // virtual destructor to ensure child destructor is called during "delete" to base class pointer
+    
+    protected:
+        // protected functions:
 
-        void requestReserveCell(); // attempts to reserve a cell to explore from the RobotMaster
-                                   // if cell to reserve fails, LocalMap is updated with GlobalMap information
-
-        int handleCellReserveResponse(Message* response, int current_status); // handles response for collision messages
-                                                                              // must be used with RobotMaster::handleMasterRequest
+        // ** Overriden Functions**
         void BFS_noPathFound(); // overriden function which handles if a path is not found
         bool BFS_exitCondition(Coordinates* node_to_test); // overriden Exit condition for finding nearest unexplored cell
                                                            // must be overriden as already reserved cells must be ignored when selecting a new cell to reserve
+                                                           
+        // ** Robot -> Master Communication Functions **
+        void requestReserveCell(); // attempts to reserve a cell to explore from the RobotMaster
+                                   // if cell to reserve fails, LocalMap is updated with GlobalMap information
+
+        // ** Master -> Robot Communication Stub Functions **
+        int handleCellReserveResponse(Message* response, int current_status); // handles response for collision messages
+                                                                              // must be used with RobotMaster::handleMasterRequest
     private:
         bool isCellAlreadyReserved(Coordinates* C); // checks if a cell is already reserved by another robot
         

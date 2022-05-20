@@ -3,6 +3,10 @@
 
 #include "RobotMaster.h"
 
+/* 
+    DEPRECATED FUNCTIONALITY USE AT OWN RISK
+*/
+
 class RobotMaster_NC: public RobotMaster{
     public:
         RobotMaster_NC(RequestHandler* r, int num_of_robots, unsigned int xsize, unsigned int ysize);

@@ -86,7 +86,6 @@ for n in range(len(group_sizes)): # iterate through the various robot swarm size
 
 group_sizes.reverse() # reversing group sizes as number of groups is reverse of this
 num_groups = group_sizes # getting number of groups
-print(group_sizes)
 average_turns_taken = [] # list containing average number of turns taken to map maze at each size
 std_deviation = [] # standard deviation across turns taken for a robot number
 
@@ -135,9 +134,9 @@ plt.figure(3) # plotting average evenness at each robot size
 plt.plot(num_groups, average_eveness_index, '--bo')
 plt.plot(num_groups, eveness_std_deviation, '--ro')
 plt.title("Relationship between eveness of cell scan operations\n and number of robots used\n" + subtitle, fontsize=11)
-plt.ylabel("Average Pielou's Eveness Index value for robots who\n scanned a cell over " + str(number_of_mazes) + " mazes")
+plt.ylabel("Average Pielou's eveness index value for robots who\n scanned a cell over " + str(number_of_mazes) + " mazes")
 plt.xlabel("Number of robot groups")
-plt.legend(["Average Pielou's Eveness Index", "Standard deviation"])
+plt.legend(["Average Pielou's eveness index", "Standard deviation"])
 plt.grid(linestyle = '--')
 plt.savefig(parent_directory + "Figure_3.png")
 
@@ -152,7 +151,7 @@ for i in range(len(average_probability_of_scan)): # plotting probability of each
     plt.scatter(num_groups[i]*np.ones(num_of_robots), row)
 
 plt.title("Relationship between proportion of cells scanned by a robot\n and number of robots used\n" + subtitle, fontsize=11)
-plt.ylabel("Average propotion of scan operations performed by a robot\n over  " + str(number_of_mazes) + " mazes")
+plt.ylabel("Average proportion of scan operations performed by a robot\n over  " + str(number_of_mazes) + " mazes")
 plt.xlabel("Number of robot groups")
 plt.grid(linestyle = '--')
 plt.savefig(parent_directory + "Figure_4.png")

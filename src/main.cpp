@@ -116,12 +116,14 @@ void* robotFunc(void* Robot_Info){ // function for robot running threads
                                                                              // these turns help give the illusion of time taken for each type of request
         }
         else if(number_of_turns_to_wait == 1){ // if there is only 1 turn left to wait, compute the function which has been waiting
-            if(robot_execution_status == s_scan_cell){
+            
+            R->computeRobotStatus(&Data->Maze_Map);
+            /*if(robot_execution_status == s_scan_cell){
                 R->computeScanCell(&Data->Maze_Map);
             }
             else if(robot_execution_status == s_compute_move){
                 R->computeMove();
-            }
+            }*/
         }
 
         pthread_barrier_wait(&TurnControl->turn_end_barrier); // waiting for all threads to complete preivous turn initialization before starting next turn
@@ -289,7 +291,7 @@ void exportPrintOuts(vector<string>* strings_to_export, string target_directory)
     return;
 }
 
-void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robots, vector<Coordinates>* robot_start_positions, string export_target_directory){ // function to run a single robot simulation with passed in parameters
+void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robots, vector<Coordinates>* robot_start_positions, string export_target_directory, bool print_outs){ // function to run a single robot simulation with passed in parameters
     // ~~~ Turn Tracking System Variable Creation ~~~~
     TurnControlData turn_control_data(number_of_robots);
     
@@ -328,7 +330,8 @@ void runSimulation(Maze* Generated_Maze, int number_of_robots, int type_of_robot
     pthread_join(master_thread, NULL); // waiting for robot master thread to finish
     
     exportJSON(RMArgs.turn_json, "Simulation", export_target_directory); // exporting json
-    //exportPrintOuts(&RMArgs.maze_printouts, export_target_directory); // exporting print outs
+    if(print_outs == true) // if prinouts enabled
+        exportPrintOuts(&RMArgs.maze_printouts, export_target_directory); // exporting print outs
 
     // ~~~ Deleting Dynamically Allocated Memory and Barriers ~~~
 
@@ -433,7 +436,7 @@ void simulateOneTime(){
     cout << "Enter a directory to store results of the simulation:\n";
     cin >> target_directory;   
 
-    runSimulation(&Generated_Maze, number_of_robots, type_of_robots, &start_positions, target_directory); // starting simulation with passed in settings
+    runSimulation(&Generated_Maze, number_of_robots, type_of_robots, &start_positions, target_directory, true); // starting simulation with passed in settings
 
     return;
 }
@@ -552,7 +555,7 @@ void testGroupSize(){
             string directory_for_export = target_directory + to_string(number_of_robots) + "_group_size_" + to_string(group_sizes[i].first) + "/sim_" + to_string(j + 1) +  "/"; // getting directory for target output
             std::filesystem::create_directories(directory_for_export); // creating child directory to store robot simulation for this test
 
-            runSimulation(&m, number_of_robots, type_of_robots, &start_positions, directory_for_export); // running simulation
+            runSimulation(&m, number_of_robots, type_of_robots, &start_positions, directory_for_export, false); // running simulation
         }
     }
 
@@ -614,7 +617,7 @@ void testSwarmSize(){
             string directory_for_export = target_directory + "sim_size_" + to_string(i) + "/sim_" + to_string(j + 1) +  "/"; // getting directory for target output
             std::filesystem::create_directories(directory_for_export); // creating child directory to store robot simulation for this test
 
-            runSimulation(&m, i, type_of_robots, &start_positions, directory_for_export); // running simulation
+            runSimulation(&m, i, type_of_robots, &start_positions, directory_for_export, false); // running simulation
         }
     }
 

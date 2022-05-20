@@ -749,7 +749,6 @@ void RobotMaster::exportRequestInfo2JSON(m_genericRequest* request, m_genericReq
     request_json["Transaction"] = transaction_id;
     
     RequestInfo.push_back(request_json); // adding generated json to RequestInfo json
-    RequestInfoString.push_back(request_json.dump(4)); // adding json to string vector for debugging purposes
 
     return; 
 }

@@ -81,7 +81,11 @@ void MultiRobot_C_CellReservation::computeRobotStatus(GridGraph* maze){ // funct
         }
         case s_scan_cell: // scan cell
         {   
-            computeScanCell(maze); // computing scan cell
+            std::vector<bool> connection_data = scanCell(maze); // scan cell which is occupied by the robot 
+
+            requestGlobalMapUpdate(connection_data); // sending message to master with scanned maze information
+
+            robot_status = s_pathfind; // setting status to 2 so pathfinding will occur on next loop cycle
 
             break;
         }
@@ -113,7 +117,22 @@ void MultiRobot_C_CellReservation::computeRobotStatus(GridGraph* maze){ // funct
         }
         case s_compute_move: // move robot 1 step
         {   
-            computeMove(); // compute movement request
+            bool move_occured = move2Cell(planned_path[0]); // attempt to move robot to next location in planned path queue
+
+            if(move_occured){ // if movement succeed 
+                planned_path.pop_front(); // remove element at start of planned path queue as it has occured 
+            
+                if(planned_path.empty()){ // if there are no more moves to occur, must be at an unscanned cell
+                    robot_status = s_scan_cell; // set robot to scan cell on next loop iteration as at desination cell
+                }
+                else{ // if more moves left, try another movement
+                    robot_status = s_move_robot;
+                }
+            }
+            else{ // if movement failed
+                    planned_path.clear(); // clearing current planned path
+                    robot_status = s_pathfind; // attempt to plan a new path which will hopefully not cause movement to faile
+            }
 
             break;
         }
