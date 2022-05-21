@@ -1,0 +1,1242 @@
+{
+    "Info": {
+        "Number_of_Printouts": 49,
+        "Number_of_Robots": 2,
+        "Total_Turns_Taken": 50
+    },
+    "Maze_Characteristics": {
+        "X_Size": 3,
+        "Y_Size": 3
+    },
+    "Simulation": [
+        {
+            "Turn_1": [
+                {
+                    "Request": {
+                        "x_pos": 0,
+                        "y_pos": 0
+                    },
+                    "Response": {
+                        "Assigned_ID": 1
+                    },
+                    "Transaction": 1,
+                    "Type": 0
+                },
+                {
+                    "Request": {
+                        "x_pos": 0,
+                        "y_pos": 0
+                    },
+                    "Response": {
+                        "Assigned_ID": 2
+                    },
+                    "Transaction": 2,
+                    "Type": 0
+                }
+            ]
+        },
+        {
+            "Turn_2": []
+        },
+        {
+            "Turn_3": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 0,
+                            "y_pos": 0
+                        },
+                        "ID": 2,
+                        "Wall_Info": {
+                            "East": "y",
+                            "North": "y",
+                            "South": "y",
+                            "West": "n"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 3,
+                    "Type": 1
+                },
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 0,
+                            "y_pos": 0
+                        },
+                        "ID": 1,
+                        "Wall_Info": {
+                            "East": "y",
+                            "North": "y",
+                            "South": "y",
+                            "West": "n"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 4,
+                    "Type": 1
+                }
+            ]
+        },
+        {
+            "Turn_4": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 5,
+                    "Type": 3
+                },
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 6,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_5": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 0
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 7,
+                    "Type": 2
+                }
+            ]
+        },
+        {
+            "Turn_6": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 8,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_7": []
+        },
+        {
+            "Turn_8": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 0
+                        },
+                        "ID": 1
+                    },
+                    "Response": null,
+                    "Transaction": 9,
+                    "Type": 4
+                },
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 10,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_9": []
+        },
+        {
+            "Turn_10": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 0
+                        },
+                        "ID": 1,
+                        "Wall_Info": {
+                            "East": "n",
+                            "North": "y",
+                            "South": "n",
+                            "West": "n"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 11,
+                    "Type": 1
+                },
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 12,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_11": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ],
+                            [
+                                1,
+                                1
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 13,
+                    "Type": 3
+                },
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                1,
+                                1
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 14,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_12": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 1
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 15,
+                    "Type": 2
+                },
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ],
+                            [
+                                1,
+                                1
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 16,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_13": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ],
+                            [
+                                2,
+                                0
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 17,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_14": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 0
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 110
+                    },
+                    "Transaction": 18,
+                    "Type": 2
+                }
+            ]
+        },
+        {
+            "Turn_15": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 1
+                        },
+                        "ID": 1
+                    },
+                    "Response": null,
+                    "Transaction": 19,
+                    "Type": 4
+                },
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ],
+                            [
+                                1,
+                                1
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 20,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_16": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ],
+                            [
+                                2,
+                                0
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 21,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_17": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 0
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 22,
+                    "Type": 2
+                },
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 1
+                        },
+                        "ID": 1,
+                        "Wall_Info": {
+                            "East": "n",
+                            "North": "n",
+                            "South": "y",
+                            "West": "n"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 23,
+                    "Type": 1
+                }
+            ]
+        },
+        {
+            "Turn_18": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                0,
+                                1
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 24,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_19": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": {
+                            "x_pos": 0,
+                            "y_pos": 1
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 25,
+                    "Type": 2
+                }
+            ]
+        },
+        {
+            "Turn_20": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 0
+                        },
+                        "ID": 2
+                    },
+                    "Response": null,
+                    "Transaction": 26,
+                    "Type": 4
+                }
+            ]
+        },
+        {
+            "Turn_21": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": {
+                            "x_pos": 2,
+                            "y_pos": 0
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 27,
+                    "Type": 2
+                }
+            ]
+        },
+        {
+            "Turn_22": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 0,
+                            "y_pos": 1
+                        },
+                        "ID": 1
+                    },
+                    "Response": null,
+                    "Transaction": 28,
+                    "Type": 4
+                }
+            ]
+        },
+        {
+            "Turn_23": []
+        },
+        {
+            "Turn_24": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 2,
+                            "y_pos": 0
+                        },
+                        "ID": 2
+                    },
+                    "Response": null,
+                    "Transaction": 29,
+                    "Type": 4
+                },
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 0,
+                            "y_pos": 1
+                        },
+                        "ID": 1,
+                        "Wall_Info": {
+                            "East": "y",
+                            "North": "y",
+                            "South": "n",
+                            "West": "n"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 30,
+                    "Type": 1
+                }
+            ]
+        },
+        {
+            "Turn_25": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                0,
+                                2
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 31,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_26": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": {
+                            "x_pos": 0,
+                            "y_pos": 2
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 32,
+                    "Type": 2
+                },
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 2,
+                            "y_pos": 0
+                        },
+                        "ID": 2,
+                        "Wall_Info": {
+                            "East": "n",
+                            "North": "y",
+                            "South": "y",
+                            "West": "y"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 33,
+                    "Type": 1
+                }
+            ]
+        },
+        {
+            "Turn_27": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ],
+                            [
+                                1,
+                                1
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 34,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_28": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                1,
+                                0
+                            ],
+                            [
+                                1,
+                                1
+                            ],
+                            [
+                                2,
+                                1
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 35,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_29": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 0
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 36,
+                    "Type": 2
+                },
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 0,
+                            "y_pos": 2
+                        },
+                        "ID": 1
+                    },
+                    "Response": null,
+                    "Transaction": 37,
+                    "Type": 4
+                }
+            ]
+        },
+        {
+            "Turn_30": []
+        },
+        {
+            "Turn_31": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 0,
+                            "y_pos": 2
+                        },
+                        "ID": 1,
+                        "Wall_Info": {
+                            "East": "y",
+                            "North": "n",
+                            "South": "y",
+                            "West": "n"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 38,
+                    "Type": 1
+                }
+            ]
+        },
+        {
+            "Turn_32": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 0
+                        },
+                        "ID": 2
+                    },
+                    "Response": null,
+                    "Transaction": 39,
+                    "Type": 4
+                },
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                1,
+                                2
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 40,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_33": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 1
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 41,
+                    "Type": 2
+                },
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 2
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 42,
+                    "Type": 2
+                }
+            ]
+        },
+        {
+            "Turn_34": []
+        },
+        {
+            "Turn_35": []
+        },
+        {
+            "Turn_36": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 1
+                        },
+                        "ID": 2
+                    },
+                    "Response": null,
+                    "Transaction": 43,
+                    "Type": 4
+                },
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 2
+                        },
+                        "ID": 1
+                    },
+                    "Response": null,
+                    "Transaction": 44,
+                    "Type": 4
+                }
+            ]
+        },
+        {
+            "Turn_37": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": {
+                            "x_pos": 2,
+                            "y_pos": 1
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 45,
+                    "Type": 2
+                }
+            ]
+        },
+        {
+            "Turn_38": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 1,
+                            "y_pos": 2
+                        },
+                        "ID": 1,
+                        "Wall_Info": {
+                            "East": "n",
+                            "North": "y",
+                            "South": "y",
+                            "West": "y"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 46,
+                    "Type": 1
+                }
+            ]
+        },
+        {
+            "Turn_39": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                0,
+                                2
+                            ],
+                            [
+                                0,
+                                1
+                            ],
+                            [
+                                1,
+                                1
+                            ],
+                            [
+                                2,
+                                1
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 47,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_40": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 2,
+                            "y_pos": 1
+                        },
+                        "ID": 2
+                    },
+                    "Response": null,
+                    "Transaction": 48,
+                    "Type": 4
+                },
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                0,
+                                2
+                            ],
+                            [
+                                0,
+                                1
+                            ],
+                            [
+                                1,
+                                1
+                            ],
+                            [
+                                1,
+                                0
+                            ],
+                            [
+                                2,
+                                0
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 49,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_41": []
+        },
+        {
+            "Turn_42": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 2,
+                            "y_pos": 1
+                        },
+                        "ID": 2,
+                        "Wall_Info": {
+                            "East": "n",
+                            "North": "y",
+                            "South": "n",
+                            "West": "y"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 50,
+                    "Type": 1
+                },
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                0,
+                                2
+                            ],
+                            [
+                                0,
+                                1
+                            ],
+                            [
+                                1,
+                                1
+                            ],
+                            [
+                                2,
+                                1
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 51,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_43": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                0,
+                                2
+                            ],
+                            [
+                                0,
+                                1
+                            ],
+                            [
+                                1,
+                                1
+                            ],
+                            [
+                                2,
+                                1
+                            ],
+                            [
+                                2,
+                                2
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 52,
+                    "Type": 3
+                },
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": [
+                            [
+                                2,
+                                2
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "y"
+                    },
+                    "Transaction": 53,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_44": [
+                {
+                    "Request": {
+                        "ID": 2,
+                        "Target_Cell": {
+                            "x_pos": 2,
+                            "y_pos": 2
+                        }
+                    },
+                    "Response": {
+                        "Movement_Occured": 121
+                    },
+                    "Transaction": 54,
+                    "Type": 2
+                },
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                0,
+                                2
+                            ],
+                            [
+                                0,
+                                1
+                            ],
+                            [
+                                1,
+                                1
+                            ],
+                            [
+                                2,
+                                1
+                            ],
+                            [
+                                2,
+                                2
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 55,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_45": []
+        },
+        {
+            "Turn_46": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                0,
+                                2
+                            ],
+                            [
+                                0,
+                                1
+                            ],
+                            [
+                                1,
+                                1
+                            ],
+                            [
+                                2,
+                                1
+                            ],
+                            [
+                                2,
+                                2
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 56,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_47": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 2,
+                            "y_pos": 2
+                        },
+                        "ID": 2
+                    },
+                    "Response": null,
+                    "Transaction": 57,
+                    "Type": 4
+                }
+            ]
+        },
+        {
+            "Turn_48": [
+                {
+                    "Request": {
+                        "ID": 1,
+                        "Target_Cell": [
+                            [
+                                0,
+                                2
+                            ],
+                            [
+                                0,
+                                1
+                            ],
+                            [
+                                1,
+                                1
+                            ],
+                            [
+                                2,
+                                1
+                            ],
+                            [
+                                2,
+                                2
+                            ]
+                        ]
+                    },
+                    "Response": {
+                        "Cell_Reserved": "n"
+                    },
+                    "Transaction": 58,
+                    "Type": 3
+                }
+            ]
+        },
+        {
+            "Turn_49": [
+                {
+                    "Request": {
+                        "Current_Cell": {
+                            "x_pos": 2,
+                            "y_pos": 2
+                        },
+                        "ID": 2,
+                        "Wall_Info": {
+                            "East": "y",
+                            "North": "n",
+                            "South": "y",
+                            "West": "y"
+                        }
+                    },
+                    "Response": null,
+                    "Transaction": 59,
+                    "Type": 1
+                }
+            ]
+        },
+        {
+            "Turn_50": [
+                {
+                    "Request": {
+                        "ID": 1
+                    },
+                    "Response": null,
+                    "Transaction": 60,
+                    "Type": -1
+                },
+                {
+                    "Request": {
+                        "ID": 2
+                    },
+                    "Response": null,
+                    "Transaction": 61,
+                    "Type": -1
+                }
+            ]
+        }
+    ]
+}
