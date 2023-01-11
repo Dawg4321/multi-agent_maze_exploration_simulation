@@ -12,8 +12,8 @@
 #include "Coordinates.h"
 #include "RequestHandler.h"
 
-#include "json.hpp" // using json.hpp from https://github.com/nlohmann/json
-                    // this library is used to export tracked data into a json format
+#include "nlohmann/json.hpp" // using json.hpp from https://github.com/nlohmann/json
+                             // this library is used to export tracked data into a json format
 
 using json = nlohmann::json; // simplifying namespace so "json" can be used instead of "nlohmann::json" when declaring json objects
 
