@@ -65,6 +65,6 @@ for i in range(1,num_of_printouts + 1): # iterate through all text files to make
 
 print("\nAll images successfully generated!") # image creation completion printout
 
-print("Saving GIF")
+print("Saving GIF...")
 images[0].save(directory + gif_name, save_all=True, append_images=images[1:], optimize=False, duration=1000/24, loop=0) # 1000/24 duration as equivalent 24 fps in milliseconds
 print("GIF successfully saved to " + directory + gif_name)
