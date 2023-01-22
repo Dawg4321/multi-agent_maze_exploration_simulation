@@ -2,6 +2,10 @@
 
 This is a C++ simulator allows for a variety of multi-agent exploration systems to be simulated within a maze environment. The goal of this is to be able to evalute high-level exploration control schemes without considering low-level challenges of robotic systems such as localisation. Data from simulationss can be exported in json format for analysis purposes. Additionally, gifs of simulations can be created for easy viewing. Portions of this project was completed for my disseration at TU Dublin.
 
+<p align="center">
+  <img src="https://github.com/Dawg4321/multi-agent_maze_exploration_simulation/blob/master/examples/10x10_Greedy/maze_exploration.gif"/>
+</p>
+
 ## Getting Started
 The C++ simulator is designed for use with ```Linux``` due to the use of ```POSIX Threads```. Additionally, ```C++20``` and at minimum ```CMake v3.10``` are required. Before building, git submodules must be cloned into the local repository using the following command in the project's main directory:
 ```
