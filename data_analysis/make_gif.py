@@ -13,6 +13,7 @@ args = parser.parse_args()
 directory = args.dir # getting directory from arguments
 img_directory = directory + "frames/" # directory for .png exporting
 simulation_json_name = "Simulation.json" # name of simulation info file
+gif_name = "maze_exploration.gif" # name of gif file to generate
 
 file = open(directory + simulation_json_name) # opening json file
 simulation_json = json.load(file) # putting simulation.json into a dictionary
@@ -27,6 +28,8 @@ except: # if directory already exists
 
 x_size = 0 # variable to determine x limit of maze image
 y_size = 0 # variable to determine y limit of maze image
+
+images = []
 
 print("Generating images for gif creation...")
 
@@ -56,8 +59,12 @@ for i in range(1,num_of_printouts + 1): # iterate through all text files to make
     draw.text((0,0), txt_file.read(), (0,0,0), font=font) # drawing maze from txt file into image
     image.save(img_directory + "frame_" + str(i) + ".png") # adding generated images to list
 
-    print("Number of images generated: " + str(i) + "/" + str(num_of_printouts + 1), end='\r') # printing progress
+    images.append(image) # saving image for use in gif generation
 
-print("All images successfully generated!") # image creation completion printout
+    print("Number of images generated: " + str(i) + "/" + str(num_of_printouts), end='\r') # printing progress
 
-os.system("ffmpeg -f image2 -framerate 15 -i " + img_directory + "frame_%d.png -loop 0 " + directory + "maze_exploration.gif") # using ffmpeg to make a gif using generated images
+print("\nAll images successfully generated!") # image creation completion printout
+
+print("Saving GIF")
+images[0].save(directory + gif_name, save_all=True, append_images=images[1:], optimize=False, duration=1000/24, loop=0) # 1000/24 duration as equivalent 24 fps in milliseconds
+print("GIF successfully saved to " + directory + gif_name)
